@@ -80,16 +80,16 @@ function generateId(): string {
 
 // Initial seed categories
 const initialCategories: CategoryItem[] = [
-  { id: 'cat-1', name: '常用工具', slug: 'tools', icon: 'Wrench', order: 1, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-2', name: '开发工具', slug: 'dev', icon: 'Code', order: 2, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-3', name: '设计资源', slug: 'design', icon: 'Palette', order: 3, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-4', name: '学习资源', slug: 'learning', icon: 'GraduationCap', order: 4, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-5', name: 'AI 工具', slug: 'ai', icon: 'Bot', order: 5, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-6', name: '云服务', slug: 'cloud', icon: 'Cloud', order: 6, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-7', name: '社区论坛', slug: 'community', icon: 'Users', order: 7, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-8', name: '文档参考', slug: 'docs', icon: 'BookOpen', order: 8, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-9', name: '生产力', slug: 'productivity', icon: 'Briefcase', order: 9, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-10', name: '娱乐休闲', slug: 'entertainment', icon: 'Gamepad2', order: 10, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-1', name: '常用工具', slug: 'tools', icon: null, order: 1, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-2', name: '开发工具', slug: 'dev', icon: null, order: 2, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-3', name: '设计资源', slug: 'design', icon: null, order: 3, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-4', name: '学习资源', slug: 'learning', icon: null, order: 4, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-5', name: 'AI 工具', slug: 'ai', icon: null, order: 5, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-6', name: '云服务', slug: 'cloud', icon: null, order: 6, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-7', name: '社区论坛', slug: 'community', icon: null, order: 7, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-8', name: '文档参考', slug: 'docs', icon: null, order: 8, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-9', name: '生产力', slug: 'productivity', icon: null, order: 9, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-10', name: '娱乐休闲', slug: 'entertainment', icon: null, order: 10, createdAt: new Date(), updatedAt: new Date() },
 ]
 
 // Initial seed sites

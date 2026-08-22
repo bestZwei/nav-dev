@@ -97,10 +97,24 @@ export function CategoryIcon({ icon, className = "h-4 w-4", size = 16 }: Categor
   }
 
   // 匹配 Lucide 图标组件
-  const IconComponent = (LucideIcons as Record<string, any>)[trimmedIcon]
+  let IconComponent = (LucideIcons as Record<string, any>)[trimmedIcon]
 
-  if (IconComponent && typeof IconComponent === "function") {
-    return <IconComponent className={className} size={size} />
+  // 如果名称大小写不一致，尝试忽略大小写匹配
+  if (!IconComponent) {
+    const lower = trimmedIcon.toLowerCase()
+    const foundKey = Object.keys(LucideIcons).find((k) => k.toLowerCase() === lower)
+    if (foundKey) {
+      IconComponent = (LucideIcons as Record<string, any>)[foundKey]
+    }
+  }
+
+  if (IconComponent && (typeof IconComponent === "function" || typeof IconComponent === "object")) {
+    const Component = IconComponent as React.ComponentType<{
+      className?: string
+      size?: number
+      style?: React.CSSProperties
+    }>
+    return <Component className={className} size={size} />
   }
 
   // 如果找不到对应的组件且不是图片，则不渲染

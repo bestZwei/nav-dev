@@ -356,13 +356,9 @@ export default function AdminCategoriesPage() {
                         {/* 图标与名称 */}
                         <TableCell>
                           <div className="flex items-center gap-2.5">
-                            {category.icon ? (
+                            {category.icon && (
                               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
                                 <CategoryIcon icon={category.icon} className="h-4 w-4" size={18} />
-                              </div>
-                            ) : (
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/20 text-muted-foreground/40 shrink-0">
-                                <span className="text-[11px] font-mono select-none">无</span>
                               </div>
                             )}
                             <div>
