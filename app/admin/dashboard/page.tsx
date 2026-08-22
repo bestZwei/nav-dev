@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { VisitFrequencyChart } from "@/components/admin/charts/visit-frequency-chart"
 import {
   ToggleGroup,
@@ -245,9 +246,17 @@ export default function AdminDashboardPage() {
           </Table>
             </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            暂无访问数据
-          </div>
+          <Empty className="py-8">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <BarChart3 className="size-5" />
+              </EmptyMedia>
+              <EmptyTitle>暂无访问数据</EmptyTitle>
+              <EmptyDescription>
+                当前时间范围内还没有访问记录
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </CardContent>
     </Card>

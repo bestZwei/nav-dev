@@ -21,6 +21,7 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 import { TrendingUp } from "lucide-react"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useMemo } from "react"
 
 interface VisitFrequencyChartProps {
@@ -190,9 +191,17 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-            暂无数据
-          </div>
+          <Empty className="h-[300px]">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <TrendingUp className="size-5" />
+              </EmptyMedia>
+              <EmptyTitle>暂无数据</EmptyTitle>
+              <EmptyDescription>
+                当前时间范围内还没有访问记录
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </CardContent>
     </Card>

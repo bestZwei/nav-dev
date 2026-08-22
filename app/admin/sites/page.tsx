@@ -39,12 +39,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Field, FieldLabel } from "@/components/ui/field"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink } from "lucide-react"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe } from "lucide-react"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
 import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter } from "@/lib/actions"
 import { toast } from "sonner"
@@ -361,9 +358,17 @@ export default function AdminSitesPage() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : sites.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              暂无符合条件的网站
-            </div>
+            <Empty className="py-12">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Globe className="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>暂无网站</EmptyTitle>
+                <EmptyDescription>
+                  暂无符合条件的网站，可调整筛选条件或新增网站
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div className="overflow-hidden rounded-lg border">
               <Table>

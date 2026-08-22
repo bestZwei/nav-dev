@@ -47,11 +47,13 @@ import {
   Sparkles,
   Info,
   CheckCircle2,
+  FolderKanban,
 } from "lucide-react"
 import { CategoryFormDialog } from "@/components/admin/category-form-dialog"
 import { CategoryIconBadge } from "@/components/category-icon"
 import { getCategoriesWithPagination, deleteCategory, updateCategoriesOrder } from "@/lib/actions"
 import { toast } from "sonner"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 
 interface Category {
   id: string
@@ -285,14 +287,24 @@ export default function AdminCategoriesPage() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : categories.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground space-y-3">
-              <p>暂无分类，点击「新增分类」添加第一个分类</p>
-              <Button variant="outline" size="sm" onClick={handleCreate}>
-                <Plus className="mr-1.5 h-4 w-4" /> 新增分类
-              </Button>
-            </div>
+            <Empty className="py-12">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <FolderKanban className="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>暂无分类</EmptyTitle>
+                <EmptyDescription>
+                  添加第一个分类，开始整理你的导航站点
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button variant="outline" onClick={handleCreate}>
+                  <Plus className="h-4 w-4" /> 新增分类
+                </Button>
+              </EmptyContent>
+            </Empty>
           ) : (
-            <div className="rounded-md border">
+            <div className="overflow-hidden rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
