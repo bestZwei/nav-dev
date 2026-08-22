@@ -26,8 +26,8 @@ export interface SiteItemProps {
   url: string
   description: string
   iconUrl: string | null
-  isPinned?: boolean
   categoryId?: string
+  isPinned?: boolean
   category?: {
     name: string
   } | null
@@ -153,18 +153,22 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               rel="noopener noreferrer"
               onClick={handleClick}
               aria-label={`访问 ${site.name}`}
-              className={`group relative flex h-12 items-center gap-2.5 rounded-lg border bg-card px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/40 hover:shadow-xs select-none ${
-                site.isPinned ? "border-amber-500/30 bg-amber-500/[0.03] dark:border-amber-400/30" : "border-border/80"
+              className={`group relative flex h-12 items-center gap-2.5 rounded-lg border px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs select-none ${
+                site.isPinned
+                  ? "border-amber-500/30 bg-amber-500/[0.04] hover:border-amber-500/60 hover:bg-amber-500/[0.08]"
+                  : "border-border/80 bg-card hover:border-primary/40 hover:bg-accent/40"
               }`}
             >
               <SiteIcon iconSrc={iconSrc} name={site.name} size="compact" />
 
               <div className="flex-1 min-w-0 pr-1 flex items-center gap-1.5">
-                <span className="block truncate text-xs sm:text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                <span className="truncate text-xs sm:text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                   {site.name}
                 </span>
                 {site.isPinned && (
-                  <Pin className="h-3 w-3 text-amber-500 dark:text-amber-400 fill-current shrink-0" />
+                  <span title="置顶推荐" className="inline-flex shrink-0">
+                    <Pin className="h-3 w-3 text-amber-500 fill-amber-500" />
+                  </span>
                 )}
               </div>
 
@@ -181,7 +185,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-semibold text-sm text-foreground">{site.name}</span>
               {site.isPinned && (
-                <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-medium">
+                <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
                   <Pin className="h-2.5 w-2.5 fill-current" />
                   置顶
                 </span>
@@ -218,8 +222,10 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
       aria-label={`访问 ${site.name}`}
       className="group relative block h-full select-none"
     >
-      <div className={`relative flex h-full items-start gap-3.5 rounded-xl border bg-card p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-card-hover ${
-        site.isPinned ? "border-amber-500/30 bg-amber-500/[0.02] dark:border-amber-400/30" : "border-border/80"
+      <div className={`relative flex h-full items-start gap-3.5 rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover ${
+        site.isPinned
+          ? "border-amber-500/30 bg-card hover:border-amber-500/60 ring-1 ring-amber-500/10"
+          : "border-border/80 bg-card hover:border-primary/40 hover:bg-card"
       }`}>
         {/* 网站图标 */}
         <SiteIcon iconSrc={iconSrc} name={site.name} size="standard" />
@@ -234,7 +240,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               {site.name}
             </h3>
             {site.isPinned && (
-              <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0.2 text-[10px] font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20">
                 <Pin className="h-2.5 w-2.5 fill-current" />
                 置顶
               </span>

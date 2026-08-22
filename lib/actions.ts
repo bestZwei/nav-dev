@@ -14,10 +14,7 @@ export async function getCategories() {
       include: {
         sites: {
           where: { isPublished: true },
-          orderBy: [
-            { isPinned: 'desc' },
-            { order: 'asc' },
-          ],
+          orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
         },
       },
     })
@@ -35,10 +32,7 @@ export async function getCategoryBySlug(slug: string) {
       include: {
         sites: {
           where: { isPublished: true },
-          orderBy: [
-            { isPinned: 'desc' },
-            { order: 'asc' },
-          ],
+          orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
         },
       },
     })
@@ -174,16 +168,14 @@ export async function updateCategory(id: string, data: {
   }
 }
 
-export async function updateCategoriesOrder(items: Array<{ id: string; order: number }>) {
+export async function updateCategoriesOrder(items: { id: string; order: number }[]) {
   try {
-    await Promise.all(
-      items.map(item =>
-        prisma.category.update({
-          where: { id: item.id },
-          data: { order: item.order },
-        })
-      )
-    )
+    for (const item of items) {
+      await prisma.category.update({
+        where: { id: item.id },
+        data: { order: item.order },
+      })
+    }
     revalidatePath("/admin/categories")
     revalidatePath("/")
     return { success: true }
@@ -212,10 +204,7 @@ export async function deleteCategory(id: string) {
 export async function getSites() {
   try {
     const sites = await prisma.site.findMany({
-      orderBy: [
-        { isPinned: 'desc' },
-        { order: 'asc' },
-      ],
+      orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
       include: {
         category: true,
       },
@@ -274,10 +263,7 @@ export async function getSitesWithPagination(params: {
         where,
         skip,
         take: pageSize,
-        orderBy: [
-          { isPinned: 'desc' },
-          { order: 'asc' },
-        ],
+        orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
         include: {
           category: true,
         },
@@ -406,6 +392,25 @@ export async function updateSite(id: string, data: {
   }
 }
 
+export async function toggleSitePin(id: string) {
+  try {
+    const existing = await prisma.site.findUnique({ where: { id } })
+    if (!existing) return { success: false, error: "Site not found" }
+    const updated = await prisma.site.update({
+      where: { id },
+      data: { isPinned: !existing.isPinned },
+      include: { category: true },
+    })
+    revalidatePath("/admin/sites")
+    revalidatePath("/")
+    revalidatePath(`/category/${updated.category?.slug || ''}`)
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error("Error toggling site pin:", error)
+    return { success: false, error: "Failed to toggle pin" }
+  }
+}
+
 export async function deleteSite(id: string) {
   try {
     const site = await prisma.site.delete({
@@ -421,33 +426,6 @@ export async function deleteSite(id: string) {
   } catch (error) {
     console.error("Error deleting site:", error)
     return { success: false, error: "Failed to delete site" }
-  }
-}
-
-export async function toggleSitePinned(id: string) {
-  try {
-    const currentSite = await prisma.site.findUnique({
-      where: { id },
-      select: { isPinned: true },
-    })
-
-    if (!currentSite) {
-      return { success: false, error: "Site not found" }
-    }
-
-    const site = await prisma.site.update({
-      where: { id },
-      data: { isPinned: !currentSite.isPinned },
-      include: {
-        category: true,
-      },
-    })
-    revalidatePath("/admin/sites")
-    revalidatePath("/")
-    return { success: true, data: site }
-  } catch (error) {
-    console.error("Error toggling site pinned status:", error)
-    return { success: false, error: "Failed to toggle site pinned status" }
   }
 }
 

@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { CategoryIconPicker } from "@/components/admin/category-icon-picker"
 import { createCategory, updateCategory, getCategoryById } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
-import { CategoryIconPicker } from "./category-icon-picker"
 
 interface Category {
   id: string
@@ -59,7 +59,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
           setFormData({
             name: result.data.name,
             slug: result.data.slug,
-            icon: result.data.icon || null,
+            icon: (result.data as any).icon || null,
             order: result.data.order,
           })
         }
@@ -125,11 +125,11 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "新增分类" : "编辑分类"}</DialogTitle>
           <DialogDescription>
-            {mode === "create" ? "添加一个新的分类，可配置分类专属图标与排序" : "修改分类信息及图标"}
+            {mode === "create" ? "添加一个新的分类" : "修改分类信息"}
           </DialogDescription>
         </DialogHeader>
 
@@ -141,20 +141,19 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="例如：技术工具"
+                placeholder="例如：技术"
                 required
               />
             </div>
 
-            {/* 分类图标选择 */}
             <div className="grid gap-2">
               <Label>分类图标</Label>
               <CategoryIconPicker
                 value={formData.icon}
-                onChange={(newIcon) => setFormData({ ...formData, icon: newIcon })}
+                onChange={(icon) => setFormData({ ...formData, icon })}
               />
-              <p className="text-[11px] text-muted-foreground">
-                支持从内置常用图标库选取、上传本地文件或输入外部图片链接
+              <p className="text-xs text-muted-foreground">
+                选择精选图标或自定义图片链接，将显示在前台导航及分类标题旁
               </p>
             </div>
 
@@ -182,7 +181,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
                 min="0"
               />
               <p className="text-xs text-muted-foreground">
-                数字越小排序越靠前（也可在分类列表中直接拖拽排序）
+                数字越小排序越靠前
               </p>
             </div>
           </div>

@@ -1,9 +1,9 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
+import { CategoryIcon } from "@/components/category-icon"
 import { getAllCategories, getCategories, getSystemSettings, getSites } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { CategoryIcon } from "@/components/category-icon"
 
 // ISR 配置：每 10 秒自动重新生成页面
 // 这样在 seed 后 10 秒内会自动看到新数据
@@ -33,11 +33,9 @@ export default async function HomePage() {
             <section key={category.id} id={`category-${category.slug}`}>
               <div className="flex items-center justify-between mb-3.5">
                 <div className="flex items-center gap-2.5">
-                  {category.icon && (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
-                      <CategoryIcon icon={category.icon} className="h-4 w-4" size={16} />
-                    </div>
-                  )}
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
+                    <CategoryIcon icon={category.icon} className="h-4 w-4" size={16} />
+                  </div>
                   <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground/95">{category.name}</h2>
                   {category.sites && category.sites.length > 0 && (
                     <Badge variant="secondary" className="px-1.5 py-0 text-[11px] font-medium h-5 rounded-full">

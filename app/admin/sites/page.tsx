@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -45,9 +45,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff } from "lucide-react"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink } from "lucide-react"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
-import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePinned, getCategoriesForFilter } from "@/lib/actions"
+import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 
 interface Site {
@@ -60,7 +60,7 @@ interface Site {
   submitterIp: string | null
   categoryId: string
   isPublished: boolean
-  isPinned: boolean
+  isPinned?: boolean
   order: number
   category?: {
     id: string
@@ -220,14 +220,14 @@ export default function AdminSitesPage() {
     }
   }
 
-  // 切换置顶状态
-  const handleTogglePinned = async (siteId: string, currentPinned: boolean) => {
+  // 切换发布状态
+  const handleTogglePublish = async (siteId: string) => {
     try {
-      const result = await toggleSitePinned(siteId)
+      const result = await toggleSitePublish(siteId)
       if (result.success) {
         toast({
-          title: !currentPinned ? "已设为置顶" : "已取消置顶",
-          description: !currentPinned ? "网站已优先置顶展示在分类顶部" : "网站已恢复普通排序",
+          title: "状态已更新",
+          description: "网站发布状态已切换",
         })
         loadSites()
       } else {
@@ -246,21 +246,21 @@ export default function AdminSitesPage() {
     }
   }
 
-  // 切换发布状态
-  const handleTogglePublish = async (siteId: string) => {
+  // 切换置顶状态
+  const handleTogglePin = async (siteId: string, currentPin?: boolean) => {
     try {
-      const result = await toggleSitePublish(siteId)
+      const result = await toggleSitePin(siteId)
       if (result.success) {
         toast({
-          title: "状态已更新",
-          description: "网站发布状态已切换",
+          title: currentPin ? "已取消置顶" : "已设为置顶",
+          description: currentPin ? "该网站将按常规顺序展示" : "该网站将在前台分类中优先推荐展示",
         })
         loadSites()
       } else {
         toast({
           variant: "destructive",
           title: "操作失败",
-          description: result.error || "操作失败，请稍后重试",
+          description: result.error || "切换置顶状态失败",
         })
       }
     } catch (error) {
@@ -300,12 +300,12 @@ export default function AdminSitesPage() {
             <FieldLabel>置顶</FieldLabel>
             <Select value={filterPinned} onValueChange={setFilterPinned}>
               <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="全部" />
+                <SelectValue placeholder="全部置顶" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部</SelectItem>
                 <SelectItem value="true">仅置顶</SelectItem>
-                <SelectItem value="false">非置顶</SelectItem>
+                <SelectItem value="false">未置顶</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -362,8 +362,8 @@ export default function AdminSitesPage() {
           )}
         </div>
 
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={handleCreate} className="gap-1.5">
+          <Plus className="h-4 w-4" />
           新增网站
         </Button>
       </div>
@@ -371,166 +371,207 @@ export default function AdminSitesPage() {
       {/* 网站列表卡片 */}
       <Card>
         <CardHeader>
-          <CardTitle>收录你的宝藏网站</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>收录你的宝藏网站</CardTitle>
+            <span className="text-xs text-muted-foreground">
+              共 {pagination?.total || 0} 个网站
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : sites.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              暂无网站，点击「新增网站」添加第一个网站
+            <div className="text-center py-12 text-muted-foreground">
+              暂无符合条件的网站
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16">图标</TableHead>
-                  <TableHead>名称</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>分类</TableHead>
-                  <TableHead>置顶</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>提交者</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sites.map((site) => (
-                  <TableRow key={site.id} className={site.isPinned ? "bg-amber-500/5 hover:bg-amber-500/10" : undefined}>
-                    <TableCell>
-                      {site.iconUrl ? (
-                        <img
-                          src={site.iconUrl}
-                          alt={site.name}
-                          className="h-8 w-8 rounded object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E"
-                          }}
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">
-                            {site.name.charAt(0).toUpperCase()}
-                          </span>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-14 text-center">图标</TableHead>
+                    <TableHead>名称 & 描述</TableHead>
+                    <TableHead className="w-36">分类</TableHead>
+                    <TableHead className="w-24 text-center">置顶推荐</TableHead>
+                    <TableHead className="w-24 text-center">状态</TableHead>
+                    <TableHead className="w-28 text-center">来源</TableHead>
+                    <TableHead className="text-right w-36">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sites.map((site) => (
+                    <TableRow key={site.id} className={site.isPinned ? "bg-amber-500/5" : ""}>
+                      {/* 图标 */}
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          {site.iconUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={site.iconUrl}
+                              alt={site.name}
+                              className="h-8 w-8 rounded-md object-contain border bg-background p-0.5"
+                              onError={(e) => {
+                                e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E"
+                              }}
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center border">
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                {site.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <span>{site.name}</span>
-                        {site.isPinned && (
-                          <Badge variant="outline" className="h-5 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                            <Pin className="h-2.5 w-2.5 fill-current" />
-                            置顶
+                      </TableCell>
+
+                      {/* 名称 & 描述 & URL */}
+                      <TableCell>
+                        <div className="space-y-1 max-w-[280px]">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm text-foreground">{site.name}</span>
+                            {site.isPinned && (
+                              <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1">
+                                <Pin className="h-2.5 w-2.5 fill-current" />
+                                置顶
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {site.description || "暂无描述"}
+                          </p>
+                          <a
+                            href={site.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <span className="truncate max-w-[200px]">{site.url}</span>
+                            <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-70" />
+                          </a>
+                        </div>
+                      </TableCell>
+
+                      {/* 分类 */}
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {site.category?.name || "未分类"}
+                        </Badge>
+                      </TableCell>
+
+                      {/* 置顶切换开关 */}
+                      <TableCell className="text-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant={site.isPinned ? "default" : "ghost"}
+                                size="sm"
+                                onClick={() => handleTogglePin(site.id, site.isPinned)}
+                                className={`h-7 px-2 text-xs gap-1 transition-all ${
+                                  site.isPinned
+                                    ? "bg-amber-500 text-white hover:bg-amber-600 shadow-sm"
+                                    : "text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10"
+                                }`}
+                              >
+                                <Pin className={`h-3.5 w-3.5 ${site.isPinned ? "fill-current" : ""}`} />
+                                <span>{site.isPinned ? "已置顶" : "置顶"}</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{site.isPinned ? "点击取消置顶" : "点击置顶该网站"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+
+                      {/* 状态 */}
+                      <TableCell className="text-center">
+                        {site.isPublished ? (
+                          <Badge variant="default" className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30">
+                            已发布
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-muted-foreground">
+                            草稿
                           </Badge>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <a
-                        href={site.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-muted-foreground hover:text-foreground line-clamp-1 max-w-[200px]"
-                      >
-                        {site.url}
-                      </a>
-                    </TableCell>
-                    <TableCell>{site.category?.name || '-'}</TableCell>
-                    <TableCell>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleTogglePinned(site.id, site.isPinned)}
-                              className={`h-7 px-2 text-xs gap-1 rounded-md transition-colors ${
-                                site.isPinned
-                                  ? "text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 font-medium"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                              }`}
-                            >
-                              <Pin className={`h-3.5 w-3.5 ${site.isPinned ? "fill-current" : ""}`} />
-                              {site.isPinned ? "已置顶" : "置顶"}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{site.isPinned ? "点击取消置顶" : "点击置顶（排在分类首位）"}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableCell>
-                    <TableCell>
-                      {site.isPublished ? (
-                        <Badge variant="default">已发布</Badge>
-                      ) : (
-                        <Badge variant="secondary">草稿</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {site.submitterIp ? (
-                        <span className="text-xs">用户提交</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">管理员创建</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleTogglePublish(site.id)}
-                            >
-                              <Power className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{site.isPublished ? "取消发布" : "发布网站"}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(site)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>编辑网站</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteClick(site.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>删除网站</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+
+                      {/* 提交来源 */}
+                      <TableCell className="text-center text-muted-foreground">
+                        {site.submitterIp ? (
+                          <span className="text-xs font-mono text-muted-foreground">用户提交</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/70">管理员</span>
+                        )}
+                      </TableCell>
+
+                      {/* 操作 */}
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleTogglePublish(site.id)}
+                                >
+                                  <Power className={`h-4 w-4 ${site.isPublished ? "text-emerald-600" : "text-muted-foreground"}`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{site.isPublished ? "取消发布" : "立即发布"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleEdit(site)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>编辑网站</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteClick(site.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>删除网站</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -548,7 +589,6 @@ export default function AdminSitesPage() {
               />
             </PaginationItem>
 
-            {/* 页码 */}
             {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
               .filter(
                 (pageNum) =>
@@ -605,14 +645,17 @@ export default function AdminSitesPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>确认删除网站</AlertDialogTitle>
             <AlertDialogDescription>
               确定要删除这个网站吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               删除
             </AlertDialogAction>
           </AlertDialogFooter>

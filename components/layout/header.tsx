@@ -134,9 +134,7 @@ export function Header({
                       : "text-muted-foreground hover:bg-accent/50"
                   }`}
                 >
-                  {category.icon && (
-                    <CategoryIcon icon={category.icon} className="h-3.5 w-3.5 opacity-80 shrink-0" size={14} />
-                  )}
+                  <CategoryIcon icon={category.icon} className="h-3.5 w-3.5 opacity-80" size={14} />
                   <span>{category.name}</span>
                 </Link>
               ))}
@@ -182,9 +180,9 @@ export function Header({
                           : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       }`}
                     >
-                      {category.icon && (
-                        <CategoryIcon icon={category.icon} className="h-4 w-4 opacity-85 shrink-0" size={16} />
-                      )}
+                      <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
+                        <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" size={14} />
+                      </div>
                       <span>{category.name}</span>
                     </Link>
                   ))}

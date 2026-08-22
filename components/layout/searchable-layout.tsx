@@ -14,6 +14,7 @@ interface Site {
   url: string
   description: string
   iconUrl: string | null
+  isPinned?: boolean
   category?: {
     name: string
   } | null

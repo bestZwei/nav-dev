@@ -42,7 +42,6 @@ model Site {
   @@index([isPublished])
   @@index([isPinned])
   @@index([categoryId, isPublished])
-  @@index([categoryId, isPinned])
   @@index([order])
   @@map("Site")
 }

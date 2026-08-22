@@ -145,7 +145,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "新增网站" : "编辑网站"}</DialogTitle>
           <DialogDescription>
-            {mode === "create" ? "添加一个新的网站到导航" : "修改网站信息及展示设置"}
+            {mode === "create" ? "添加一个新的网站到导航" : "修改网站信息"}
           </DialogDescription>
         </DialogHeader>
 
@@ -216,41 +216,32 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
               />
             </div>
 
-            <div className="grid gap-3 pt-2 border-t">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="published">发布状态</Label>
-                  <p className="text-xs text-muted-foreground">
-                    是否在前台正常展示此网站
-                  </p>
-                </div>
-                <Switch
-                  id="published"
-                  checked={formData.isPublished}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isPublished: checked })}
-                />
+            <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/20">
+              <div className="space-y-0.5">
+                <Label htmlFor="pinned" className="font-medium">置顶展示</Label>
+                <p className="text-xs text-muted-foreground">
+                  将该网站置顶并在前台分类中优先排在最前
+                </p>
               </div>
+              <Switch
+                id="pinned"
+                checked={formData.isPinned}
+                onCheckedChange={(checked) => setFormData({ ...formData, isPinned: checked })}
+              />
+            </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <Label htmlFor="pinned" className="font-semibold text-foreground">
-                      置顶推荐
-                    </Label>
-                    <span className="rounded bg-amber-500/10 px-1.5 py-0.2 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                      首页优先展示
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    置顶网站将在前台分类中排在首位，并显示专属置顶角标
-                  </p>
-                </div>
-                <Switch
-                  id="pinned"
-                  checked={formData.isPinned}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isPinned: checked })}
-                />
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="published">发布状态</Label>
+                <p className="text-sm text-muted-foreground">
+                  是否在前台显示此网站
+                </p>
               </div>
+              <Switch
+                id="published"
+                checked={formData.isPublished}
+                onCheckedChange={(checked) => setFormData({ ...formData, isPublished: checked })}
+              />
             </div>
           </div>
 

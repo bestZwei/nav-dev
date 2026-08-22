@@ -5,7 +5,7 @@ export interface CategoryItem {
   id: string
   name: string
   slug: string
-  icon: string | null
+  icon?: string | null
   order: number
   createdAt: Date
   updatedAt: Date
@@ -25,7 +25,7 @@ export interface SiteItem {
   submitterIp: string | null
   categoryId: string
   isPublished: boolean
-  isPinned: boolean
+  isPinned?: boolean
   order: number
   createdAt: Date
   updatedAt: Date
@@ -83,12 +83,12 @@ const initialCategories: CategoryItem[] = [
   { id: 'cat-1', name: '常用工具', slug: 'tools', icon: 'Wrench', order: 1, createdAt: new Date(), updatedAt: new Date() },
   { id: 'cat-2', name: '开发工具', slug: 'dev', icon: 'Code', order: 2, createdAt: new Date(), updatedAt: new Date() },
   { id: 'cat-3', name: '设计资源', slug: 'design', icon: 'Palette', order: 3, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-4', name: '学习资源', slug: 'learning', icon: 'BookOpen', order: 4, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-5', name: 'AI 工具', slug: 'ai', icon: 'Sparkles', order: 5, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-4', name: '学习资源', slug: 'learning', icon: 'GraduationCap', order: 4, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-5', name: 'AI 工具', slug: 'ai', icon: 'Bot', order: 5, createdAt: new Date(), updatedAt: new Date() },
   { id: 'cat-6', name: '云服务', slug: 'cloud', icon: 'Cloud', order: 6, createdAt: new Date(), updatedAt: new Date() },
   { id: 'cat-7', name: '社区论坛', slug: 'community', icon: 'Users', order: 7, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-8', name: '文档参考', slug: 'docs', icon: 'FileText', order: 8, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-9', name: '生产力', slug: 'productivity', icon: 'Flame', order: 9, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-8', name: '文档参考', slug: 'docs', icon: 'BookOpen', order: 8, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-9', name: '生产力', slug: 'productivity', icon: 'Briefcase', order: 9, createdAt: new Date(), updatedAt: new Date() },
   { id: 'cat-10', name: '娱乐休闲', slug: 'entertainment', icon: 'Gamepad2', order: 10, createdAt: new Date(), updatedAt: new Date() },
 ]
 
@@ -109,7 +109,7 @@ const seedSitesData = [
   { name: 'Tailwind CSS', url: 'https://tailwindcss.com', description: '实用优先的现代化原子 CSS 框架', categorySlug: 'dev', isPinned: false },
 
   // 设计资源
-  { name: 'Dribbble', url: 'https://dribbble.com', description: '全球顶尖设计师创意灵感与作品展示社区', categorySlug: 'design', isPinned: true },
+  { name: 'Dribbble', url: 'https://dribbble.com', description: '全球顶尖设计师创意灵感与作品展示社区', categorySlug: 'design', isPinned: false },
   { name: 'Behance', url: 'https://www.behance.net', description: 'Adobe 旗下创意作品与设计展示平台', categorySlug: 'design', isPinned: false },
   { name: 'Figma', url: 'https://www.figma.com', description: '基于云端的新一代 UI/UX 协作设计利器', categorySlug: 'design', isPinned: true },
   { name: 'shadcn/ui', url: 'https://ui.shadcn.com', description: '美观优雅的可定制 React 组件设计系统', categorySlug: 'design', isPinned: false },
@@ -130,30 +130,30 @@ const seedSitesData = [
   { name: 'Perplexity', url: 'https://www.perplexity.ai', description: '基于搜索与引用的对话式 AI 搜索引擎', categorySlug: 'ai', isPinned: false },
 
   // 云服务
-  { name: 'AWS', url: 'https://aws.amazon.com', description: '亚马逊全球云计算基础设施服务平台', categorySlug: 'cloud', isPinned: true },
-  { name: 'Cloudflare', url: 'https://www.cloudflare.com', description: '全球 CDN、DNS 和网络安全防护服务', categorySlug: 'cloud', isPinned: false },
+  { name: 'AWS', url: 'https://aws.amazon.com', description: '亚马逊全球云计算基础设施服务平台', categorySlug: 'cloud', isPinned: false },
+  { name: 'Cloudflare', url: 'https://www.cloudflare.com', description: '全球 CDN、DNS 和网络安全防护服务', categorySlug: 'cloud', isPinned: true },
   { name: 'Railway', url: 'https://railway.app', description: '快速部署后端、数据库与全栈应用的云平台', categorySlug: 'cloud', isPinned: false },
   { name: 'Netlify', url: 'https://www.netlify.com', description: '面向现代 Web 的构建、部署与托管服务', categorySlug: 'cloud', isPinned: false },
 
   // 社区论坛
-  { name: 'GitHub Discussions', url: 'https://github.com', description: '开源项目团队与社区交流讨论平台', categorySlug: 'community', isPinned: true },
+  { name: 'GitHub Discussions', url: 'https://github.com', description: '开源项目团队与社区交流讨论平台', categorySlug: 'community', isPinned: false },
   { name: 'Reddit', url: 'https://www.reddit.com', description: '全球热门话题与兴趣圈子社区', categorySlug: 'community', isPinned: false },
   { name: 'Hacker News', url: 'https://news.ycombinator.com', description: '硅谷前沿技术与初创企业资讯讨论', categorySlug: 'community', isPinned: false },
   { name: 'Product Hunt', url: 'https://www.producthunt.com', description: '每日最新科技与互联网产品发现平台', categorySlug: 'community', isPinned: false },
   { name: 'V2EX', url: 'https://www.v2ex.com', description: '程序员与创意工作者交流分享社区', categorySlug: 'community', isPinned: false },
 
   // 文档参考
-  { name: 'Can I Use', url: 'https://caniuse.com', description: '前端 HTML5/CSS3 浏览器兼容性查询', categorySlug: 'docs', isPinned: true },
+  { name: 'Can I Use', url: 'https://caniuse.com', description: '前端 HTML5/CSS3 浏览器兼容性查询', categorySlug: 'docs', isPinned: false },
   { name: 'DevDocs', url: 'https://devdocs.io', description: '整合百种开发者 API 的快速离线文档库', categorySlug: 'docs', isPinned: false },
   { name: 'RegExp101', url: 'https://regex101.com', description: '交互式正则表达式测试与语法解析器', categorySlug: 'docs', isPinned: false },
 
   // 生产力
-  { name: 'Trello', url: 'https://trello.com', description: '直观灵活的看板式团队任务协作工具', categorySlug: 'productivity', isPinned: true },
+  { name: 'Trello', url: 'https://trello.com', description: '直观灵活的看板式团队任务协作工具', categorySlug: 'productivity', isPinned: false },
   { name: 'Slack', url: 'https://slack.com', description: '现代企业与远程团队即时沟通协作平台', categorySlug: 'productivity', isPinned: false },
   { name: 'Discord', url: 'https://discord.com', description: '社群交流、语音连麦与游戏开黑平台', categorySlug: 'productivity', isPinned: false },
 
   // 娱乐休闲
-  { name: 'Bilibili', url: 'https://www.bilibili.com', description: '国内年轻人的潮流文化娱乐与视频弹幕网站', categorySlug: 'entertainment', isPinned: true },
+  { name: 'Bilibili', url: 'https://www.bilibili.com', description: '国内年轻人的潮流文化娱乐与视频弹幕网站', categorySlug: 'entertainment', isPinned: false },
   { name: 'Spotify', url: 'https://www.spotify.com', description: '全球领先的流行音乐与播客流媒体平台', categorySlug: 'entertainment', isPinned: false },
 ]
 
@@ -169,7 +169,7 @@ const initialSites: SiteItem[] = seedSitesData.map((s, idx) => {
     submitterIp: null,
     categoryId: cat.id,
     isPublished: true,
-    isPinned: s.isPinned || false,
+    isPinned: Boolean(s.isPinned),
     order: idx + 1,
     createdAt: new Date(Date.now() - (idx * 3600 * 1000)),
     updatedAt: new Date(Date.now() - (idx * 3600 * 1000)),
@@ -301,11 +301,11 @@ class InMemoryDatabase {
           if (args.include.sites.where?.isPublished !== undefined) {
             sites = sites.filter(s => s.isPublished === args.include.sites.where.isPublished)
           }
-          // Sort pinned sites first, then by order
+          // Prioritize pinned sites, then by order
           sites.sort((a, b) => {
-            if (a.isPinned !== b.isPinned) {
-              return a.isPinned ? -1 : 1
-            }
+            const aPinned = a.isPinned ? 1 : 0
+            const bPinned = b.isPinned ? 1 : 0
+            if (aPinned !== bPinned) return bPinned - aPinned
             return a.order - b.order
           })
           item.sites = sites
@@ -329,11 +329,10 @@ class InMemoryDatabase {
         if (args.include.sites.where?.isPublished !== undefined) {
           sites = sites.filter(s => s.isPublished === args.include.sites.where.isPublished)
         }
-        // Sort pinned sites first, then by order
         sites.sort((a, b) => {
-          if (a.isPinned !== b.isPinned) {
-            return a.isPinned ? -1 : 1
-          }
+          const aPinned = a.isPinned ? 1 : 0
+          const bPinned = b.isPinned ? 1 : 0
+          if (aPinned !== bPinned) return bPinned - aPinned
           return a.order - b.order
         })
         item.sites = sites
@@ -448,9 +447,6 @@ class InMemoryDatabase {
             if (clause.isPublished !== undefined) {
               result = result.filter(s => s.isPublished === clause.isPublished)
             }
-            if (clause.isPinned !== undefined) {
-              result = result.filter(s => s.isPinned === clause.isPinned)
-            }
             if (clause.OR) {
               result = result.filter(site =>
                 clause.OR.some((cond: any) => {
@@ -472,30 +468,14 @@ class InMemoryDatabase {
       }
 
       if (args?.orderBy) {
-        const orderConfigs: Array<{ key: keyof SiteItem; dir: 'asc' | 'desc' }> = []
-        if (Array.isArray(args.orderBy)) {
-          for (const item of args.orderBy) {
-            const k = Object.keys(item)[0] as keyof SiteItem
-            orderConfigs.push({ key: k, dir: item[k] })
-          }
-        } else {
-          const k = Object.keys(args.orderBy)[0] as keyof SiteItem
-          orderConfigs.push({ key: k, dir: args.orderBy[k] })
-        }
-
+        const orderKey = Object.keys(args.orderBy)[0] as keyof SiteItem
+        const orderDir = args.orderBy[orderKey]
         result.sort((a: any, b: any) => {
-          for (const { key, dir } of orderConfigs) {
-            const valA = a[key]
-            const valB = b[key]
-            if (valA === valB) continue
-            if (valA === undefined) return 1
-            if (valB === undefined) return -1
-            if (typeof valA === 'boolean') {
-              return dir === 'desc' ? (valA ? -1 : 1) : (valA ? 1 : -1)
-            }
-            if (valA < valB) return dir === 'desc' ? 1 : -1
-            if (valA > valB) return dir === 'desc' ? -1 : 1
-          }
+          const valA = a[orderKey]
+          const valB = b[orderKey]
+          if (valA === undefined || valB === undefined) return 0
+          if (valA < valB) return orderDir === 'desc' ? 1 : -1
+          if (valA > valB) return orderDir === 'desc' ? -1 : 1
           return 0
         })
       }
