@@ -1,5 +1,5 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
-import { SiteCard } from "@/components/layout/site-card"
+import { SiteGrid } from "@/components/layout/site-grid"
 import { getAllCategories, getCategoryBySlug, getSystemSettings, getSites } from "@/lib/actions"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -36,25 +36,23 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       siteName={settings?.siteName}
       currentCategory={slug}
     >
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
-        {category.sites && category.sites.length > 0 && (
-          <p className="text-muted-foreground mt-2">
-            共 {category.sites.length} 个网站
-          </p>
-        )}
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{category.name}</h1>
+          {category.sites && category.sites.length > 0 && (
+            <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
+              共 {category.sites.length} 个网站
+            </Badge>
+          )}
+        </div>
       </div>
 
       {category.sites && category.sites.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {category.sites.map((site) => (
-            <SiteCard key={site.id} site={site} />
-          ))}
-        </div>
+        <SiteGrid sites={category.sites} />
       ) : (
-        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed">
-          <p className="text-lg text-muted-foreground">该分类下暂无网站</p>
-          <p className="text-sm text-muted-foreground mt-2">
+        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-8 text-center">
+          <p className="text-base font-semibold text-foreground">该分类下暂无网站</p>
+          <p className="text-xs text-muted-foreground mt-1">
             请在后台添加网站到此分类
           </p>
         </div>
@@ -62,3 +60,4 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     </SearchableLayout>
   )
 }
+

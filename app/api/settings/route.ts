@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server"
 import { getSystemSettings } from "@/lib/actions"
+import { defaultSettings } from "@/lib/client-settings"
 
 export async function GET() {
   try {
     const result = await getSystemSettings()
-    if (!result.success || !result.data) {
-      return NextResponse.json({ error: result.error || "Failed to fetch settings" }, { status: 400 })
+    if (result.success && result.data) {
+      const { id, ...publicSettings } = result.data
+      return NextResponse.json({ ...defaultSettings, ...publicSettings })
     }
-    // 只返回前台需要的公开信息
-    const { id, ...publicSettings } = result.data
-    return NextResponse.json(publicSettings)
+    return NextResponse.json(defaultSettings)
   } catch (error) {
-    console.error("Error fetching public settings:", error)
-    return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 })
+    console.warn("Using default settings fallback:", error)
+    return NextResponse.json(defaultSettings)
   }
 }

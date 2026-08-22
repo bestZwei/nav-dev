@@ -2,23 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Separator } from "@/components/ui/separator"
-import { logger } from "@/lib/logger"
-
-// 系统设置缓存类型
-interface SettingsCache {
-  showFooter?: boolean
-  footerCopyright?: string
-  footerLinks?: Array<{ name: string; url: string }>
-  showAdminLink?: boolean
-  showIcp?: boolean
-  icpNumber?: string | null
-  icpLink?: string | null
-}
-
-// 缓存设置数据，避免每次页面切换都重新加载
-let settingsCache: SettingsCache | null = null
-let cacheTimestamp = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5分钟缓存
+import { fetchPublicSettings, type PublicSettings } from "@/lib/client-settings"
 
 // 获取动态版权信息
 function getDefaultCopyright(): string {
@@ -27,71 +11,22 @@ function getDefaultCopyright(): string {
 }
 
 export function Footer() {
-  const [settings, setSettings] = useState<{
-    showFooter: boolean
-    footerCopyright: string
-    footerLinks: Array<{ name: string; url: string }>
-    showAdminLink: boolean
-    showIcp: boolean
-    icpNumber: string | null
-    icpLink: string | null
-  } | null>(null)
+  const [settings, setSettings] = useState<PublicSettings | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadSettings() {
-      // 检查缓存
-      const now = Date.now()
-      if (settingsCache && (now - cacheTimestamp) < CACHE_DURATION) {
-        if (!cancelled) {
-          const data = settingsCache
-          setSettings({
-            showFooter: data.showFooter ?? true,
-            footerCopyright: data.footerCopyright || getDefaultCopyright(),
-            footerLinks: data.footerLinks || [],
-            showAdminLink: data.showAdminLink ?? true,
-            showIcp: data.showIcp ?? false,
-            icpNumber: data.icpNumber || null,
-            icpLink: data.icpLink || null,
-          })
-        }
-        return
-      }
-
-      try {
-        const res = await fetch("/api/settings")
-        if (res.ok) {
-          const data = await res.json()
-          if (!cancelled) {
-            settingsCache = data
-            cacheTimestamp = now
-            setSettings({
-              showFooter: data.showFooter ?? true,
-              footerCopyright: data.footerCopyright || getDefaultCopyright(),
-              footerLinks: data.footerLinks || [],
-              showAdminLink: data.showAdminLink ?? true,
-              showIcp: data.showIcp ?? false,
-              icpNumber: data.icpNumber || null,
-              icpLink: data.icpLink || null,
-            })
-          }
-        }
-      } catch (error) {
-        if (!cancelled) {
-          logger.error("Failed to load settings:", error)
-        }
+      const data = await fetchPublicSettings()
+      if (!cancelled) {
+        setSettings(data)
       }
     }
 
     loadSettings()
 
-    // 窗口焦点时检查缓存是否过期
     const handleFocus = () => {
-      const now = Date.now()
-      if (!settingsCache || (now - cacheTimestamp) > CACHE_DURATION) {
-        loadSettings()
-      }
+      loadSettings()
     }
 
     window.addEventListener('focus', handleFocus)

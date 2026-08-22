@@ -1,5 +1,5 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
-import { SiteCard } from "@/components/layout/site-card"
+import { SiteGrid } from "@/components/layout/site-grid"
 import { getAllCategories, getCategories, getSystemSettings, getSites } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -24,41 +24,39 @@ export default async function HomePage() {
       flatSites={flatSites}
       siteName={settings?.siteName}
     >
-      <div className="space-y-12">
+      <div className="space-y-10">
         {/* 分类内容 */}
         {categories && categories.length > 0 ? (
           <>
             {categories.map((category, index) => (
             <section key={category.id} id={`category-${category.slug}`}>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold tracking-tight">{category.name}</h2>
-                {category.sites && category.sites.length > 0 && (
-                  <Badge variant="secondary" className="text-sm">
-                    {category.sites.length}
-                  </Badge>
-                )}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{category.name}</h2>
+                  {category.sites && category.sites.length > 0 && (
+                    <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
+                      {category.sites.length}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {category.sites && category.sites.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {category.sites.map((site) => (
-                    <SiteCard key={site.id} site={site} />
-                  ))}
-                </div>
+                <SiteGrid sites={category.sites} />
               ) : (
-                <div className="flex min-h-[200px] items-center justify-center rounded-lg border">
-                  <p className="text-sm text-muted-foreground">暂无网站</p>
+                <div className="flex min-h-[140px] items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20">
+                  <p className="text-xs text-muted-foreground">暂无网站</p>
                 </div>
               )}
 
-              {index < categories.length - 1 && <Separator className="mt-12" />}
+              {index < categories.length - 1 && <Separator className="mt-10" />}
             </section>
           ))}
           </>
         ) : (
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border">
-            <p className="text-lg text-muted-foreground">暂无分类数据</p>
-            <p className="text-sm text-muted-foreground mt-2">
+          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-8">
+            <p className="text-base font-semibold text-foreground">暂无分类数据</p>
+            <p className="text-xs text-muted-foreground mt-1">
               请先在后台创建分类和网站
             </p>
           </div>
@@ -67,3 +65,4 @@ export default async function HomePage() {
     </SearchableLayout>
   )
 }
+

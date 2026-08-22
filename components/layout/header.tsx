@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { PoetryToggle } from "@/components/poetry-toggle"
 import { FaviconServiceToggle } from "@/components/favicon-service-toggle"
+import { CardDensityToggle } from "@/components/card-density-toggle"
 import { SiteSubmissionDialog } from "@/components/layout/site-submission-dialog"
 import {
   Drawer,
@@ -17,18 +18,7 @@ import {
 } from "@/components/ui/drawer"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { Search, X } from "lucide-react"
-import { logger } from "@/lib/logger"
-
-// 系统设置缓存类型
-interface SettingsCache {
-  siteLogo?: string | null
-  enableSubmission?: boolean
-}
-
-// 缓存设置数据，避免每次页面切换都重新加载
-let settingsCache: SettingsCache | null = null
-let cacheTimestamp = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5分钟缓存
+import { fetchPublicSettings } from "@/lib/client-settings"
 
 interface HeaderProps {
   categories: Array<{
@@ -65,39 +55,17 @@ export function Header({
     let cancelled = false
 
     async function loadSettings() {
-      // 检查缓存
-      const now = Date.now()
-      if (settingsCache && (now - cacheTimestamp) < CACHE_DURATION) {
-        if (settingsCache.siteLogo && !cancelled) setLogo(settingsCache.siteLogo)
-        return
-      }
-
-      try {
-        const res = await fetch("/api/settings")
-        if (res.ok) {
-          const settings = await res.json()
-          if (!cancelled) {
-            settingsCache = settings
-            cacheTimestamp = now
-            if (settings.siteLogo) setLogo(settings.siteLogo)
-            setEnableSubmission(settings.enableSubmission ?? true)
-          }
-        }
-      } catch (error) {
-        if (!cancelled) {
-          logger.error("Failed to load settings:", error)
-        }
+      const settings = await fetchPublicSettings()
+      if (!cancelled) {
+        if (settings.siteLogo) setLogo(settings.siteLogo)
+        setEnableSubmission(settings.enableSubmission ?? true)
       }
     }
 
     loadSettings()
 
-    // 窗口焦点时检查缓存是否过期
     const handleFocus = () => {
-      const now = Date.now()
-      if (!settingsCache || (now - cacheTimestamp) > CACHE_DURATION) {
-        loadSettings()
-      }
+      loadSettings()
     }
 
     window.addEventListener('focus', handleFocus)
@@ -111,6 +79,23 @@ export function Header({
   const handleClearSearch = () => {
     onSearchChange?.("")
   }
+
+  // 快捷键支持：按 '/' 或 'Cmd+K / Ctrl+K' 聚焦搜索输入框
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName.toLowerCase()
+      if (activeTag === 'input' || activeTag === 'textarea') return
+
+      if (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) {
+        e.preventDefault()
+        const input = document.getElementById('search') as HTMLInputElement | null
+        input?.focus()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -196,27 +181,31 @@ export function Header({
           )}
 
           <div className="flex-shrink-0 pl-2 sm:pl-4 flex items-center gap-2">
-            <div className="relative hidden sm:block">
+            <div className="relative hidden sm:block group">
               <Label htmlFor="search" className="sr-only">搜索</Label>
-              <Search className="absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 pointer-events-none select-none" />
+              <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none select-none transition-colors group-focus-within:text-foreground" />
               <Input
                 id="search"
                 type="text"
-                placeholder="搜索..."
-                className="h-9 w-40 sm:w-48 lg:w-64 pl-8 pr-8 [&::-webkit-search-cancel-button]:hidden [&::-ms-clear]:hidden"
+                placeholder="搜索... (快捷键 /)"
+                className="h-9 w-40 sm:w-48 lg:w-64 pl-8 pr-8 text-xs bg-muted/40 transition-all focus:bg-background focus:w-56 sm:focus:w-60 lg:focus:w-72 [&::-webkit-search-cancel-button]:hidden [&::-ms-clear]:hidden"
                 value={searchQuery}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 suppressHydrationWarning
               />
-              {searchQuery && (
+              {searchQuery ? (
                 <button
                   onClick={handleClearSearch}
-                  className="absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-transform active:scale-90"
                   type="button"
                   aria-label="清除搜索"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
+              ) : (
+                <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-70">
+                  /
+                </kbd>
               )}
             </div>
 
@@ -225,6 +214,7 @@ export function Header({
               <SiteSubmissionDialog categories={categories} />
             )}
 
+            <CardDensityToggle />
             <FaviconServiceToggle />
             <PoetryToggle />
             <ThemeToggle />

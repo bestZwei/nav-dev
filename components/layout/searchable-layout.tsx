@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { ScrollHeader } from "./scroll-header"
 import { Footer } from "./footer"
-import { SiteCard } from "./site-card"
+import { SiteGrid } from "./site-grid"
 import { JinrishiciCardWrapper } from "./jinrishici-card-wrapper"
 import { Badge } from "@/components/ui/badge"
 
@@ -71,32 +71,44 @@ export function SearchableLayout({
           <div className="lg:pr-36 lg:pl-2">
             {isSearching ? (
               // 搜索结果
-              <>
-                <div className="mb-8 flex items-center gap-3">
-                  <h1 className="text-3xl font-bold tracking-tight">搜索结果</h1>
-                  <Badge variant="secondary" className="text-sm">
-                    {filteredSites.length}
+              <div className="animate-fade-in">
+                <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">搜索结果</h1>
+                  <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
+                    找到 {filteredSites.length} 个站点
                   </Badge>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     关键词：<span className="font-semibold text-foreground">「{searchQuery}」</span>
                   </p>
                 </div>
 
                 {filteredSites.length === 0 ? (
-                  <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed">
-                    <p className="text-lg text-muted-foreground">未找到匹配的网站</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      请尝试其他关键词
+                  <div className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-8 text-center animate-scale-in">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-4">
+                      <svg
+                        className="h-6 w-6"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-base font-semibold text-foreground">未找到匹配的网站</p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                      没有找到与「{searchQuery}」相关的站点，请尝试更换关键词或缩短搜索字词。
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {filteredSites.map((site) => (
-                      <SiteCard key={site.id} site={site} />
-                    ))}
-                  </div>
+                  <SiteGrid sites={filteredSites} />
                 )}
-              </>
+              </div>
             ) : (
               // 页面内容（由父组件传入）
               children

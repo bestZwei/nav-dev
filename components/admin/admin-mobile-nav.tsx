@@ -21,17 +21,7 @@ import {
   Users,
   Database,
 } from "lucide-react"
-
-// 系统设置缓存类型
-interface SettingsCache {
-  siteName?: string
-  siteLogo?: string | null
-}
-
-// 缓存设置数据，避免每次页面切换都重新加载
-let settingsCache: SettingsCache | null = null
-let cacheTimestamp = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5分钟缓存
+import { fetchPublicSettings } from "@/lib/client-settings"
 
 const navItems = [
   {
@@ -73,29 +63,18 @@ export function AdminMobileNav({ open, onOpenChange }: AdminMobileNavProps) {
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
     async function loadSettings() {
-      // 检查缓存
-      const now = Date.now()
-      if (settingsCache && (now - cacheTimestamp) < CACHE_DURATION) {
-        if (settingsCache.siteName) setSiteName(settingsCache.siteName)
-        if (settingsCache.siteLogo) setSiteLogo(settingsCache.siteLogo)
-        return
-      }
-
-      try {
-        const res = await fetch("/api/settings")
-        if (res.ok) {
-          const settings = await res.json()
-          settingsCache = settings
-          cacheTimestamp = now
-          if (settings.siteName) setSiteName(settings.siteName)
-          if (settings.siteLogo) setSiteLogo(settings.siteLogo)
-        }
-      } catch (error) {
-        console.error("Failed to load settings:", error)
+      const settings = await fetchPublicSettings()
+      if (!cancelled) {
+        if (settings.siteName) setSiteName(settings.siteName)
+        if (settings.siteLogo) setSiteLogo(settings.siteLogo)
       }
     }
     loadSettings()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // 点击导航项后关闭 Drawer

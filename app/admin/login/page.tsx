@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Github, ArrowRight, BarChart3, FolderTree, Search, Smartphone, Moon, Scroll, FileEdit, Palette, Image } from "lucide-react"
+import { Github, ArrowRight, BarChart3, FolderTree, Search, Smartphone, Moon, Scroll, FileEdit, Palette, ImageIcon } from "lucide-react"
 import {
   Field,
   FieldGroup,
@@ -13,19 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Loader2 } from "lucide-react"
-import { logger } from "@/lib/logger"
-
-// 系统设置缓存类型
-interface SettingsCache {
-  siteName?: string
-  siteDescription?: string
-  githubUrl?: string | null
-}
-
-// 缓存设置数据
-let settingsCache: SettingsCache | null = null
-let cacheTimestamp = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5分钟缓存
+import { fetchPublicSettings } from "@/lib/client-settings"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -47,46 +35,19 @@ export default function AdminLoginPage() {
     let cancelled = false
 
     async function loadSettings() {
-      // 检查缓存
-      const now = Date.now()
-      if (settingsCache && (now - cacheTimestamp) < CACHE_DURATION) {
-        if (!cancelled) {
-          if (settingsCache.siteName) setSiteName(settingsCache.siteName)
-          if (settingsCache.siteDescription) setSiteDescription(settingsCache.siteDescription)
-          if (settingsCache.githubUrl) setGithubUrl(settingsCache.githubUrl)
-        }
-        return
-      }
-
-      try {
-        const res = await fetch("/api/settings")
-        if (res.ok) {
-          const settings = await res.json()
-          if (!cancelled) {
-            settingsCache = settings
-            cacheTimestamp = now
-            if (settings.siteName) setSiteName(settings.siteName)
-            if (settings.siteDescription) setSiteDescription(settings.siteDescription)
-            if (settings.githubUrl) setGithubUrl(settings.githubUrl)
-            setSettingsLoaded(true)
-          }
-        }
-      } catch (error) {
-        if (!cancelled) {
-          logger.error("Failed to load settings:", error)
-          setSettingsLoaded(true)
-        }
+      const settings = await fetchPublicSettings()
+      if (!cancelled) {
+        if (settings.siteName) setSiteName(settings.siteName)
+        if (settings.siteDescription) setSiteDescription(settings.siteDescription)
+        if (settings.githubUrl) setGithubUrl(settings.githubUrl)
+        setSettingsLoaded(true)
       }
     }
 
     loadSettings()
 
-    // 窗口焦点时检查缓存是否过期
     const handleFocus = () => {
-      const now = Date.now()
-      if (!settingsCache || (now - cacheTimestamp) > CACHE_DURATION) {
-        loadSettings()
-      }
+      loadSettings()
     }
 
     window.addEventListener('focus', handleFocus)
@@ -281,7 +242,7 @@ export default function AdminLoginPage() {
           {/* 9. 智能图标 */}
           <div className="absolute top-[56%] right-[9%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
-              <Image className="size-4 text-primary" />
+              <ImageIcon className="size-4 text-primary" />
               <span className="text-xs font-medium">智能图标</span>
             </div>
             <div className="space-y-1.5">

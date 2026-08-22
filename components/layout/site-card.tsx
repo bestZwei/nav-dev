@@ -2,99 +2,169 @@
 
 import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
-import { Card, CardHeader, CardTitle, CardDescription, CardAction } from "@/components/ui/card"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, Copy, Check } from "lucide-react"
 import { useFaviconService, getFaviconUrl } from "@/hooks/use-favicon-service"
+import { useCardDensity } from "@/hooks/use-card-density"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-// 生成首字母图标（shadcn/ui 简洁风格）
-function getInitialIcon(name: string) {
-  const trimmed = name.trim()
-  for (let i = 0; i < trimmed.length; i++) {
-    const char = trimmed[i]
-    const code = char.codePointAt(0) || 0
-
-    // 匹配：英文字母 (A-Z, a-z) 或 中文字符 (0x4e00-0x9fff)
-    const isLetter = (code >= 65 && code <= 90) || (code >= 97 && code <= 122)
-    const isChinese = code >= 0x4e00 && code <= 0x9fff
-
-    if (isLetter || isChinese) {
-      return char.toUpperCase()
-    }
-  }
-
-  // 如果没有找到合适的字符，返回默认图标
-  return 'N'
+// 生成首字母图标
+function getInitial(name: string): string {
+  if (!name) return "?"
+  const firstChar = name.trim().charAt(0)
+  return firstChar.toUpperCase()
 }
 
-interface Site {
+export interface SiteItemProps {
   id: string
   name: string
   url: string
   description: string
   iconUrl: string | null
+  categoryId?: string
   category?: {
     name: string
   } | null
 }
 
 interface SiteCardProps {
-  site: Site
+  site: SiteItemProps
+  density?: "standard" | "compact"
 }
 
-export function SiteCard({ site }: SiteCardProps) {
+export function SiteCard({ site, density: propDensity }: SiteCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [copied, setCopied] = useState(false)
   const hasTriedLoad = useRef(false)
   const { service } = useFaviconService()
+  const { density: contextDensity } = useCardDensity()
 
-  // 使用 useMemo 优化 favicon URL 计算
-  // 优先级：用户配置 > 选中的 Favicon 服务
+  const density = propDensity || contextDensity
+  const isCompact = density === "compact"
+
   const iconSrc = useMemo(() => {
     if (site.iconUrl) return site.iconUrl
 
     try {
       const domain = new URL(site.url).hostname
-      // 使用选中的 Favicon 服务
       return getFaviconUrl(domain, service)
     } catch {
       return null
     }
   }, [site.iconUrl, site.url, service])
 
-  // 计算首字母图标（作为 fallback）
-  const initial = useMemo(() => getInitialIcon(site.name), [site.name])
+  const initial = useMemo(() => getInitial(site.name), [site.name])
 
-  // 当服务切换时，重置加载状态
   useEffect(() => {
+    if (!iconSrc) {
+      setImageLoaded(false)
+      return
+    }
+
     setImageLoaded(false)
     hasTriedLoad.current = false
-  }, [iconSrc])
 
-  // 使用 useEffect + new Image() 预加载图片
-  useEffect(() => {
-    if (!iconSrc || hasTriedLoad.current) return
-
-    hasTriedLoad.current = true
     const img = new Image()
-
+    img.src = iconSrc
     img.onload = () => {
       setImageLoaded(true)
+      hasTriedLoad.current = true
     }
-
     img.onerror = () => {
-      // 保持显示首字母图标
+      setImageLoaded(false)
+      hasTriedLoad.current = true
     }
-
-    img.src = iconSrc
   }, [iconSrc])
 
   const handleClick = () => {
-    // 使用 sendBeacon 异步记录访问，不阻塞页面跳转
     if (navigator.sendBeacon) {
       const data = JSON.stringify({ siteId: site.id })
-      navigator.sendBeacon('/api/visit', new Blob([data], { type: 'application/json' }))
+      navigator.sendBeacon("/api/visit", new Blob([data], { type: "application/json" }))
     }
   }
 
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigator.clipboard.writeText(site.url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+
+  // ================= 紧凑模式 (Compact Mode) =================
+  if (isCompact) {
+    return (
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href={site.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleClick}
+              aria-label={`访问 ${site.name}`}
+              className="group relative flex h-12 items-center gap-2.5 rounded-lg border border-border/80 bg-card px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/40 hover:shadow-xs select-none"
+            >
+              <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-muted/60 p-0.5 transition-transform duration-150 group-hover:scale-105">
+                {iconSrc && imageLoaded ? (
+                  <img
+                    src={iconSrc}
+                    alt={`${site.name} 图标`}
+                    className="h-full w-full object-contain rounded-xs"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className="text-[11px] font-bold text-muted-foreground select-none">
+                    {initial}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0 pr-1">
+                <span className="block truncate text-xs sm:text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                  {site.name}
+                </span>
+              </div>
+
+              <div className="shrink-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                <ExternalLink className="h-3 w-3 text-muted-foreground" />
+              </div>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            align="center"
+            className="max-w-[280px] p-3 text-left shadow-lg border bg-popover text-popover-foreground rounded-lg"
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="font-semibold text-sm text-foreground">{site.name}</span>
+              {site.category?.name && (
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  {site.category.name}
+                </span>
+              )}
+            </div>
+            {site.description ? (
+              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                {site.description}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">暂无描述</p>
+            )}
+            <p className="mt-2 text-[10px] text-muted-foreground/80 font-mono truncate border-t border-border/40 pt-1.5">
+              {site.url}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
+
+  // ================= 标准模式 (Standard Mode) =================
   return (
     <Link
       href={site.url}
@@ -102,39 +172,64 @@ export function SiteCard({ site }: SiteCardProps) {
       rel="noopener noreferrer"
       onClick={handleClick}
       aria-label={`访问 ${site.name}`}
-      className="group block"
+      className="group relative block h-full select-none"
     >
-      <Card className="h-full transition-colors hover:bg-muted">
-        <CardHeader>
-          <CardAction>
-            <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-          </CardAction>
-          <div className="flex items-center space-x-3">
-            {iconSrc && imageLoaded ? (
-              <img
-                src={iconSrc}
-                alt={`${site.name} 图标`}
-                className="h-8 w-8 rounded"
-              />
-            ) : (
-              <div
-                className="h-8 w-8 rounded bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground"
-                title={site.name}
-              >
-                {initial}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg line-clamp-2 leading-tight" title={site.name}>{site.name}</CardTitle>
-              {site.description && (
-                <CardDescription className="mt-2 line-clamp-1" title={site.description}>
-                  {site.description}
-                </CardDescription>
-              )}
+      <div className="relative flex h-full items-start gap-3.5 rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-card-hover">
+        {/* 网站图标 */}
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-muted/50 p-1 transition-transform duration-200 group-hover:scale-105">
+          {iconSrc && imageLoaded ? (
+            <img
+              src={iconSrc}
+              alt={`${site.name} 图标`}
+              className="h-full w-full object-contain rounded-sm"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded text-sm font-bold text-muted-foreground">
+              {initial}
             </div>
+          )}
+        </div>
+
+        {/* 网站标题与描述 */}
+        <div className="flex-1 min-w-0 pr-6">
+          <h3
+            className="text-sm sm:text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-150 group-hover:text-primary line-clamp-1"
+            title={site.name}
+          >
+            {site.name}
+          </h3>
+          {site.description ? (
+            <p
+              className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+              title={site.description}
+            >
+              {site.description}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground/60 italic">暂无描述</p>
+          )}
+        </div>
+
+        {/* 悬停快捷操作 */}
+        <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+          <button
+            onClick={handleCopy}
+            title={copied ? "已复制网址" : "复制网址"}
+            type="button"
+            className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {copied ? (
+              <Check className="h-3 w-3 text-green-500 animate-scale-in" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+          <div className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+            <ExternalLink className="h-3 w-3" />
           </div>
-        </CardHeader>
-      </Card>
+        </div>
+      </div>
     </Link>
   )
 }
