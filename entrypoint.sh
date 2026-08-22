@@ -1,6 +1,13 @@
 #!/bin/sh
 set -e
 
+# 未配置 DATABASE_URL 时使用内置内存数据，跳过数据库初始化
+if [ -z "$DATABASE_URL" ]; then
+  echo "⚠️  未配置 DATABASE_URL，使用内置内存数据（重启后修改不会保留）"
+  echo "🚀 启动应用..."
+  exec node server.js
+fi
+
 echo "🔧 初始化数据库..."
 
 # 检查是否存在迁移文件夹

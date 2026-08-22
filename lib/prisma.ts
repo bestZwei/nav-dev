@@ -1,4 +1,10 @@
+import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+
+// 是否启用真实数据库（配置了 DATABASE_URL 时使用 PostgreSQL，否则使用内置内存数据）
+const useRealDatabase =
+  typeof process.env.DATABASE_URL === 'string' &&
+  process.env.DATABASE_URL.trim() !== ''
 
 // In-memory types
 export interface CategoryItem {
@@ -779,10 +785,23 @@ class InMemoryDatabase {
 
 const globalForPrisma = globalThis as unknown as {
   inMemoryDb: InMemoryDatabase | undefined
+  realClient: PrismaClient | undefined
 }
 
-export const prisma = globalForPrisma.inMemoryDb ?? new InMemoryDatabase()
+function createPrisma(): PrismaClient {
+  if (useRealDatabase) {
+    const client = globalForPrisma.realClient ?? new PrismaClient()
+    if (process.env.NODE_ENV !== 'production') {
+      globalForPrisma.realClient = client
+    }
+    return client
+  }
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.inMemoryDb = prisma
+  const db = globalForPrisma.inMemoryDb ?? new InMemoryDatabase()
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.inMemoryDb = db
+  }
+  return db as unknown as PrismaClient
 }
+
+export const prisma: PrismaClient = createPrisma()
