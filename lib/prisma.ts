@@ -590,6 +590,35 @@ class InMemoryDatabase {
       const list = await this.site.findMany(args)
       return list.length
     },
+
+    groupBy: async (args: {
+      by: string[]
+      where?: { isPublished?: boolean }
+      _count?: { id?: boolean }
+      orderBy?: { _count?: { id?: 'asc' | 'desc' } }
+    }) => {
+      let filtered = [...this.sites]
+      if (args?.where?.isPublished !== undefined) {
+        filtered = filtered.filter(s => s.isPublished === args.where!.isPublished)
+      }
+
+      const counts: Record<string, number> = {}
+      for (const s of filtered) {
+        counts[s.categoryId] = (counts[s.categoryId] || 0) + 1
+      }
+
+      let groups = Object.entries(counts).map(([categoryId, count]) => ({
+        categoryId,
+        _count: { id: count },
+      }))
+
+      if (args.orderBy?._count?.id) {
+        const dir = args.orderBy._count.id
+        groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id - b._count.id)
+      }
+
+      return groups
+    },
   }
 
   // User methods
