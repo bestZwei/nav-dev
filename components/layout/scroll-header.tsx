@@ -14,6 +14,7 @@ interface ScrollHeaderProps {
   searchQuery?: string
   onSearchChange?: (query: string) => void
   currentCategory?: string
+  useAnchorLinks?: boolean
 }
 
 export function ScrollHeader({
@@ -21,7 +22,8 @@ export function ScrollHeader({
   siteName,
   searchQuery = "",
   onSearchChange,
-  currentCategory: initialCategory = ""
+  currentCategory: initialCategory = "",
+  useAnchorLinks = false,
 }: ScrollHeaderProps) {
   const [activeCategory, setActiveCategory] = useState(initialCategory)
 
@@ -68,6 +70,7 @@ export function ScrollHeader({
       siteName={siteName}
       searchQuery={searchQuery}
       onSearchChange={onSearchChange}
+      useAnchorLinks={useAnchorLinks}
     />
   )
 }

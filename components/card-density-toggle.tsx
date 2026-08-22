@@ -27,7 +27,7 @@ export function CardDensityToggle() {
     const nextMode = toggleDensity()
     toast({
       title: "已切换卡片视图",
-      description: nextMode === "compact" ? "已切换为「紧凑模式」(7列极简布局)" : "已切换为「标准模式」(5列图文布局)",
+      description: nextMode === "compact" ? "已切换为「紧凑模式」" : "已切换为「标准模式」",
       duration: 2000,
     })
   }
@@ -55,7 +55,7 @@ export function CardDensityToggle() {
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <p className="text-xs">
-            卡片大小：<span className="font-semibold">{isCompact ? "紧凑模式 (7列)" : "标准模式 (5列)"}</span>
+            卡片大小：<span className="font-semibold">{isCompact ? "紧凑模式" : "标准模式"}</span>
             <span className="block text-muted-foreground text-[10px] mt-0.5">点击切换视图布局</span>
           </p>
         </TooltipContent>

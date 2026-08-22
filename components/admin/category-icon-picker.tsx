@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { CategoryIconBadge, POPULAR_CATEGORY_ICONS } from "@/components/category-icon"
 import { Search, Upload, Link as LinkIcon, Trash2, Check, Sparkles, Image as ImageIcon, Plus } from "lucide-react"
 
@@ -25,6 +24,26 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
   const [customUrl, setCustomUrl] = useState("")
   const [activeGroup, setActiveGroup] = useState<string>("全部")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [iconScrollNode, setIconScrollNode] = useState<HTMLDivElement | null>(null)
+
+  // 手动接管滚轮：Dialog/Popover 嵌套场景下浏览器默认滚动链可能被截断，
+  // 用非 passive 监听并直接写入 scrollTop，保证滚轮始终可用
+  useEffect(() => {
+    if (!iconScrollNode) return
+    const onWheel = (e: WheelEvent) => {
+      const el = iconScrollNode
+      if (el.scrollHeight <= el.clientHeight) return
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
+      const atTop = el.scrollTop <= 0 && delta < 0
+      const atBottom =
+        el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && delta > 0
+      if (atTop || atBottom) return
+      e.preventDefault()
+      el.scrollTop += delta
+    }
+    iconScrollNode.addEventListener("wheel", onWheel, { passive: false })
+    return () => iconScrollNode.removeEventListener("wheel", onWheel)
+  }, [iconScrollNode])
 
   const groups = ["全部", "智能科技", "研发编程", "创意设计", "办公效率", "知识教育", "社交网络", "生活娱乐", "常用收藏"]
 
@@ -107,7 +126,10 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
               </span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[360px] p-0" align="start">
+          <PopoverContent
+            className="w-[360px] p-0 overflow-hidden"
+            align="start"
+          >
             <Tabs defaultValue="preset" className="w-full">
               <div className="p-2 border-b">
                 <TabsList className="grid grid-cols-3 w-full h-8">
@@ -127,7 +149,10 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
               </div>
 
               {/* Tab 1: 常用 Lucide 图标库（分类别、多色彩丰富呈现） */}
-              <TabsContent value="preset" className="p-2.5 space-y-2.5 m-0 focus-visible:outline-none">
+              <TabsContent
+                value="preset"
+                className="p-2.5 space-y-2.5 m-0 mt-2 focus-visible:outline-none"
+              >
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
@@ -156,7 +181,11 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                   ))}
                 </div>
 
-                <ScrollArea className="h-[210px] pr-2">
+                <div
+                  ref={setIconScrollNode}
+                  className="native-scroll overflow-y-auto pr-2"
+                  style={{ height: "240px" }}
+                >
                   <div className="grid grid-cols-4 gap-2 p-1">
                     {filteredIcons.map((item) => {
                       const isSelected = value === item.name
@@ -195,11 +224,14 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                       未找到相关图标
                     </div>
                   )}
-                </ScrollArea>
+                </div>
               </TabsContent>
 
               {/* Tab 2: 网络图片 URL */}
-              <TabsContent value="url" className="p-3 space-y-3 m-0 focus-visible:outline-none">
+              <TabsContent
+                value="url"
+                className="p-3 space-y-3 m-0 mt-2 focus-visible:outline-none"
+              >
                 <div className="space-y-1.5">
                   <Label className="text-xs">图片 URL 地址</Label>
                   <Input
@@ -231,7 +263,10 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
               </TabsContent>
 
               {/* Tab 3: 本地上传 */}
-              <TabsContent value="upload" className="p-3 space-y-3 m-0 focus-visible:outline-none">
+              <TabsContent
+                value="upload"
+                className="p-3 m-0 mt-2 focus-visible:outline-none"
+              >
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -253,7 +288,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
 
               {/* Footer: 清除图标 */}
               {value && (
-                <div className="p-2 border-t bg-muted/20 flex justify-between items-center">
+                <div className="p-2 border-t bg-muted/20 flex justify-between items-center shrink-0">
                   <span className="text-[11px] text-muted-foreground truncate max-w-[200px]">
                     已设置: {value.startsWith("data:") ? "本地图片" : value}
                   </span>

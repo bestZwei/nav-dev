@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { ScrollHeader } from "./scroll-header"
 import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
@@ -30,6 +30,7 @@ interface SearchableLayoutProps {
   flatSites: Site[]
   siteName?: string
   currentCategory?: string
+  useAnchorLinks?: boolean
   children: React.ReactNode
 }
 
@@ -38,10 +39,19 @@ export function SearchableLayout({
   flatSites,
   siteName,
   currentCategory,
+  useAnchorLinks,
   children,
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
+  const [isHomePath, setIsHomePath] = useState(false)
   const { isVisible: isPoetryVisible, mounted: poetryMounted } = usePoetryToggle()
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    setIsHomePath(window.location.pathname === "/" || window.location.pathname === "")
+  }, [])
+
+  const anchorLinks = useAnchorLinks ?? isHomePath
 
   const filteredSites = useMemo(() => {
     if (!searchQuery.trim()) return []
@@ -65,6 +75,7 @@ export function SearchableLayout({
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         currentCategory={currentCategory}
+        useAnchorLinks={anchorLinks}
       />
 
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
