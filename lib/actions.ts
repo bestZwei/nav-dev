@@ -3,7 +3,7 @@
 import { prisma } from "./prisma"
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 
 // ==================== Categories ====================
 
@@ -767,7 +767,7 @@ export async function exportData() {
       name: category.name,
       slug: category.slug,
       order: category.order,
-      sites: category.sites.map(site => ({
+      sites: (category.sites || []).map(site => ({
         name: site.name,
         url: site.url,
         description: site.description,
@@ -803,7 +803,7 @@ export async function exportBookmarks() {
     // 转换为书签格式（仅基本字段）
     const bookmarkData = categories.map(category => ({
       name: category.name,
-      sites: category.sites.map(site => ({
+      sites: (category.sites || []).map(site => ({
         name: site.name,
         url: site.url,
         icon: site.iconUrl || undefined,

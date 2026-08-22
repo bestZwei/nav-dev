@@ -34,7 +34,7 @@ interface Site {
   iconUrl: string | null
   category?: {
     name: string
-  }
+  } | null
 }
 
 interface SiteCardProps {

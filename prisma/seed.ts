@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcrypt'
-
-const prisma = new PrismaClient()
+import { prisma } from '../lib/prisma'
+import bcrypt from 'bcryptjs'
 
 // 基础分类（少量）
 const basicCategories = [

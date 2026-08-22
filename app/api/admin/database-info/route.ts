@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 interface DatabaseInfo {
   type: string
@@ -20,7 +18,7 @@ export async function GET() {
     // 从 DATABASE_URL 解析数据库信息
     const databaseUrl = process.env.DATABASE_URL || ""
     let dbInfo: DatabaseInfo = {
-      type: "PostgreSQL",
+      type: "In-Memory / PostgreSQL",
       status: "connected",
     }
 
@@ -32,6 +30,7 @@ export async function GET() {
           const [, username, , host, port, database] = match
           dbInfo = {
             ...dbInfo,
+            type: "PostgreSQL",
             host,
             port: parseInt(port),
             database,

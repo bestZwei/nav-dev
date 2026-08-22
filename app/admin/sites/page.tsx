@@ -61,10 +61,10 @@ interface Site {
   categoryId: string
   isPublished: boolean
   order: number
-  category: {
+  category?: {
     id: string
     name: string
-  }
+  } | null
   createdAt: Date
   updatedAt: Date
 }
@@ -382,7 +382,7 @@ title: "加载失败",
                         {site.url}
                       </a>
                     </TableCell>
-                    <TableCell>{site.category.name}</TableCell>
+                    <TableCell>{site.category?.name || '-'}</TableCell>
                     <TableCell>
                       {site.isPublished ? (
                         <Badge variant="default">已发布</Badge>

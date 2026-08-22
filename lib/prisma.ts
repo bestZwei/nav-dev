@@ -1,9 +1,773 @@
-import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+// In-memory types
+export interface CategoryItem {
+  id: string
+  name: string
+  slug: string
+  order: number
+  createdAt: Date
+  updatedAt: Date
+  sites?: SiteItem[]
+  _count?: {
+    sites: number
+  }
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+export interface SiteItem {
+  id: string
+  name: string
+  url: string
+  description: string
+  iconUrl: string | null
+  submitterContact: string | null
+  submitterIp: string | null
+  categoryId: string
+  isPublished: boolean
+  order: number
+  createdAt: Date
+  updatedAt: Date
+  category?: CategoryItem | null
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+export interface UserItem {
+  id: string
+  email: string
+  password: string
+  name: string | null
+  avatar: string | null
+  role: 'ADMIN'
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface SystemSettingsItem {
+  id: string
+  siteName: string
+  siteDescription: string
+  siteLogo: string | null
+  favicon: string | null
+  pageSize: number
+  showFooter: boolean
+  footerCopyright: string
+  footerLinks: Array<{ name: string; url: string }>
+  showAdminLink: boolean
+  showIcp: boolean
+  icpNumber: string | null
+  icpLink: string | null
+  enableVisitTracking: boolean
+  enableSubmission: boolean
+  submissionMaxPerDay: number
+  githubUrl: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface VisitItem {
+  id: string
+  siteId: string
+  ipAddress: string | null
+  userAgent: string | null
+  referer: string | null
+  visitedAt: Date
+}
+
+function generateId(): string {
+  return 'c' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36)
+}
+
+// Initial seed categories
+const initialCategories: CategoryItem[] = [
+  { id: 'cat-1', name: '常用工具', slug: 'tools', order: 1, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-2', name: '开发工具', slug: 'dev', order: 2, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-3', name: '设计资源', slug: 'design', order: 3, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-4', name: '学习资源', slug: 'learning', order: 4, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-5', name: 'AI 工具', slug: 'ai', order: 5, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-6', name: '云服务', slug: 'cloud', order: 6, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-7', name: '社区论坛', slug: 'community', order: 7, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-8', name: '文档参考', slug: 'docs', order: 8, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-9', name: '生产力', slug: 'productivity', order: 9, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-10', name: '娱乐休闲', slug: 'entertainment', order: 10, createdAt: new Date(), updatedAt: new Date() },
+]
+
+// Initial seed sites
+const seedSitesData = [
+  // 常用工具
+  { name: 'Google', url: 'https://www.google.com', description: '全球最大的搜索引擎', categorySlug: 'tools' },
+  { name: 'GitHub', url: 'https://github.com', description: '全球最大的代码托管与开源协作平台', categorySlug: 'tools' },
+  { name: 'Stack Overflow', url: 'https://stackoverflow.com', description: '程序员技术问答与知识社区', categorySlug: 'tools' },
+  { name: 'ChatGPT', url: 'https://chatgpt.com', description: 'OpenAI 出品的对话式人工智能助手', categorySlug: 'tools' },
+  { name: 'Notion', url: 'https://www.notion.so', description: '全合一的笔记、知识库与项目管理平台', categorySlug: 'tools' },
+
+  // 开发工具
+  { name: 'VS Code', url: 'https://code.visualstudio.com', description: '微软开发的轻量级强大代码编辑器', categorySlug: 'dev' },
+  { name: 'Vercel', url: 'https://vercel.com', description: 'Next.js 团队打造的前端自动化部署云平台', categorySlug: 'dev' },
+  { name: 'React', url: 'https://react.dev', description: '用于构建 Web 和原生交互界面的前端库', categorySlug: 'dev' },
+  { name: 'Next.js', url: 'https://nextjs.org', description: '现代化 React 全栈开发框架', categorySlug: 'dev' },
+  { name: 'Tailwind CSS', url: 'https://tailwindcss.com', description: '实用优先的现代化原子 CSS 框架', categorySlug: 'dev' },
+
+  // 设计资源
+  { name: 'Dribbble', url: 'https://dribbble.com', description: '全球顶尖设计师创意灵感与作品展示社区', categorySlug: 'design' },
+  { name: 'Behance', url: 'https://www.behance.net', description: 'Adobe 旗下创意作品与设计展示平台', categorySlug: 'design' },
+  { name: 'Figma', url: 'https://www.figma.com', description: '基于云端的新一代 UI/UX 协作设计利器', categorySlug: 'design' },
+  { name: 'shadcn/ui', url: 'https://ui.shadcn.com', description: '美观优雅的可定制 React 组件设计系统', categorySlug: 'design' },
+  { name: 'Unsplash', url: 'https://unsplash.com', description: '免费可商用的高分辨率摄影图片素材库', categorySlug: 'design' },
+
+  // 学习资源
+  { name: 'MDN Web Docs', url: 'https://developer.mozilla.org', description: '权威的 Web 开放标准与技术开发者文档', categorySlug: 'learning' },
+  { name: 'freeCodeCamp', url: 'https://www.freecodecamp.org', description: '免费互动的全栈开发编程学习社区', categorySlug: 'learning' },
+  { name: 'LeetCode', url: 'https://leetcode.cn', description: '技术面试必备的算法题库与刷题平台', categorySlug: 'learning' },
+  { name: 'Coursera', url: 'https://www.coursera.org', description: '汇聚世界顶尖名校的在线公开课程平台', categorySlug: 'learning' },
+  { name: 'YouTube', url: 'https://www.youtube.com', description: '全球最大的视频学习与分享平台', categorySlug: 'learning' },
+
+  // AI 工具
+  { name: 'Claude', url: 'https://claude.ai', description: 'Anthropic 开发的安全智能 AI 助手', categorySlug: 'ai' },
+  { name: 'Gemini', url: 'https://gemini.google.com', description: 'Google DeepMind 新一代多模态 AI 模型', categorySlug: 'ai' },
+  { name: 'Midjourney', url: 'https://www.midjourney.com', description: '高质量艺术风格 AI 图像生成工具', categorySlug: 'ai' },
+  { name: 'Hugging Face', url: 'https://huggingface.co', description: '全球开源 AI 模型与数据集社区', categorySlug: 'ai' },
+  { name: 'Perplexity', url: 'https://www.perplexity.ai', description: '基于搜索与引用的对话式 AI 搜索引擎', categorySlug: 'ai' },
+
+  // 云服务
+  { name: 'AWS', url: 'https://aws.amazon.com', description: '亚马逊全球云计算基础设施服务平台', categorySlug: 'cloud' },
+  { name: 'Cloudflare', url: 'https://www.cloudflare.com', description: '全球 CDN、DNS 和网络安全防护服务', categorySlug: 'cloud' },
+  { name: 'Railway', url: 'https://railway.app', description: '快速部署后端、数据库与全栈应用的云平台', categorySlug: 'cloud' },
+  { name: 'Netlify', url: 'https://www.netlify.com', description: '面向现代 Web 的构建、部署与托管服务', categorySlug: 'cloud' },
+
+  // 社区论坛
+  { name: 'GitHub Discussions', url: 'https://github.com', description: '开源项目团队与社区交流讨论平台', categorySlug: 'community' },
+  { name: 'Reddit', url: 'https://www.reddit.com', description: '全球热门话题与兴趣圈子社区', categorySlug: 'community' },
+  { name: 'Hacker News', url: 'https://news.ycombinator.com', description: '硅谷前沿技术与初创企业资讯讨论', categorySlug: 'community' },
+  { name: 'Product Hunt', url: 'https://www.producthunt.com', description: '每日最新科技与互联网产品发现平台', categorySlug: 'community' },
+  { name: 'V2EX', url: 'https://www.v2ex.com', description: '程序员与创意工作者交流分享社区', categorySlug: 'community' },
+
+  // 文档参考
+  { name: 'Can I Use', url: 'https://caniuse.com', description: '前端 HTML5/CSS3 浏览器兼容性查询', categorySlug: 'docs' },
+  { name: 'DevDocs', url: 'https://devdocs.io', description: '整合百种开发者 API 的快速离线文档库', categorySlug: 'docs' },
+  { name: 'RegExp101', url: 'https://regex101.com', description: '交互式正则表达式测试与语法解析器', categorySlug: 'docs' },
+
+  // 生产力
+  { name: 'Trello', url: 'https://trello.com', description: '直观灵活的看板式团队任务协作工具', categorySlug: 'productivity' },
+  { name: 'Slack', url: 'https://slack.com', description: '现代企业与远程团队即时沟通协作平台', categorySlug: 'productivity' },
+  { name: 'Discord', url: 'https://discord.com', description: '社群交流、语音连麦与游戏开黑平台', categorySlug: 'productivity' },
+
+  // 娱乐休闲
+  { name: 'Bilibili', url: 'https://www.bilibili.com', description: '国内年轻人的潮流文化娱乐与视频弹幕网站', categorySlug: 'entertainment' },
+  { name: 'Spotify', url: 'https://www.spotify.com', description: '全球领先的流行音乐与播客流媒体平台', categorySlug: 'entertainment' },
+]
+
+const initialSites: SiteItem[] = seedSitesData.map((s, idx) => {
+  const cat = initialCategories.find(c => c.slug === s.categorySlug) || initialCategories[0]
+  return {
+    id: `site-${idx + 1}`,
+    name: s.name,
+    url: s.url,
+    description: s.description,
+    iconUrl: `https://www.google.com/s2/favicons?domain=${new URL(s.url).hostname}&sz=128`,
+    submitterContact: null,
+    submitterIp: null,
+    categoryId: cat.id,
+    isPublished: true,
+    order: idx + 1,
+    createdAt: new Date(Date.now() - (idx * 3600 * 1000)),
+    updatedAt: new Date(Date.now() - (idx * 3600 * 1000)),
+  }
+})
+
+// Default admin: admin@example.com / admin123
+const defaultHashedPassword = bcrypt.hashSync('admin123', 10)
+
+const initialUsers: UserItem[] = [
+  {
+    id: 'user-admin',
+    email: 'admin@example.com',
+    password: defaultHashedPassword,
+    name: '管理员',
+    avatar: null,
+    role: 'ADMIN',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+]
+
+const initialSystemSettings: SystemSettingsItem = {
+  id: 'default',
+  siteName: 'Conan Nav',
+  siteDescription: '简洁现代化的网址导航系统',
+  siteLogo: null,
+  favicon: null,
+  pageSize: 20,
+  showFooter: true,
+  footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+  footerLinks: [
+    { name: 'GitHub', url: 'https://github.com/kenanlabs/nav' },
+  ],
+  showAdminLink: true,
+  showIcp: false,
+  icpNumber: null,
+  icpLink: null,
+  enableVisitTracking: true,
+  enableSubmission: true,
+  submissionMaxPerDay: 3,
+  githubUrl: 'https://github.com/kenanlabs/nav',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+
+// Generate sample visits for dashboard stats
+const initialVisits: VisitItem[] = []
+for (let i = 0; i < 60; i++) {
+  const randomSite = initialSites[i % initialSites.length]
+  initialVisits.push({
+    id: `visit-${i + 1}`,
+    siteId: randomSite.id,
+    ipAddress: '127.0.0.1',
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    referer: 'https://google.com',
+    visitedAt: new Date(Date.now() - Math.floor(Math.random() * 14 * 24 * 60 * 60 * 1000)),
+  })
+}
+
+// In-Memory Database Store (Global singleton across requests)
+class InMemoryDatabase {
+  categories: CategoryItem[] = [...initialCategories]
+  sites: SiteItem[] = [...initialSites]
+  users: UserItem[] = [...initialUsers]
+  systemSettingsItem: SystemSettingsItem = { ...initialSystemSettings }
+  visits: VisitItem[] = [...initialVisits]
+
+  // Category methods
+  category = {
+    findMany: async (args?: any): Promise<CategoryItem[]> => {
+      let result = [...this.categories]
+
+      if (args?.where) {
+        if (args.where.id) {
+          result = result.filter(c => c.id === args.where.id)
+        }
+        if (args.where.slug) {
+          result = result.filter(c => c.slug === args.where.slug)
+        }
+        if (args.where.sites?.some) {
+          result = result.filter(cat => {
+            const catSites = this.sites.filter(s => s.categoryId === cat.id)
+            if (args.where.sites.some.isPublished !== undefined) {
+              return catSites.some(s => s.isPublished === args.where.sites.some.isPublished)
+            }
+            return catSites.length > 0
+          })
+        }
+        if (args.where.OR) {
+          result = result.filter(cat =>
+            args.where.OR.some((cond: any) => {
+              if (cond.name?.contains) {
+                return cat.name.toLowerCase().includes(cond.name.contains.toLowerCase())
+              }
+              if (cond.slug?.contains) {
+                return cat.slug.toLowerCase().includes(cond.slug.contains.toLowerCase())
+              }
+              return true
+            })
+          )
+        }
+      }
+
+      if (args?.orderBy) {
+        const orderKey = Object.keys(args.orderBy)[0] as keyof CategoryItem
+        const orderDir = args.orderBy[orderKey]
+        result.sort((a: any, b: any) => {
+          const valA = a[orderKey]
+          const valB = b[orderKey]
+          if (valA === undefined || valB === undefined) return 0
+          if (valA < valB) return orderDir === 'desc' ? 1 : -1
+          if (valA > valB) return orderDir === 'desc' ? -1 : 1
+          return 0
+        })
+      }
+
+      if (args?.skip) {
+        result = result.slice(args.skip)
+      }
+      if (args?.take) {
+        result = result.slice(0, args.take)
+      }
+
+      return result.map(cat => {
+        const item: any = { ...cat, sites: [] }
+        if (args?.include?.sites) {
+          let sites = this.sites.filter(s => s.categoryId === cat.id)
+          if (args.include.sites.where?.isPublished !== undefined) {
+            sites = sites.filter(s => s.isPublished === args.include.sites.where.isPublished)
+          }
+          if (args.include.sites.orderBy?.order) {
+            sites.sort((a, b) => a.order - b.order)
+          }
+          item.sites = sites
+        }
+        if (args?.include?._count?.select?.sites) {
+          item._count = { sites: this.sites.filter(s => s.categoryId === cat.id).length }
+        }
+        return item as CategoryItem
+      })
+    },
+
+    findUnique: async (args: { where: { id?: string; slug?: string }; include?: any; select?: any }): Promise<CategoryItem | null> => {
+      const cat = this.categories.find(c =>
+        (args.where.id && c.id === args.where.id) ||
+        (args.where.slug && c.slug === args.where.slug)
+      )
+      if (!cat) return null
+      const item: any = { ...cat, sites: [] }
+      if (args.include?.sites) {
+        let sites = this.sites.filter(s => s.categoryId === cat.id)
+        if (args.include.sites.where?.isPublished !== undefined) {
+          sites = sites.filter(s => s.isPublished === args.include.sites.where.isPublished)
+        }
+        if (args.include.sites.orderBy?.order) {
+          sites.sort((a, b) => a.order - b.order)
+        }
+        item.sites = sites
+      }
+      if (args?.include?._count?.select?.sites) {
+        item._count = { sites: this.sites.filter(s => s.categoryId === cat.id).length }
+      }
+      return item as CategoryItem
+    },
+
+    findFirst: async (args?: any): Promise<CategoryItem | null> => {
+      const list = await this.category.findMany(args)
+      return list[0] || null
+    },
+
+    create: async (args: { data: Partial<CategoryItem>; select?: any; include?: any }): Promise<CategoryItem> => {
+      const newCat: CategoryItem = {
+        id: generateId(),
+        name: args.data.name || '',
+        slug: args.data.slug || '',
+        order: args.data.order ?? this.categories.length + 1,
+        sites: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      this.categories.push(newCat)
+      return newCat
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<CategoryItem>; select?: any; include?: any }): Promise<CategoryItem> => {
+      const idx = this.categories.findIndex(c => c.id === args.where.id)
+      if (idx === -1) throw new Error('Category not found')
+      this.categories[idx] = {
+        ...this.categories[idx],
+        ...args.data,
+        updatedAt: new Date(),
+      }
+      return this.categories[idx]
+    },
+
+    delete: async (args: { where: { id: string }; select?: any; include?: any }): Promise<CategoryItem> => {
+      const idx = this.categories.findIndex(c => c.id === args.where.id)
+      if (idx === -1) throw new Error('Category not found')
+      const deleted = this.categories.splice(idx, 1)[0]
+      // Cascade delete sites
+      this.sites = this.sites.filter(s => s.categoryId !== deleted.id)
+      return deleted
+    },
+
+    deleteMany: async (_args?: any) => {
+      const count = this.categories.length
+      this.categories = []
+      this.sites = []
+      return { count }
+    },
+
+    count: async (args?: any): Promise<number> => {
+      const list = await this.category.findMany(args)
+      return list.length
+    },
+  }
+
+  // Site methods
+  site = {
+    findMany: async (args?: any): Promise<SiteItem[]> => {
+      let result = [...this.sites]
+
+      if (args?.where) {
+        if (args.where.categoryId) {
+          result = result.filter(s => s.categoryId === args.where.categoryId)
+        }
+        if (args.where.isPublished !== undefined) {
+          result = result.filter(s => s.isPublished === args.where.isPublished)
+        }
+        if (args.where.submitterIp !== undefined) {
+          if (args.where.submitterIp && typeof args.where.submitterIp === 'object' && 'not' in args.where.submitterIp) {
+            result = result.filter(s => s.submitterIp !== null)
+          } else if (args.where.submitterIp === null) {
+            result = result.filter(s => s.submitterIp === null)
+          } else {
+            result = result.filter(s => s.submitterIp === args.where.submitterIp)
+          }
+        }
+        if (args.where.id?.in) {
+          result = result.filter(s => args.where.id.in.includes(s.id))
+        }
+        if (args.where.createdAt?.gte) {
+          result = result.filter(s => s.createdAt >= args.where.createdAt.gte)
+        }
+        if (args.where.OR) {
+          result = result.filter(site =>
+            args.where.OR.some((cond: any) => {
+              if (cond.name?.contains) {
+                return site.name.toLowerCase().includes(cond.name.contains.toLowerCase())
+              }
+              if (cond.description?.contains) {
+                return site.description.toLowerCase().includes(cond.description.contains.toLowerCase())
+              }
+              if (cond.url?.contains) {
+                return site.url.toLowerCase().includes(cond.url.contains.toLowerCase())
+              }
+              return false
+            })
+          )
+        }
+        if (args.where.AND) {
+          for (const clause of args.where.AND) {
+            if (clause.isPublished !== undefined) {
+              result = result.filter(s => s.isPublished === clause.isPublished)
+            }
+            if (clause.OR) {
+              result = result.filter(site =>
+                clause.OR.some((cond: any) => {
+                  if (cond.name?.contains) {
+                    return site.name.toLowerCase().includes(cond.name.contains.toLowerCase())
+                  }
+                  if (cond.description?.contains) {
+                    return site.description.toLowerCase().includes(cond.description.contains.toLowerCase())
+                  }
+                  if (cond.url?.contains) {
+                    return site.url.toLowerCase().includes(cond.url.contains.toLowerCase())
+                  }
+                  return false
+                })
+              )
+            }
+          }
+        }
+      }
+
+      if (args?.orderBy) {
+        const orderKey = Object.keys(args.orderBy)[0] as keyof SiteItem
+        const orderDir = args.orderBy[orderKey]
+        result.sort((a: any, b: any) => {
+          const valA = a[orderKey]
+          const valB = b[orderKey]
+          if (valA === undefined || valB === undefined) return 0
+          if (valA < valB) return orderDir === 'desc' ? 1 : -1
+          if (valA > valB) return orderDir === 'desc' ? -1 : 1
+          return 0
+        })
+      }
+
+      if (args?.skip) {
+        result = result.slice(args.skip)
+      }
+      if (args?.take) {
+        result = result.slice(0, args.take)
+      }
+
+      return result.map(site => {
+        const item: any = { ...site }
+        if (args?.include?.category) {
+          item.category = this.categories.find(c => c.id === site.categoryId) || null
+        }
+        return item
+      })
+    },
+
+    findUnique: async (args: { where: { id?: string; url?: string }; include?: any; select?: any }): Promise<SiteItem | null> => {
+      const site = this.sites.find(s =>
+        (args.where.id && s.id === args.where.id) ||
+        (args.where.url && s.url === args.where.url)
+      )
+      if (!site) return null
+      const item: any = { ...site }
+      if (args.include?.category) {
+        item.category = this.categories.find(c => c.id === site.categoryId) || null
+      }
+      return item as SiteItem
+    },
+
+    findFirst: async (args?: any): Promise<SiteItem | null> => {
+      const list = await this.site.findMany(args)
+      return list[0] || null
+    },
+
+    create: async (args: { data: Partial<SiteItem>; include?: any; select?: any }): Promise<SiteItem> => {
+      let icon = args.data.iconUrl
+      if (!icon && args.data.url) {
+        try {
+          icon = `https://www.google.com/s2/favicons?domain=${new URL(args.data.url).hostname}&sz=128`
+        } catch {
+          icon = null
+        }
+      }
+
+      const newSite: SiteItem = {
+        id: generateId(),
+        name: args.data.name || '',
+        url: args.data.url || '',
+        description: args.data.description || '',
+        iconUrl: icon || null,
+        submitterContact: args.data.submitterContact || null,
+        submitterIp: args.data.submitterIp || null,
+        categoryId: args.data.categoryId || (this.categories[0]?.id ?? 'cat-1'),
+        isPublished: args.data.isPublished ?? true,
+        order: args.data.order ?? this.sites.length + 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      this.sites.push(newSite)
+      const item: any = { ...newSite }
+      if (args.include?.category) {
+        item.category = this.categories.find(c => c.id === newSite.categoryId) || null
+      }
+      return item as SiteItem
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<SiteItem>; include?: any; select?: any }): Promise<SiteItem> => {
+      const idx = this.sites.findIndex(s => s.id === args.where.id)
+      if (idx === -1) throw new Error('Site not found')
+      this.sites[idx] = {
+        ...this.sites[idx],
+        ...args.data,
+        updatedAt: new Date(),
+      }
+      const item: any = { ...this.sites[idx] }
+      if (args.include?.category) {
+        item.category = this.categories.find(c => c.id === item.categoryId) || null
+      }
+      return item as SiteItem
+    },
+
+    delete: async (args: { where: { id: string }; include?: any; select?: any }): Promise<SiteItem> => {
+      const idx = this.sites.findIndex(s => s.id === args.where.id)
+      if (idx === -1) throw new Error('Site not found')
+      const deleted = this.sites.splice(idx, 1)[0]
+      const item: any = { ...deleted }
+      if (args.include?.category) {
+        item.category = this.categories.find(c => c.id === item.categoryId) || null
+      }
+      return item as SiteItem
+    },
+
+    deleteMany: async (_args?: any) => {
+      const count = this.sites.length
+      this.sites = []
+      this.visits = []
+      return { count }
+    },
+
+    count: async (args?: any): Promise<number> => {
+      const list = await this.site.findMany(args)
+      return list.length
+    },
+  }
+
+  // User methods
+  user = {
+    findMany: async (args?: any): Promise<UserItem[]> => {
+      let result = [...this.users]
+      if (args?.where?.OR) {
+        result = result.filter(u =>
+          args.where.OR.some((cond: any) => {
+            if (cond.email?.contains) return u.email.toLowerCase().includes(cond.email.contains.toLowerCase())
+            if (cond.name?.contains && u.name) return u.name.toLowerCase().includes(cond.name.contains.toLowerCase())
+            return false
+          })
+        )
+      }
+      if (args?.skip) result = result.slice(args.skip)
+      if (args?.take) result = result.slice(0, args.take)
+      return result
+    },
+
+    findUnique: async (args: { where: { id?: string; email?: string }; select?: any; include?: any }): Promise<any> => {
+      return this.users.find(u =>
+        (args.where.id && u.id === args.where.id) ||
+        (args.where.email && u.email.toLowerCase() === args.where.email.toLowerCase())
+      ) || null
+    },
+
+    findFirst: async (args?: any): Promise<any> => {
+      const list = await this.user.findMany(args)
+      return list[0] || null
+    },
+
+    create: async (args: { data: Partial<UserItem>; select?: any; include?: any }): Promise<any> => {
+      const newUser: UserItem = {
+        id: generateId(),
+        email: args.data.email || '',
+        password: args.data.password || defaultHashedPassword,
+        name: args.data.name || null,
+        avatar: args.data.avatar || null,
+        role: 'ADMIN',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      this.users.push(newUser)
+      return newUser
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<UserItem>; select?: any; include?: any }): Promise<any> => {
+      const idx = this.users.findIndex(u => u.id === args.where.id)
+      if (idx === -1) throw new Error('User not found')
+      this.users[idx] = {
+        ...this.users[idx],
+        ...args.data,
+        updatedAt: new Date(),
+      }
+      return this.users[idx]
+    },
+
+    delete: async (args: { where: { id: string } }): Promise<UserItem> => {
+      const idx = this.users.findIndex(u => u.id === args.where.id)
+      if (idx === -1) throw new Error('User not found')
+      return this.users.splice(idx, 1)[0]
+    },
+
+    count: async (_args?: any): Promise<number> => {
+      return this.users.length
+    },
+  }
+
+  // System Settings methods
+  systemSettings = {
+    findFirst: async (): Promise<SystemSettingsItem> => {
+      return { ...this.systemSettingsItem }
+    },
+
+    create: async (args: { data: Partial<SystemSettingsItem> }): Promise<SystemSettingsItem> => {
+      this.systemSettingsItem = {
+        ...this.systemSettingsItem,
+        ...args.data,
+        updatedAt: new Date(),
+      }
+      return { ...this.systemSettingsItem }
+    },
+
+    update: async (args: { where?: { id: string }; data: Partial<SystemSettingsItem> }): Promise<SystemSettingsItem> => {
+      this.systemSettingsItem = {
+        ...this.systemSettingsItem,
+        ...args.data,
+        updatedAt: new Date(),
+      }
+      return { ...this.systemSettingsItem }
+    },
+
+    count: async () => 1,
+  }
+
+  // Visit tracking methods
+  visit = {
+    findMany: async (args?: any): Promise<VisitItem[]> => {
+      let result = [...this.visits]
+      if (args?.where?.visitedAt?.gte) {
+        result = result.filter(v => v.visitedAt >= args.where.visitedAt.gte)
+      }
+      if (args?.orderBy?.visitedAt) {
+        const dir = args.orderBy.visitedAt
+        result.sort((a, b) => {
+          if (a.visitedAt < b.visitedAt) return dir === 'desc' ? 1 : -1
+          if (a.visitedAt > b.visitedAt) return dir === 'desc' ? -1 : 1
+          return 0
+        })
+      }
+      return result
+    },
+
+    create: async (args: { data: Partial<VisitItem> }): Promise<VisitItem> => {
+      const newVisit: VisitItem = {
+        id: generateId(),
+        siteId: args.data.siteId || '',
+        ipAddress: args.data.ipAddress || null,
+        userAgent: args.data.userAgent || null,
+        referer: args.data.referer || null,
+        visitedAt: new Date(),
+      }
+      this.visits.push(newVisit)
+      return newVisit
+    },
+
+    count: async (args?: any): Promise<number> => {
+      if (args?.where?.visitedAt?.gte) {
+        return this.visits.filter(v => v.visitedAt >= args.where.visitedAt.gte).length
+      }
+      return this.visits.length
+    },
+
+    groupBy: async (args: {
+      by: string[]
+      where?: { visitedAt?: { gte?: Date } }
+      _count?: { id?: boolean }
+      orderBy?: { _count?: { id?: 'asc' | 'desc' } }
+      take?: number
+    }) => {
+      let filtered = [...this.visits]
+      const gte = args?.where?.visitedAt?.gte
+      if (gte) {
+        filtered = filtered.filter(v => v.visitedAt >= gte)
+      }
+
+      const counts: Record<string, number> = {}
+      for (const v of filtered) {
+        counts[v.siteId] = (counts[v.siteId] || 0) + 1
+      }
+
+      let groups = Object.entries(counts).map(([siteId, count]) => ({
+        siteId,
+        _count: { id: count },
+      }))
+
+      if (args.orderBy?._count?.id) {
+        const dir = args.orderBy._count.id
+        groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id - b._count.id)
+      }
+
+      if (args.take) {
+        groups = groups.slice(0, args.take)
+      }
+
+      return groups
+    },
+
+    deleteMany: async (_args?: any) => {
+      const count = this.visits.length
+      this.visits = []
+      return { count }
+    },
+  }
+
+  $transaction = async (input: any) => {
+    if (typeof input === 'function') {
+      return await input(this)
+    }
+    if (Array.isArray(input)) {
+      return await Promise.all(input)
+    }
+    return input
+  }
+
+  $queryRaw = async (..._args: any[]) => {
+    return [{ '?column?': 1 }]
+  }
+
+  $disconnect = async () => {}
+}
+
+const globalForPrisma = globalThis as unknown as {
+  inMemoryDb: InMemoryDatabase | undefined
+}
+
+export const prisma = globalForPrisma.inMemoryDb ?? new InMemoryDatabase()
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.inMemoryDb = prisma
+}

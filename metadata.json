@@ -1,0 +1,8 @@
+{
+  "name": "Conan Nav",
+  "description": "A clean, modern website navigation and bookmark directory system with category filtering, search, and admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

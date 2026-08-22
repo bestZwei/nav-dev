@@ -76,8 +76,10 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
   }
 
   // 格式化完整日期
-  const formatFullDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+  const formatFullDate = (dateStr: any) => {
+    if (!dateStr) return ''
+    const date = new Date(String(dateStr))
+    if (isNaN(date.getTime())) return String(dateStr)
     const year = date.getFullYear()
     const month = date.getMonth() + 1
     const day = date.getDate()
@@ -175,7 +177,7 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
                   borderRadius: "0.5rem",
                 }}
                 labelFormatter={(label) => formatFullDate(label)}
-                formatter={(value: number | undefined) => [
+                formatter={(value: any) => [
                   value ? (value + " 次") : '0 次',
                   '访问量',
                 ]}
