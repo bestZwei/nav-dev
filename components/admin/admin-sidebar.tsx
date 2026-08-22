@@ -77,21 +77,23 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-4 pt-4 pb-2">
+      <SidebarHeader className="px-4 pt-4 pb-2 group-data-[collapsible=icon]:!px-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/admin">
                 {siteLogo ? (
-                  <Image
-                    src={siteLogo}
-                    alt="Logo"
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 object-contain"
-                    referrerPolicy="no-referrer"
-                    priority
-                  />
+                  <div className="flex aspect-square size-8 items-center justify-center">
+                    <Image
+                      src={siteLogo}
+                      alt="Logo"
+                      width={24}
+                      height={24}
+                      className="h-6 w-6 object-contain"
+                      referrerPolicy="no-referrer"
+                      priority
+                    />
+                  </div>
                 ) : (
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                     <span className="text-sm font-bold">{siteName.charAt(0)}</span>
@@ -108,7 +110,7 @@ export function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup className="px-3 py-4">
+        <SidebarGroup className="px-3 py-4 group-data-[collapsible=icon]:!px-2">
           <SidebarGroupLabel className="px-2 text-xs text-muted-foreground">管理菜单</SidebarGroupLabel>
           <SidebarGroupContent className="mt-1">
             <SidebarMenu>
@@ -131,7 +133,7 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:!p-2">
         <AdminAvatar />
       </SidebarFooter>
       <SidebarRail />
