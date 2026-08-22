@@ -13,9 +13,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider>
       <AdminSidebar />
-      <SidebarInset className="h-svh md:peer-data-[variant=inset]:h-[calc(100svh-1rem)]">
+      <SidebarInset className="@container/content h-svh md:peer-data-[variant=inset]:h-[calc(100svh-1rem)]">
         <AdminHeader />
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto px-4 py-6 @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl">
           {children}
         </div>
       </SidebarInset>
