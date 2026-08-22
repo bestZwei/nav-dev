@@ -365,7 +365,7 @@ export default function AdminSitesPage() {
               暂无符合条件的网站
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="overflow-hidden rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>

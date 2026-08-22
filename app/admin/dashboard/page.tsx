@@ -198,6 +198,7 @@ export default function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           {visitStats && visitStats.topSites.length > 0 ? (
+            <div className="overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -242,6 +243,7 @@ export default function AdminDashboardPage() {
               ))}
             </TableBody>
           </Table>
+            </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             暂无访问数据
