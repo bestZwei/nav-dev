@@ -20,6 +20,13 @@ interface ScrollHeaderProps {
 // 点击分类后锁定高亮的时长（覆盖平滑滚动期），期间滚动事件不重算
 const CLICK_LOCK_MS = 1200
 
+// 判定线相对视口顶部的偏移，与 header.tsx 锚点滚动的 headerOffset 保持一致，
+// 使点击分类后的落点区块与滚动高亮判定完全对齐
+const HEADER_OFFSET = 80
+
+// 视为处于页面顶部的滚动阈值
+const TOP_EPSILON = 4
+
 export function ScrollHeader({
   categories,
   siteName,
@@ -37,25 +44,30 @@ export function ScrollHeader({
     let ticking = false
 
     // 依据滚动位置计算当前激活分类：
-    // 判定线取视口中心（比顶部判定更宽容，尾部短分类也能依次选中）；
-    // 激活「区块顶部在判定线上方的最后一个」；触底强制最后一个
+    // 判定线取 sticky header 下缘（HEADER_OFFSET），即「贴在导航栏下方的区块」
+    // 为当前阅读区块，与点击分类的锚点落点一致；
+    // 页面置于顶部时固定第一个分类，触底时强制最后一个
     const updateActiveCategory = () => {
       ticking = false
       if (Date.now() < clickLockUntilRef.current) return
 
       const doc = document.documentElement
+      const scrollY = window.scrollY
       const bottomReached =
-        window.innerHeight + window.scrollY >= doc.scrollHeight - 2
+        window.innerHeight + scrollY >= doc.scrollHeight - 2
+      const atTop = scrollY <= TOP_EPSILON
 
       let current: string
-      if (bottomReached) {
+      if (atTop) {
+        current = categories[0].slug
+      } else if (bottomReached) {
         current = categories[categories.length - 1].slug
       } else {
-        const line = window.scrollY + window.innerHeight / 2
+        const line = scrollY + HEADER_OFFSET
         current = categories[0].slug
         for (const category of categories) {
           const element = document.getElementById(`category-${category.slug}`)
-          if (element && element.offsetTop <= line) {
+          if (element && element.getBoundingClientRect().top + scrollY <= line) {
             current = category.slug
           }
         }
