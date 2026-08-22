@@ -10,12 +10,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Moon, Sun, Laptop } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 export function ThemeToggle() {
   const { setTheme, theme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
-  const { toast } = useToast()
 
   React.useEffect(() => {
     setMounted(true)
@@ -45,8 +44,7 @@ export function ThemeToggle() {
     }
 
     // 显示提示
-    toast({
-      title: "换个氛围",
+    toast.success("换个氛围", {
       description: `${getThemeName(currentTheme)} → ${getThemeName(nextTheme)}`,
     })
   }

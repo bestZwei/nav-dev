@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { createSite, updateSite, getAllCategories } from "@/lib/actions"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
 interface Site {
@@ -52,7 +52,6 @@ interface SiteFormDialogProps {
 
 export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: SiteFormDialogProps) {
   const router = useRouter()
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
@@ -114,24 +113,19 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
         : await updateSite(site!.id, formData)
 
       if (result.success) {
-        toast({
-          title: mode === "create" ? "创建成功" : "更新成功",
+        toast.success(mode === "create" ? "创建成功" : "更新成功", {
           description: `网站"${formData.name}"已${mode === "create" ? "创建" : "更新"}`,
         })
         onOpenChange(false)
         onSuccess?.()
         router.refresh()
       } else {
-        toast({
-          variant: "destructive",
-          title: "操作失败",
+        toast.error("操作失败", {
           description: result.error || "操作失败，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "操作失败",
+      toast.error("操作失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {

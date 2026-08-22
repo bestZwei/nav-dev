@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import { getSystemSettings, updateSystemSettings } from "@/lib/actions"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface SystemSettingsData {
   id: string
@@ -32,7 +32,6 @@ interface SystemSettingsData {
 }
 
 export default function AdminSettingsPage() {
-  const { toast } = useToast()
   const [settings, setSettings] = useState<SystemSettingsData>({
     id: "",
     siteName: "Conan Nav",
@@ -82,22 +81,17 @@ export default function AdminSettingsPage() {
     try {
       const result = await updateSystemSettings(settings)
       if (result.success) {
-        toast({
-          title: "保存成功",
+        toast.success("保存成功", {
           description: "系统设置已更新",
         })
         setTimeout(() => window.location.reload(), 500)
       } else {
-        toast({
-          variant: "destructive",
-          title: "保存失败",
+        toast.error("保存失败", {
           description: result.error || "保存设置失败，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "保存失败",
+      toast.error("保存失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {

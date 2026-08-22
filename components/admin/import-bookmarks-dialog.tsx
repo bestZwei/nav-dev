@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Upload, AlertTriangle, Loader2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { importBookmarks } from "@/lib/actions"
 
 interface ImportBookmarksDialogProps {
@@ -35,7 +35,6 @@ export function ImportBookmarksDialog({
   open,
   onOpenChange,
 }: ImportBookmarksDialogProps) {
-  const { toast } = useToast()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -51,9 +50,7 @@ export function ImportBookmarksDialog({
       const isJson = file.name.endsWith('.json')
 
       if (!isHtml && !isJson) {
-        toast({
-          variant: "destructive",
-          title: "文件格式错误",
+        toast.error("文件格式错误", {
           description: "请选择JSON备份文件或Chrome书签文件（.html/.htm）",
         })
         return
@@ -64,9 +61,7 @@ export function ImportBookmarksDialog({
 
   const handleImport = async () => {
     if (!selectedFile) {
-      toast({
-        variant: "destructive",
-        title: "未选择文件",
+      toast.error("未选择文件", {
         description: "请先选择要导入的书签文件",
       })
       return
@@ -112,8 +107,7 @@ export function ImportBookmarksDialog({
       }
 
       if (result.success) {
-        toast({
-          title: "导入成功",
+        toast.success("导入成功", {
           description: result.message,
         })
         setSelectedFile(null)
@@ -124,16 +118,12 @@ export function ImportBookmarksDialog({
         router.refresh()
         onOpenChange(false)
       } else {
-        toast({
-          variant: "destructive",
-          title: "导入失败",
+        toast.error("导入失败", {
           description: result.error,
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "导入失败",
+      toast.error("导入失败", {
         description: error instanceof Error ? error.message : "未知错误",
       })
     } finally {

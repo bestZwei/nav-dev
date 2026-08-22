@@ -15,7 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Loader2 } from "lucide-react"
 import { updateUser } from "@/lib/actions"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface UpdatedUser {
@@ -42,7 +42,6 @@ export function UserEditDialog({
   userName,
   onUpdate,
 }: UserEditDialogProps) {
-  const { toast } = useToast()
   const [name, setName] = useState(userName || "")
   const [email, setEmail] = useState(userEmail)
   const [avatar, setAvatar] = useState("")
@@ -77,9 +76,7 @@ export function UserEditDialog({
     // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      toast({
-        variant: "destructive",
-        title: "邮箱格式错误",
+      toast.error("邮箱格式错误", {
         description: "请输入有效的邮箱地址",
       })
       return
@@ -87,18 +84,14 @@ export function UserEditDialog({
 
     // 如果填写了密码，验证密码
     if (password && password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "密码太短",
+      toast.error("密码太短", {
         description: "密码长度至少为6个字符",
       })
       return
     }
 
     if (password && password !== confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "密码不匹配",
+      toast.error("密码不匹配", {
         description: "两次输入的密码不一致",
       })
       return
@@ -138,8 +131,7 @@ export function UserEditDialog({
 
       const result = await updateUser(userId, updateData)
       if (result.success) {
-        toast({
-          title: "更新成功",
+        toast.success("更新成功", {
           description: "管理员信息已成功更新",
         })
         // 更新缓存中的用户信息
@@ -148,16 +140,12 @@ export function UserEditDialog({
         }
         onOpenChange(false)
       } else {
-        toast({
-          variant: "destructive",
-          title: "更新失败",
+        toast.error("更新失败", {
           description: result.error || "无法更新信息，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "更新失败",
+      toast.error("更新失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {

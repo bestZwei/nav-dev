@@ -9,13 +9,12 @@ import {
 } from "@/components/ui/tooltip"
 import { Images } from "lucide-react"
 import { useFaviconService, FAVICON_SERVICES, type FaviconService } from "@/hooks/use-favicon-service"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 const SERVICES: FaviconService[] = ["favicon-im", "bqb-cool", "duckduckgo"]
 
 export function FaviconServiceToggle() {
   const { service, setService } = useFaviconService()
-  const { toast } = useToast()
 
   const handleToggle = () => {
     const currentIndex = SERVICES.indexOf(service)
@@ -23,8 +22,7 @@ export function FaviconServiceToggle() {
     const nextService = SERVICES[nextIndex]
 
     // 显示提示
-    toast({
-      title: "切换图标服务",
+    toast.success("切换图标服务", {
       description: `智能图标由 ${FAVICON_SERVICES[nextService].name} 提供服务`,
     })
 

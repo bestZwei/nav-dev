@@ -48,7 +48,7 @@ import {
 import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink } from "lucide-react"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
 import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter } from "@/lib/actions"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface Site {
   id: string
@@ -78,7 +78,6 @@ interface PaginationInfo {
 }
 
 export default function AdminSitesPage() {
-  const { toast } = useToast()
   const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -115,16 +114,12 @@ export default function AdminSitesPage() {
         setPagination(result.pagination || null)
         setPage(result.pagination?.page || 1)
       } else {
-        toast({
-          variant: "destructive",
-          title: "加载失败",
+        toast.error("加载失败", {
           description: result.error || "无法加载网站列表",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "加载失败",
+      toast.error("加载失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {
@@ -196,22 +191,17 @@ export default function AdminSitesPage() {
     try {
       const result = await deleteSite(deletingSiteId)
       if (result.success) {
-        toast({
-          title: "删除成功",
+        toast.success("删除成功", {
           description: "网站已删除",
         })
         loadSites()
       } else {
-        toast({
-          variant: "destructive",
-          title: "删除失败",
+        toast.error("删除失败", {
           description: result.error || "删除失败，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "删除失败",
+      toast.error("删除失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {
@@ -225,22 +215,17 @@ export default function AdminSitesPage() {
     try {
       const result = await toggleSitePublish(siteId)
       if (result.success) {
-        toast({
-          title: "状态已更新",
+        toast.success("状态已更新", {
           description: "网站发布状态已切换",
         })
         loadSites()
       } else {
-        toast({
-          variant: "destructive",
-          title: "操作失败",
+        toast.error("操作失败", {
           description: result.error || "操作失败，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "操作失败",
+      toast.error("操作失败", {
         description: "发生错误，请稍后重试",
       })
     }
@@ -251,22 +236,17 @@ export default function AdminSitesPage() {
     try {
       const result = await toggleSitePin(siteId)
       if (result.success) {
-        toast({
-          title: currentPin ? "已取消置顶" : "已设为置顶",
+        toast.success(currentPin ? "已取消置顶" : "已设为置顶", {
           description: currentPin ? "该网站将按常规顺序展示" : "该网站将在前台分类中优先推荐展示",
         })
         loadSites()
       } else {
-        toast({
-          variant: "destructive",
-          title: "操作失败",
+        toast.error("操作失败", {
           description: result.error || "切换置顶状态失败",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "操作失败",
+      toast.error("操作失败", {
         description: "发生错误，请稍后重试",
       })
     }

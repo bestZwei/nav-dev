@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CategoryIconPicker } from "@/components/admin/category-icon-picker"
 import { createCategory, updateCategory, getCategoryById } from "@/lib/actions"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
 interface Category {
@@ -36,7 +36,6 @@ interface CategoryFormDialogProps {
 
 export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuccess }: CategoryFormDialogProps) {
   const router = useRouter()
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<{
     name: string
@@ -98,24 +97,19 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
         : await updateCategory(categoryId!, formData)
 
       if (result.success) {
-        toast({
-          title: mode === "create" ? "创建成功" : "更新成功",
+        toast.success(mode === "create" ? "创建成功" : "更新成功", {
           description: `分类"${formData.name}"已${mode === "create" ? "创建" : "更新"}`,
         })
         onOpenChange(false)
         onSuccess?.()
         router.refresh()
       } else {
-        toast({
-          variant: "destructive",
-          title: "操作失败",
+        toast.error("操作失败", {
           description: result.error || "操作失败，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "操作失败",
+      toast.error("操作失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {

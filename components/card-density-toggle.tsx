@@ -9,11 +9,10 @@ import {
 } from "@/components/ui/tooltip"
 import { LayoutGrid, Grid3X3 } from "lucide-react"
 import { useCardDensity } from "@/hooks/use-card-density"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 export function CardDensityToggle() {
   const { density, toggleDensity, mounted } = useCardDensity()
-  const { toast } = useToast()
 
   if (!mounted) {
     return (
@@ -25,8 +24,7 @@ export function CardDensityToggle() {
 
   const handleToggle = () => {
     const nextMode = toggleDensity()
-    toast({
-      title: "已切换卡片视图",
+    toast.success("已切换卡片视图", {
       description: nextMode === "compact" ? "已切换为「紧凑模式」" : "已切换为「标准模式」",
       duration: 2000,
     })

@@ -52,7 +52,7 @@ import {
 import { CategoryFormDialog } from "@/components/admin/category-form-dialog"
 import { CategoryIconBadge } from "@/components/category-icon"
 import { getCategoriesWithPagination, deleteCategory, updateCategoriesOrder } from "@/lib/actions"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface Category {
   id: string
@@ -73,7 +73,6 @@ interface PaginationInfo {
 }
 
 export default function AdminCategoriesPage() {
-  const { toast } = useToast()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [isSavingOrder, setIsSavingOrder] = useState(false)
@@ -101,16 +100,12 @@ export default function AdminCategoriesPage() {
         setPagination(result.pagination || null)
         setPage(result.pagination?.page || 1)
       } else {
-        toast({
-          variant: "destructive",
-          title: "加载失败",
+        toast.error("加载失败", {
           description: result.error || "无法加载分类列表",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "加载失败",
+      toast.error("加载失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {
@@ -132,22 +127,17 @@ export default function AdminCategoriesPage() {
       }))
       const result = await updateCategoriesOrder(orderPayload)
       if (result.success) {
-        toast({
-          title: "排序已保存",
+        toast.success("排序已保存", {
           description: "分类顺序已成功更新并同步至前台",
         })
       } else {
-        toast({
-          variant: "destructive",
-          title: "排序保存失败",
+        toast.error("排序保存失败", {
           description: result.error || "无法保存排序",
         })
         loadCategories(page)
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "排序保存失败",
+      toast.error("排序保存失败", {
         description: "网络错误，请稍后重试",
       })
       loadCategories(page)
@@ -236,22 +226,17 @@ export default function AdminCategoriesPage() {
     try {
       const result = await deleteCategory(deletingCategoryId)
       if (result.success) {
-        toast({
-          title: "删除成功",
+        toast.success("删除成功", {
           description: "分类已删除",
         })
         loadCategories()
       } else {
-        toast({
-          variant: "destructive",
-          title: "删除失败",
+        toast.error("删除失败", {
           description: result.error || "删除失败，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "删除失败",
+      toast.error("删除失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {

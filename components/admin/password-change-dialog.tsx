@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Loader2 } from "lucide-react"
 import { updateUser } from "@/lib/actions"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface PasswordChangeDialogProps {
   open: boolean
@@ -29,7 +29,6 @@ export function PasswordChangeDialog({
   userId,
   userEmail,
 }: PasswordChangeDialogProps) {
-  const { toast } = useToast()
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -38,18 +37,14 @@ export function PasswordChangeDialog({
     e.preventDefault()
 
     if (password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "密码太短",
+      toast.error("密码太短", {
         description: "密码长度至少为6个字符",
       })
       return
     }
 
     if (password !== confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "密码不匹配",
+      toast.error("密码不匹配", {
         description: "两次输入的密码不一致",
       })
       return
@@ -59,24 +54,19 @@ export function PasswordChangeDialog({
     try {
       const result = await updateUser(userId, { password })
       if (result.success) {
-        toast({
-          title: "密码已修改",
+        toast.success("密码已修改", {
           description: "用户密码已成功更新",
         })
         onOpenChange(false)
         setPassword("")
         setConfirmPassword("")
       } else {
-        toast({
-          variant: "destructive",
-          title: "修改失败",
+        toast.error("修改失败", {
           description: result.error || "无法修改密码，请稍后重试",
         })
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "修改失败",
+      toast.error("修改失败", {
         description: "发生错误，请稍后重试",
       })
     } finally {
