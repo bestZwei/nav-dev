@@ -29,6 +29,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={inter.className}>
+        {/* 资源提示：提前建立第三方连接，降低图标与诗词接口的首字节延迟 */}
+        <link rel="preconnect" href="https://api.jinrishici.com" />
+        <link rel="dns-prefetch" href="https://favicon.im" />
+        <link rel="dns-prefetch" href="https://www.google.com" />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

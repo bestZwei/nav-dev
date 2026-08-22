@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ExternalLink, Copy, Check, Pin } from "lucide-react"
-import { useFaviconService, getFaviconUrl } from "@/hooks/use-favicon-service"
+import { useFaviconService, getProxiedFaviconUrl, proxyIconUrlIfPossible } from "@/hooks/use-favicon-service"
 import { useCardDensity } from "@/hooks/use-card-density"
 import {
   Tooltip,
@@ -85,6 +85,7 @@ function SiteIcon({
           sizes={isCompact ? "28px" : "40px"}
           referrerPolicy="no-referrer"
           loading="lazy"
+          unoptimized
           onLoad={() => setLoadState("loaded")}
           onError={() => setLoadState("error")}
           className={`h-full w-full object-contain rounded-xs transition-all duration-300 ease-out ${
@@ -116,11 +117,11 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
   const isCompact = density === "compact"
 
   const iconSrc = useMemo(() => {
-    if (site.iconUrl) return site.iconUrl
+    if (site.iconUrl) return proxyIconUrlIfPossible(site.iconUrl)
 
     try {
       const domain = new URL(site.url).hostname
-      return getFaviconUrl(domain, service)
+      return getProxiedFaviconUrl(domain, service)
     } catch {
       return null
     }

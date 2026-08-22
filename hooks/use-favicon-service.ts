@@ -89,7 +89,36 @@ export function useFaviconService() {
   }
 }
 
-// 获取 Favicon URL（可以在服务端和客户端使用）
+// 获取 Favicon URL（直接访问第三方，仅服务端等场景使用）
 export function getFaviconUrl(domain: string, service: FaviconService = DEFAULT_SERVICE): string {
   return FAVICON_SERVICES[service].url(domain)
+}
+
+// 允许走本地代理缓存的上游域名（与 /api/icon 白名单保持一致）
+const PROXYABLE_HOSTS = new Set([
+  "favicon.im",
+  "icon.bqb.cool",
+  "icons.duckduckgo.com",
+  "www.google.com",
+  "google.com",
+  "gstatic.com",
+  "www.gstatic.com",
+])
+
+// 构建本地代理地址：由服务端拉取并做磁盘/浏览器双层缓存
+export function getProxiedFaviconUrl(domain: string, service: FaviconService = DEFAULT_SERVICE): string {
+  return `/api/icon?domain=${encodeURIComponent(domain)}&s=${service}`
+}
+
+// 若 iconUrl 指向已知 favicon 服务，则改走本地代理；否则原样返回由浏览器直连
+export function proxyIconUrlIfPossible(iconUrl: string): string {
+  try {
+    const parsed = new URL(iconUrl)
+    if ((parsed.protocol === "https:" || parsed.protocol === "http:") && PROXYABLE_HOSTS.has(parsed.hostname)) {
+      return `/api/icon?url=${encodeURIComponent(iconUrl)}`
+    }
+  } catch {
+    // 解析失败按原样处理
+  }
+  return iconUrl
 }
