@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { CategoryIcon, POPULAR_CATEGORY_ICONS } from "@/components/category-icon"
+import { CategoryIconBadge, POPULAR_CATEGORY_ICONS } from "@/components/category-icon"
 import { Search, Upload, Link as LinkIcon, Trash2, Check, Sparkles, Image as ImageIcon, Plus } from "lucide-react"
 
 interface CategoryIconPickerProps {
@@ -96,9 +96,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
               className="h-10 px-3 flex items-center gap-2.5 justify-start min-w-[180px] border-dashed hover:border-primary/50 transition-colors"
             >
               {value ? (
-                <div className={`flex h-6 w-6 items-center justify-center rounded-md border shrink-0 ${selectedItem?.color || "bg-primary/10 text-primary border-primary/20"}`}>
-                  <CategoryIcon icon={value} className="h-3.5 w-3.5" size={14} />
-                </div>
+                <CategoryIconBadge icon={value} size="sm" />
               ) : (
                 <div className="flex h-6 w-6 items-center justify-center rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 text-muted-foreground/50 shrink-0">
                   <Plus className="h-3.5 w-3.5" />
@@ -174,12 +172,8 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                               : "border-border/60 hover:border-primary/40 bg-card hover:bg-accent/40"
                           }`}
                         >
-                          <div className={`flex h-7 w-7 items-center justify-center rounded-md border mb-1.5 transition-transform group-hover:scale-110 ${item.color}`}>
-                            <CategoryIcon
-                              icon={item.name}
-                              className="h-4 w-4"
-                              size={16}
-                            />
+                          <div className="mb-1.5 transition-transform group-hover:scale-110">
+                            <CategoryIconBadge icon={item.name} size="md" />
                           </div>
                           <span className="text-[11px] font-medium truncate max-w-full leading-tight text-foreground/90">
                             {item.label}
@@ -221,7 +215,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                 {customUrl && (
                   <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
                     <span className="text-xs text-muted-foreground">预览:</span>
-                    <CategoryIcon icon={customUrl} className="h-6 w-6" size={24} />
+                    <CategoryIconBadge icon={customUrl} size="md" className="h-9 w-9" />
                   </div>
                 )}
                 <Button

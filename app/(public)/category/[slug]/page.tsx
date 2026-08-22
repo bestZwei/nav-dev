@@ -1,6 +1,6 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
-import { CategoryIcon } from "@/components/category-icon"
+import { CategoryIconBadge } from "@/components/category-icon"
 import { getAllCategories, getCategoryBySlug, getSystemSettings, getSites } from "@/lib/actions"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -40,9 +40,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <div className="mb-6">
         <div className="flex items-center gap-3">
           {(category as any).icon && (
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
-              <CategoryIcon icon={(category as any).icon} className="h-5 w-5" size={20} />
-            </div>
+            <CategoryIconBadge icon={(category as any).icon} size="lg" />
           )}
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground/95">{category.name}</h1>
           {category.sites && category.sites.length > 0 && (

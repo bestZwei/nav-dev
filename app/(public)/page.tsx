@@ -1,6 +1,6 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
-import { CategoryIcon } from "@/components/category-icon"
+import { CategoryIconBadge } from "@/components/category-icon"
 import { getAllCategories, getCategories, getSystemSettings, getSites } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -34,9 +34,7 @@ export default async function HomePage() {
               <div className="flex items-center justify-between mb-3.5">
                 <div className="flex items-center gap-2.5">
                   {category.icon && (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
-                      <CategoryIcon icon={category.icon} className="h-4 w-4" size={16} />
-                    </div>
+                    <CategoryIconBadge icon={category.icon} size="md" />
                   )}
                   <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground/95">{category.name}</h2>
                   {category.sites && category.sites.length > 0 && (

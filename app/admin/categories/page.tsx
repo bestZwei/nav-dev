@@ -50,7 +50,7 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { CategoryFormDialog } from "@/components/admin/category-form-dialog"
-import { CategoryIcon } from "@/components/category-icon"
+import { CategoryIconBadge } from "@/components/category-icon"
 import { getCategoriesWithPagination, deleteCategory, updateCategoriesOrder } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 
@@ -357,9 +357,7 @@ export default function AdminCategoriesPage() {
                         <TableCell>
                           <div className="flex items-center gap-2.5">
                             {category.icon && (
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
-                                <CategoryIcon icon={category.icon} className="h-4 w-4" size={18} />
-                              </div>
+                              <CategoryIconBadge icon={category.icon} size="md" className="h-8 w-8" />
                             )}
                             <div>
                               <div className="font-medium text-sm flex items-center gap-1.5">
