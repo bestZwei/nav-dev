@@ -137,7 +137,6 @@ export function JinrishiciCard({ onClose }: JinrishiciCardProps) {
           </Button>
         </div>
       )}
-
       <CardContent className="px-8 flex justify-center">
         {/* 竖向排列容器：从右到左 */}
         <div

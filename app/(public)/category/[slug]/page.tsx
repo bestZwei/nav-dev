@@ -36,11 +36,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       siteName={settings?.siteName}
       currentCategory={slug}
     >
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{category.name}</h1>
+      <div className="mb-5">
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground/95">{category.name}</h1>
           {category.sites && category.sites.length > 0 && (
-            <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
+            <Badge variant="secondary" className="px-2 py-0 text-[11px] font-medium h-5 rounded-full">
               共 {category.sites.length} 个网站
             </Badge>
           )}
@@ -50,8 +50,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       {category.sites && category.sites.length > 0 ? (
         <SiteGrid sites={category.sites} />
       ) : (
-        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-8 text-center">
-          <p className="text-base font-semibold text-foreground">该分类下暂无网站</p>
+        <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-center">
+          <p className="text-sm font-semibold text-foreground">该分类下暂无网站</p>
           <p className="text-xs text-muted-foreground mt-1">
             请在后台添加网站到此分类
           </p>

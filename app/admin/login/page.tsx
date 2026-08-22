@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Github, ArrowRight, BarChart3, FolderTree, Search, Smartphone, Moon, Scroll, FileEdit, Palette, ImageIcon } from "lucide-react"
 import {
   Field,
@@ -15,8 +15,11 @@ import { Separator } from "@/components/ui/separator"
 import { Loader2 } from "lucide-react"
 import { fetchPublicSettings } from "@/lib/client-settings"
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get("redirect") || "/admin/dashboard"
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -73,8 +76,8 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        router.push("/admin/dashboard")
-        router.refresh()
+        // 使用 window.location.href 进行硬重定向，确保浏览器环境完整同步 Cookie 状态
+        window.location.href = redirectUrl
       } else {
         setError(data.error || "登录失败")
       }
@@ -530,5 +533,19 @@ export default function AdminLoginPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-muted/40">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }

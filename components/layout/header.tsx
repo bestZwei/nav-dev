@@ -110,31 +110,27 @@ export function Header({
             </Link>
           </div>
 
-          {/* 响应式导航：桌面端横向导航，移动端 Drawer */}
-          {!mounted ? (
-            // 占位符：保持布局稳定
-            <div className="flex-1" />
-          ) : isDesktop ? (
-            // 桌面端：Tabs 风格的横向导航
-            <nav className="flex flex-1 items-center overflow-x-auto overflow-y-hidden scrollbar-hide">
-              <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px]">
-                {categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/category/${category.slug}`}
-                    className={`inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] ${
-                      currentCategory === category.slug
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-accent/50"
-                    }`}
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-          ) : (
-            // 移动端：Drawer（从左侧展开）
+          {/* 桌面端：Tabs 风格横向分类导航 */}
+          <nav className="hidden md:flex flex-1 items-center overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px]">
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/category/${category.slug}`}
+                  className={`inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] ${
+                    currentCategory === category.slug
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-accent/50"
+                  }`}
+                >
+                  {category.name}
+                </Link>
+              ))}
+            </div>
+          </nav>
+
+          {/* 移动端：Drawer（从左侧展开） */}
+          <div className="flex md:hidden flex-1 items-center">
             <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} direction="left">
               <DrawerTrigger asChild>
                 <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
@@ -148,7 +144,7 @@ export function Header({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="h-4 w-4"
+                    className="h-5 w-5"
                   >
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <path d="M9 3v18" />
@@ -178,7 +174,7 @@ export function Header({
                 </div>
               </DrawerContent>
             </Drawer>
-          )}
+          </div>
 
           <div className="flex-shrink-0 pl-2 sm:pl-4 flex items-center gap-2">
             <div className="relative hidden sm:block group">

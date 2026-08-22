@@ -47,58 +47,58 @@ export function Footer() {
       <div className="mx-auto max-w-[1600px] w-full py-6">
         <div className="lg:pr-36 lg:pl-2">
           <div className="flex flex-col items-center justify-between space-y-4 sm:flex-row sm:space-y-0">
-          <div className="flex flex-col items-center space-y-1 sm:items-start">
-            <p className="text-sm text-muted-foreground">
-              {settings?.footerCopyright || getDefaultCopyright()}
-            </p>
-            {/* 备案信息 */}
-            {settings?.showIcp && settings.icpNumber && (
-              <p className="text-xs text-muted-foreground">
-                {settings.icpLink ? (
-                  <a
-                    href={settings.icpLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-foreground"
-                  >
-                    {settings.icpNumber}
-                  </a>
-                ) : (
-                  <span>{settings.icpNumber}</span>
-                )}
+            <div className="flex flex-col items-center space-y-1 sm:items-start">
+              <p className="text-sm text-muted-foreground">
+                {settings?.footerCopyright || getDefaultCopyright()}
               </p>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-end">
-            {/* 友情链接 */}
-            {settings?.footerLinks && settings.footerLinks.length > 0 && (
-              <>
-                {settings.footerLinks.map((link, index) => (
-                  <a
-                    key={index}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {link.name}
-                  </a>
-                ))}
-                <Separator orientation="vertical" className="h-4" />
-              </>
-            )}
-            {/* 管理后台链接 - 根据设置显示或隐藏 */}
-            {settings?.showAdminLink && (
-              <a
-                href="/admin"
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                管理后台
-              </a>
-            )}
+              {/* 备案信息 */}
+              {settings?.showIcp && settings.icpNumber && (
+                <p className="text-xs text-muted-foreground">
+                  {settings.icpLink ? (
+                    <a
+                      href={settings.icpLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-foreground"
+                    >
+                      {settings.icpNumber}
+                    </a>
+                  ) : (
+                    <span>{settings.icpNumber}</span>
+                  )}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-end">
+              {/* 友情链接 */}
+              {settings?.footerLinks && settings.footerLinks.length > 0 && (
+                <>
+                  {settings.footerLinks.map((link, index) => (
+                    <a
+                      key={index}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      {link.name}
+                    </a>
+                  ))}
+                  <Separator orientation="vertical" className="h-4" />
+                </>
+              )}
+              {/* 管理后台链接 - 根据设置显示或隐藏 */}
+              {settings?.showAdminLink && (
+                <a
+                  href="/admin"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  管理后台
+                </a>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </footer>
   )

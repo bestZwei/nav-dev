@@ -6,6 +6,7 @@ import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
 import { JinrishiciCardWrapper } from "./jinrishici-card-wrapper"
 import { Badge } from "@/components/ui/badge"
+import { usePoetryToggle } from "@/hooks/use-poetry-toggle"
 
 interface Site {
   id: string
@@ -38,6 +39,7 @@ export function SearchableLayout({
   children,
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
+  const { isVisible: isPoetryVisible, mounted: poetryMounted } = usePoetryToggle()
 
   const filteredSites = useMemo(() => {
     if (!searchQuery.trim()) return []
@@ -51,6 +53,7 @@ export function SearchableLayout({
   }, [searchQuery, flatSites])
 
   const isSearching = searchQuery.trim().length > 0
+  const hasPoetryRightSpace = poetryMounted && isPoetryVisible
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -64,7 +67,7 @@ export function SearchableLayout({
 
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
         <div className="mx-auto max-w-[1600px] w-full">
-          {/* 今日诗词 - 固定在右上角，根据用户设置显示/隐藏 */}
+          {/* 今日诗词 - 固定在右上角 */}
           <JinrishiciCardWrapper />
 
           {/* 内容区域：为诗词卡片预留右侧空间 */}

@@ -1,9 +1,9 @@
+/* 引入霞鹜文楷字体 (必须放在 CSS 最顶部以符合 CSS 规范) */
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 引入霞鹜文楷字体 */
-@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css');
 
 /* 定义霞鹜文楷字体类 */
 .font-lxgw-wenkai {

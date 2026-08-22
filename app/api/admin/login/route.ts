@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
+import bcrypt from "bcrypt"
 import { z } from "zod"
 
 // 定义登录验证schema
@@ -57,22 +57,19 @@ export async function POST(request: NextRequest) {
     // 创建 session
     const response = NextResponse.json({ success: true, message: "登录成功" })
 
-    // 判断是否为 HTTPS 环境
-    const isSecure = process.env.NEXTAUTH_URL?.startsWith("https://") || false
-
-    // 设置简单的 cookie（后续可以用 NextAuth.js 优化）
+    // 支持在 AI Studio Preview（iframe / cloud run 代理）环境下正常传输 Cookie
     response.cookies.set("user_id", user.id, {
       httpOnly: true,
-      secure: isSecure,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
     })
 
     response.cookies.set("user_role", user.role, {
       httpOnly: true,
-      secure: isSecure,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
