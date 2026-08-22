@@ -17,6 +17,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -76,7 +77,7 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
+      <SidebarHeader className="px-4 pt-4 pb-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
@@ -107,8 +108,9 @@ export function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
+        <SidebarGroup className="px-3 py-4">
+          <SidebarGroupLabel className="px-2 text-xs text-muted-foreground">管理菜单</SidebarGroupLabel>
+          <SidebarGroupContent className="mt-1">
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
@@ -129,7 +131,7 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
         <AdminAvatar />
       </SidebarFooter>
       <SidebarRail />
