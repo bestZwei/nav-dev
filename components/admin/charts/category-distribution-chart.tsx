@@ -31,7 +31,7 @@ interface CategoryDistributionChartProps {
   }>
 }
 
-// 五个官方主题色循环使用，超过 5 个分类自动循环
+// 五个官方主题色循环使用
 const CHART_COLORS = [
   "var(--chart-1)",
   "var(--chart-2)",
@@ -41,22 +41,8 @@ const CHART_COLORS = [
 ]
 
 export function CategoryDistributionChart({ data }: CategoryDistributionChartProps) {
-  // 前 5 个分类 + 其余合并为「其他」
-  const displayData = (() => {
-    if (data.length <= 6) return data
-    const top = data.slice(0, 5)
-    const rest = data.slice(5)
-    const restCount = rest.reduce((sum, d) => sum + d.count, 0)
-    const total = data.reduce((sum, d) => sum + d.count, 0)
-    return [
-      ...top,
-      {
-        category: "其他",
-        count: restCount,
-        share: total > 0 ? Math.round((restCount / total) * 100) : 0,
-      },
-    ]
-  })()
+  // 图例最多显示 8 项，超出部分滚动查看；环形图全量渲染
+  const displayData = data
 
   const chartConfig = {
     count: { label: "网站数" },
@@ -119,7 +105,12 @@ export function CategoryDistributionChart({ data }: CategoryDistributionChartPro
               </Pie>
             </PieChart>
           </ChartContainer>
-          <ul className="w-full space-y-2 text-sm">
+          <ul
+            className={
+              "w-full space-y-2 text-sm " +
+              (displayData.length > 8 ? "max-h-[200px] overflow-y-auto pr-1" : "")
+            }
+          >
             {displayData.map((entry, index) => (
               <li key={entry.category} className="flex items-center gap-2">
                 <span

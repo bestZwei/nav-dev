@@ -35,6 +35,7 @@ interface HeaderProps {
   searchQuery?: string
   onSearchChange?: (query: string) => void
   useAnchorLinks?: boolean
+  onCategoryClick?: (slug: string) => void
 }
 
 export function Header({
@@ -45,6 +46,7 @@ export function Header({
   searchQuery = "",
   onSearchChange,
   useAnchorLinks = false,
+  onCategoryClick,
 }: HeaderProps) {
   const [logo, setLogo] = useState<string | null>(siteLogo)
   const [enableSubmission, setEnableSubmission] = useState<boolean>(true)
@@ -95,6 +97,7 @@ export function Header({
     if (!useAnchorLinks) return
     e.preventDefault()
     setMobileMenuOpen(false)
+    onCategoryClick?.(slug)
     const target = document.getElementById(`category-${slug}`)
     if (target) {
       const headerOffset = 80

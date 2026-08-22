@@ -1,12 +1,12 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 import { Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
 
 // 路径到标题的映射
 const pageTitleMap: Record<string, string> = {
@@ -17,18 +17,39 @@ const pageTitleMap: Record<string, string> = {
   "/admin/users": "系统设置",
 }
 
-export function AdminHeader() {
-  const pathname = usePathname()
+// 导出供内容区使用的页面标题 hook
+export function usePageTitle(pathname: string) {
+  return pageTitleMap[pathname] || "管理后台"
+}
 
-  // 获取当前页面的标题，默认为"管理后台"
-  const title = pageTitleMap[pathname] || "管理后台"
+export function AdminHeader() {
+  const [offset, setOffset] = useState(0)
+
+  useEffect(() => {
+    const onScroll = () => {
+      setOffset(document.body.scrollTop || document.documentElement.scrollTop)
+    }
+    document.addEventListener("scroll", onScroll, { passive: true })
+    return () => document.removeEventListener("scroll", onScroll)
+  }, [])
+
+  const scrolled = offset > 10
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear">
-      <div className="flex w-full items-center gap-2 px-4 lg:gap-2 lg:px-6">
+    <header
+      className={cn(
+        "sticky top-0 z-50 h-16 w-full",
+        scrolled ? "shadow" : "shadow-none"
+      )}
+    >
+      <div
+        className={cn(
+          "relative flex h-full items-center gap-2 px-4 lg:px-6",
+          scrolled &&
+            "after:absolute after:inset-0 after:-z-10 after:bg-background/20 after:backdrop-blur-lg after:rounded-t-xl"
+        )}
+      >
         <SidebarTrigger variant="outline" className="-ml-1 max-md:scale-125" />
-        <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-        <h1 className="text-base font-medium">{title}</h1>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/">

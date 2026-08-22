@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import { AdminSidebar } from "./admin-sidebar"
-import { AdminHeader } from "./admin-header"
+import { AdminHeader, usePageTitle } from "./admin-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 interface AdminLayoutProps {
@@ -10,12 +11,16 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
+  const pathname = usePathname()
+  const title = usePageTitle(pathname)
+
   return (
     <SidebarProvider>
       <AdminSidebar />
-      <SidebarInset className="@container/content h-svh md:peer-data-[variant=inset]:h-[calc(100svh-1rem)]">
+      <SidebarInset className="@container/content">
         <AdminHeader />
-        <div className="flex-1 overflow-y-auto px-4 py-6 @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl">
+        <div className="flex-1 px-4 py-6 @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl">
+          <h1 className="mb-4 text-2xl font-bold tracking-tight">{title}</h1>
           {children}
         </div>
       </SidebarInset>

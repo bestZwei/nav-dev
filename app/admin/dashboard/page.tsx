@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
             <Skeleton key={i} className="h-[120px] rounded-xl" />
           ))}
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
           <Skeleton className="h-[300px] rounded-xl" />
           <Skeleton className="h-[300px] rounded-xl" />
         </div>
@@ -232,7 +232,10 @@ export default function AdminDashboardPage() {
               <BarChart3 className="h-5 w-5" />
               网站访问排行
             </CardTitle>
-            <CardDescription>{getTimeRangeLabel(timeRange)}热门网站</CardDescription>
+            <CardDescription>
+              {getTimeRangeLabel(timeRange)}热门网站
+              {topCount > 5 || topCount === 0 ? "（表内滚动查看更多）" : ""}
+            </CardDescription>
             <CardAction>
               <ToggleGroup
                 type="single"
@@ -267,7 +270,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             {visitStats && visitStats.topSites.length > 0 ? (
-              <div className="overflow-hidden rounded-lg border">
+              <div className="max-h-[318px] overflow-auto rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow>
