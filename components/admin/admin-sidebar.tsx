@@ -76,7 +76,7 @@ export function AdminSidebar() {
   }, [])
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader className="px-4 pt-4 pb-2 group-data-[collapsible=icon]:!px-2">
         <SidebarMenu>
           <SidebarMenuItem>
