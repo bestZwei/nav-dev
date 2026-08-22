@@ -90,16 +90,17 @@ export default function AdminSitesPage() {
 
   // 分页状态
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
 
   // 加载网站列表
-  const loadSites = async (currentPage = page) => {
+  const loadSites = async (currentPage = page, currentPageSize = pageSize) => {
     setLoading(true)
     try {
       const result = await getSitesWithPagination({
         page: currentPage,
-        pageSize: 10,
+        pageSize: currentPageSize,
         categoryId: filterCategory !== "all" ? filterCategory : undefined,
         isPublished: filterStatus !== "all" ? (filterStatus === "true") : undefined,
         isPinned: filterPinned !== "all" ? (filterPinned === "true") : undefined,
@@ -153,6 +154,13 @@ export default function AdminSitesPage() {
   useEffect(() => {
     loadSites(1)
   }, [filterCategory, filterStatus, filterPinned, filterSubmitter])
+
+  // 每页数量改变时重新加载
+  const handlePageSizeChange = (value: string) => {
+    const newSize = Number(value)
+    setPageSize(newSize)
+    loadSites(1, newSize)
+  }
 
   // 打开创建对话框
   const handleCreate = () => {
@@ -603,6 +611,21 @@ export default function AdminSitesPage() {
                     : "cursor-pointer"
                 }
               />
+            </PaginationItem>
+
+            <PaginationItem>
+              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="每页显示数量">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 50].map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size} 条/页
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </PaginationItem>
           </PaginationContent>
         </Pagination>

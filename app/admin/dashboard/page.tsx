@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { Loader2, BarChart3, TrendingUp, Globe, FolderKanban, Users } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -147,7 +148,7 @@ export default function AdminDashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold tabular-nums @[250px]/card:text-3xl">
                 {stat.loading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Skeleton className="h-8 w-20" />
                 ) : (
                   stat.value.toLocaleString()
                 )}
