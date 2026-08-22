@@ -24,6 +24,7 @@ interface SearchableLayoutProps {
     id: string
     name: string
     slug: string
+    icon?: string | null
   }>
   flatSites: Site[]
   siteName?: string

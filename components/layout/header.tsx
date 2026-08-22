@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -19,12 +20,14 @@ import {
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { Search, X } from "lucide-react"
 import { fetchPublicSettings } from "@/lib/client-settings"
+import { CategoryIcon } from "@/components/category-icon"
 
 interface HeaderProps {
   categories: Array<{
     id: string
     name: string
     slug: string
+    icon?: string | null
   }>
   currentCategory?: string
   siteName?: string
@@ -104,7 +107,15 @@ export function Header({
           <div className="flex-shrink-0 pr-6 sm:pr-8">
             <Link href="/" className="flex items-center space-x-2">
               {logo && (
-                <img src={logo} alt="Logo" className="h-6 w-6 object-contain" />
+                <Image
+                  src={logo}
+                  alt="Logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 object-contain"
+                  referrerPolicy="no-referrer"
+                  priority
+                />
               )}
               <span className="font-bold text-xl">{siteName}</span>
             </Link>
@@ -112,18 +123,21 @@ export function Header({
 
           {/* 桌面端：Tabs 风格横向分类导航 */}
           <nav className="hidden md:flex flex-1 items-center overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px]">
+            <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px] gap-0.5">
               {categories.map((category) => (
                 <Link
                   key={category.id}
                   href={`/category/${category.slug}`}
-                  className={`inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] ${
+                  className={`inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] ${
                     currentCategory === category.slug
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:bg-accent/50"
                   }`}
                 >
-                  {category.name}
+                  {category.icon && (
+                    <CategoryIcon icon={category.icon} className="h-3.5 w-3.5 opacity-80 shrink-0" size={14} />
+                  )}
+                  <span>{category.name}</span>
                 </Link>
               ))}
             </div>
@@ -162,13 +176,16 @@ export function Header({
                       key={category.id}
                       href={`/category/${category.slug}`}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`block py-3 px-4 rounded-md transition-colors ${
+                      className={`flex items-center gap-2.5 py-3 px-4 rounded-md transition-colors ${
                         currentCategory === category.slug
-                          ? "bg-accent text-foreground"
+                          ? "bg-accent text-foreground font-medium"
                           : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       }`}
                     >
-                      {category.name}
+                      {category.icon && (
+                        <CategoryIcon icon={category.icon} className="h-4 w-4 opacity-85 shrink-0" size={16} />
+                      )}
+                      <span>{category.name}</span>
                     </Link>
                   ))}
                 </div>

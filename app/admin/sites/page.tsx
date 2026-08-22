@@ -45,9 +45,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw } from "lucide-react"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff } from "lucide-react"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
-import { getSitesWithPagination, deleteSite, toggleSitePublish, getCategoriesForFilter } from "@/lib/actions"
+import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePinned, getCategoriesForFilter } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 
 interface Site {
@@ -60,6 +60,7 @@ interface Site {
   submitterIp: string | null
   categoryId: string
   isPublished: boolean
+  isPinned: boolean
   order: number
   category?: {
     id: string
@@ -89,6 +90,7 @@ export default function AdminSitesPage() {
   // 筛选状态
   const [filterCategory, setFilterCategory] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [filterPinned, setFilterPinned] = useState<string>("all")
   const [filterSubmitter, setFilterSubmitter] = useState<string>("all")
 
   // 分页状态
@@ -105,6 +107,7 @@ export default function AdminSitesPage() {
         pageSize: 10,
         categoryId: filterCategory !== "all" ? filterCategory : undefined,
         isPublished: filterStatus !== "all" ? (filterStatus === "true") : undefined,
+        isPinned: filterPinned !== "all" ? (filterPinned === "true") : undefined,
         submitterIp: filterSubmitter !== "all" ? filterSubmitter : undefined,
       })
       if (result.success && result.data) {
@@ -121,7 +124,7 @@ export default function AdminSitesPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-title: "加载失败",
+        title: "加载失败",
         description: "发生错误，请稍后重试",
       })
     } finally {
@@ -150,6 +153,7 @@ title: "加载失败",
   const handleResetFilters = () => {
     setFilterCategory("all")
     setFilterStatus("all")
+    setFilterPinned("all")
     setFilterSubmitter("all")
     setPage(1)
   }
@@ -157,7 +161,7 @@ title: "加载失败",
   // 筛选条件改变时重新加载
   useEffect(() => {
     loadSites(1)
-  }, [filterCategory, filterStatus, filterSubmitter])
+  }, [filterCategory, filterStatus, filterPinned, filterSubmitter])
 
   // 打开创建对话框
   const handleCreate = () => {
@@ -216,6 +220,32 @@ title: "加载失败",
     }
   }
 
+  // 切换置顶状态
+  const handleTogglePinned = async (siteId: string, currentPinned: boolean) => {
+    try {
+      const result = await toggleSitePinned(siteId)
+      if (result.success) {
+        toast({
+          title: !currentPinned ? "已设为置顶" : "已取消置顶",
+          description: !currentPinned ? "网站已优先置顶展示在分类顶部" : "网站已恢复普通排序",
+        })
+        loadSites()
+      } else {
+        toast({
+          variant: "destructive",
+          title: "操作失败",
+          description: result.error || "操作失败，请稍后重试",
+        })
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "操作失败",
+        description: "发生错误，请稍后重试",
+      })
+    }
+  }
+
   // 切换发布状态
   const handleTogglePublish = async (siteId: string) => {
     try {
@@ -265,11 +295,26 @@ title: "加载失败",
             </Select>
           </Field>
 
+          {/* 置顶筛选 */}
+          <Field orientation="horizontal" className="w-auto">
+            <FieldLabel>置顶</FieldLabel>
+            <Select value={filterPinned} onValueChange={setFilterPinned}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="全部" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                <SelectItem value="true">仅置顶</SelectItem>
+                <SelectItem value="false">非置顶</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+
           {/* 状态筛选 */}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>状态</FieldLabel>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="全部状态" />
               </SelectTrigger>
               <SelectContent>
@@ -284,7 +329,7 @@ title: "加载失败",
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>来源</FieldLabel>
             <Select value={filterSubmitter} onValueChange={setFilterSubmitter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="全部来源" />
               </SelectTrigger>
               <SelectContent>
@@ -296,7 +341,7 @@ title: "加载失败",
           </Field>
 
           {/* 重置按钮 */}
-          {(filterCategory !== "all" || filterStatus !== "all" || filterSubmitter !== "all") && (
+          {(filterCategory !== "all" || filterStatus !== "all" || filterPinned !== "all" || filterSubmitter !== "all") && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -345,6 +390,7 @@ title: "加载失败",
                   <TableHead>名称</TableHead>
                   <TableHead>URL</TableHead>
                   <TableHead>分类</TableHead>
+                  <TableHead>置顶</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>提交者</TableHead>
                   <TableHead className="text-right">操作</TableHead>
@@ -352,7 +398,7 @@ title: "加载失败",
               </TableHeader>
               <TableBody>
                 {sites.map((site) => (
-                  <TableRow key={site.id}>
+                  <TableRow key={site.id} className={site.isPinned ? "bg-amber-500/5 hover:bg-amber-500/10" : undefined}>
                     <TableCell>
                       {site.iconUrl ? (
                         <img
@@ -371,18 +417,52 @@ title: "加载失败",
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">{site.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <span>{site.name}</span>
+                        {site.isPinned && (
+                          <Badge variant="outline" className="h-5 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                            <Pin className="h-2.5 w-2.5 fill-current" />
+                            置顶
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <a
                         href={site.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-muted-foreground hover:text-foreground"
+                        className="text-sm text-muted-foreground hover:text-foreground line-clamp-1 max-w-[200px]"
                       >
                         {site.url}
                       </a>
                     </TableCell>
                     <TableCell>{site.category?.name || '-'}</TableCell>
+                    <TableCell>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleTogglePinned(site.id, site.isPinned)}
+                              className={`h-7 px-2 text-xs gap-1 rounded-md transition-colors ${
+                                site.isPinned
+                                  ? "text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                              }`}
+                            >
+                              <Pin className={`h-3.5 w-3.5 ${site.isPinned ? "fill-current" : ""}`} />
+                              {site.isPinned ? "已置顶" : "置顶"}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{site.isPinned ? "点击取消置顶" : "点击置顶（排在分类首位）"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
                     <TableCell>
                       {site.isPublished ? (
                         <Badge variant="default">已发布</Badge>

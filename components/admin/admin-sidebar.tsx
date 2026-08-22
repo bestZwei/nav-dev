@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -104,7 +105,15 @@ export function AdminSidebar({ className }: SidebarProps) {
           {!collapsed && (
             <>
               {siteLogo && (
-                <img src={siteLogo} alt="Logo" className="h-6 w-6 object-contain" />
+                <Image
+                  src={siteLogo}
+                  alt="Logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 object-contain"
+                  referrerPolicy="no-referrer"
+                  priority
+                />
               )}
               <span className="font-bold text-xl">{siteName}</span>
             </>

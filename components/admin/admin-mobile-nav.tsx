@@ -3,6 +3,7 @@
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -94,7 +95,15 @@ export function AdminMobileNav({ open, onOpenChange }: AdminMobileNavProps) {
         <div className="flex h-16 items-center border-b px-6">
           <Link href="/admin" onClick={handleNavClick} className="flex items-center space-x-2">
             {siteLogo && (
-              <img src={siteLogo} alt="Logo" className="h-6 w-6 object-contain" />
+              <Image
+                src={siteLogo}
+                alt="Logo"
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain"
+                referrerPolicy="no-referrer"
+                priority
+              />
             )}
             <span className="font-bold text-xl">{siteName}</span>
           </Link>

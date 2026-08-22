@@ -14,6 +14,7 @@ model Category {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  icon      String?
   order     Int      @default(0)
   sites     Site[]
   createdAt DateTime @default(now())
@@ -31,6 +32,7 @@ model Site {
   categoryId       String
   category         Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   isPublished      Boolean   @default(false)
+  isPinned         Boolean   @default(false)
   order            Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @default(now())
@@ -38,7 +40,9 @@ model Site {
 
   @@index([categoryId])
   @@index([isPublished])
+  @@index([isPinned])
   @@index([categoryId, isPublished])
+  @@index([categoryId, isPinned])
   @@index([order])
   @@map("Site")
 }

@@ -8,6 +8,7 @@ interface ScrollHeaderProps {
     id: string
     name: string
     slug: string
+    icon?: string | null
   }>
   siteName?: string
   searchQuery?: string

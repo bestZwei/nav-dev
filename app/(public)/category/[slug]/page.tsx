@@ -3,6 +3,7 @@ import { SiteGrid } from "@/components/layout/site-grid"
 import { getAllCategories, getCategoryBySlug, getSystemSettings, getSites } from "@/lib/actions"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import { CategoryIcon } from "@/components/category-icon"
 
 // ISR 配置：每 10 秒自动重新生成页面
 // 这样在 seed 后 10 秒内会自动看到新数据
@@ -36,8 +37,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       siteName={settings?.siteName}
       currentCategory={slug}
     >
-      <div className="mb-5">
-        <div className="flex items-center gap-2.5">
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          {category.icon && (
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
+              <CategoryIcon icon={category.icon} className="h-5 w-5" size={20} />
+            </div>
+          )}
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground/95">{category.name}</h1>
           {category.sites && category.sites.length > 0 && (
             <Badge variant="secondary" className="px-2 py-0 text-[11px] font-medium h-5 rounded-full">

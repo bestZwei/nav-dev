@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
-import { ExternalLink, Copy, Check } from "lucide-react"
+import Image from "next/image"
+import { ExternalLink, Copy, Check, Pin } from "lucide-react"
 import { useFaviconService, getFaviconUrl } from "@/hooks/use-favicon-service"
 import { useCardDensity } from "@/hooks/use-card-density"
 import {
@@ -25,6 +26,7 @@ export interface SiteItemProps {
   url: string
   description: string
   iconUrl: string | null
+  isPinned?: boolean
   categoryId?: string
   category?: {
     name: string
@@ -36,10 +38,77 @@ interface SiteCardProps {
   density?: "standard" | "compact"
 }
 
+// 独立的网站图标组件：支持 Next.js Image 优化、占位符骨架屏动画与平滑渐变
+function SiteIcon({
+  iconSrc,
+  name,
+  size = "standard",
+}: {
+  iconSrc: string | null
+  name: string
+  size?: "standard" | "compact"
+}) {
+  const [loadState, setLoadState] = useState<"loading" | "loaded" | "error">("loading")
+  const initial = useMemo(() => getInitial(name), [name])
+  const isCompact = size === "compact"
+
+  // 当 iconSrc 改变时重置状态
+  useEffect(() => {
+    if (!iconSrc) {
+      setLoadState("error")
+    } else {
+      setLoadState("loading")
+    }
+  }, [iconSrc])
+
+  const containerSizeClass = isCompact ? "h-7 w-7 rounded-md p-0.5" : "h-10 w-10 rounded-lg p-1"
+  const pixelSize = isCompact ? 22 : 36
+
+  return (
+    <div
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40 transition-transform duration-200 group-hover:scale-105 ${containerSizeClass}`}
+    >
+      {/* 骨架屏加载动画占位符 */}
+      {loadState === "loading" && iconSrc && (
+        <div className="absolute inset-0 z-0 flex items-center justify-center bg-muted/60">
+          <div className="h-full w-full animate-pulse bg-gradient-to-tr from-muted/80 via-muted to-muted/80 rounded" />
+        </div>
+      )}
+
+      {/* Next.js 优化后的 Image 组件 */}
+      {iconSrc && loadState !== "error" && (
+        <Image
+          src={iconSrc}
+          alt={`${name} 图标`}
+          width={pixelSize}
+          height={pixelSize}
+          sizes={isCompact ? "28px" : "40px"}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          onLoad={() => setLoadState("loaded")}
+          onError={() => setLoadState("error")}
+          className={`h-full w-full object-contain rounded-xs transition-all duration-300 ease-out ${
+            loadState === "loaded" ? "opacity-100 scale-100" : "opacity-0 scale-90"
+          }`}
+        />
+      )}
+
+      {/* 加载失败或无图标时的首字母占位 */}
+      {(loadState === "error" || !iconSrc) && (
+        <div
+          className={`flex h-full w-full items-center justify-center font-bold text-muted-foreground select-none animate-fade-in ${
+            isCompact ? "text-[11px]" : "text-sm"
+          }`}
+        >
+          {initial}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function SiteCard({ site, density: propDensity }: SiteCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false)
   const [copied, setCopied] = useState(false)
-  const hasTriedLoad = useRef(false)
   const { service } = useFaviconService()
   const { density: contextDensity } = useCardDensity()
 
@@ -56,29 +125,6 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
       return null
     }
   }, [site.iconUrl, site.url, service])
-
-  const initial = useMemo(() => getInitial(site.name), [site.name])
-
-  useEffect(() => {
-    if (!iconSrc) {
-      setImageLoaded(false)
-      return
-    }
-
-    setImageLoaded(false)
-    hasTriedLoad.current = false
-
-    const img = new Image()
-    img.src = iconSrc
-    img.onload = () => {
-      setImageLoaded(true)
-      hasTriedLoad.current = true
-    }
-    img.onerror = () => {
-      setImageLoaded(false)
-      hasTriedLoad.current = true
-    }
-  }, [iconSrc])
 
   const handleClick = () => {
     if (navigator.sendBeacon) {
@@ -107,27 +153,19 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               rel="noopener noreferrer"
               onClick={handleClick}
               aria-label={`访问 ${site.name}`}
-              className="group relative flex h-12 items-center gap-2.5 rounded-lg border border-border/80 bg-card px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/40 hover:shadow-xs select-none"
+              className={`group relative flex h-12 items-center gap-2.5 rounded-lg border bg-card px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/40 hover:shadow-xs select-none ${
+                site.isPinned ? "border-amber-500/30 bg-amber-500/[0.03] dark:border-amber-400/30" : "border-border/80"
+              }`}
             >
-              <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border/50 bg-muted/60 p-0.5 transition-transform duration-150 group-hover:scale-105">
-                {iconSrc && imageLoaded ? (
-                  <img
-                    src={iconSrc}
-                    alt={`${site.name} 图标`}
-                    className="h-full w-full object-contain rounded-xs"
-                    loading="lazy"
-                  />
-                ) : (
-                  <span className="text-[11px] font-bold text-muted-foreground select-none">
-                    {initial}
-                  </span>
-                )}
-              </div>
+              <SiteIcon iconSrc={iconSrc} name={site.name} size="compact" />
 
-              <div className="flex-1 min-w-0 pr-1">
+              <div className="flex-1 min-w-0 pr-1 flex items-center gap-1.5">
                 <span className="block truncate text-xs sm:text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                   {site.name}
                 </span>
+                {site.isPinned && (
+                  <Pin className="h-3 w-3 text-amber-500 dark:text-amber-400 fill-current shrink-0" />
+                )}
               </div>
 
               <div className="shrink-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -142,6 +180,12 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
           >
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-semibold text-sm text-foreground">{site.name}</span>
+              {site.isPinned && (
+                <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-medium">
+                  <Pin className="h-2.5 w-2.5 fill-current" />
+                  置顶
+                </span>
+              )}
               {site.category?.name && (
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                   {site.category.name}
@@ -174,31 +218,28 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
       aria-label={`访问 ${site.name}`}
       className="group relative block h-full select-none"
     >
-      <div className="relative flex h-full items-start gap-3.5 rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-card-hover">
+      <div className={`relative flex h-full items-start gap-3.5 rounded-xl border bg-card p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-card-hover ${
+        site.isPinned ? "border-amber-500/30 bg-amber-500/[0.02] dark:border-amber-400/30" : "border-border/80"
+      }`}>
         {/* 网站图标 */}
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-muted/50 p-1 transition-transform duration-200 group-hover:scale-105">
-          {iconSrc && imageLoaded ? (
-            <img
-              src={iconSrc}
-              alt={`${site.name} 图标`}
-              className="h-full w-full object-contain rounded-sm"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center rounded text-sm font-bold text-muted-foreground">
-              {initial}
-            </div>
-          )}
-        </div>
+        <SiteIcon iconSrc={iconSrc} name={site.name} size="standard" />
 
         {/* 网站标题与描述 */}
         <div className="flex-1 min-w-0 pr-6">
-          <h3
-            className="text-sm sm:text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-150 group-hover:text-primary line-clamp-1"
-            title={site.name}
-          >
-            {site.name}
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3
+              className="text-sm sm:text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-150 group-hover:text-primary line-clamp-1"
+              title={site.name}
+            >
+              {site.name}
+            </h3>
+            {site.isPinned && (
+              <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                <Pin className="h-2.5 w-2.5 fill-current" />
+                置顶
+              </span>
+            )}
+          </div>
           {site.description ? (
             <p
               className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed"
@@ -233,3 +274,4 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
     </Link>
   )
 }
+

@@ -14,7 +14,10 @@ export async function getCategories() {
       include: {
         sites: {
           where: { isPublished: true },
-          orderBy: { order: 'asc' },
+          orderBy: [
+            { isPinned: 'desc' },
+            { order: 'asc' },
+          ],
         },
       },
     })
@@ -32,7 +35,10 @@ export async function getCategoryBySlug(slug: string) {
       include: {
         sites: {
           where: { isPublished: true },
-          orderBy: { order: 'asc' },
+          orderBy: [
+            { isPinned: 'desc' },
+            { order: 'asc' },
+          ],
         },
       },
     })
@@ -126,6 +132,7 @@ export async function getCategoryById(id: string) {
 export async function createCategory(data: {
   name: string
   slug: string
+  icon?: string | null
   order?: number
 }) {
   try {
@@ -133,6 +140,7 @@ export async function createCategory(data: {
       data: {
         name: data.name,
         slug: data.slug,
+        icon: data.icon || null,
         order: data.order ?? 0,
       },
     })
@@ -148,6 +156,7 @@ export async function createCategory(data: {
 export async function updateCategory(id: string, data: {
   name?: string
   slug?: string
+  icon?: string | null
   order?: number
 }) {
   try {
@@ -162,6 +171,25 @@ export async function updateCategory(id: string, data: {
   } catch (error) {
     console.error("Error updating category:", error)
     return { success: false, error: "Failed to update category" }
+  }
+}
+
+export async function updateCategoriesOrder(items: Array<{ id: string; order: number }>) {
+  try {
+    await Promise.all(
+      items.map(item =>
+        prisma.category.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        })
+      )
+    )
+    revalidatePath("/admin/categories")
+    revalidatePath("/")
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating categories order:", error)
+    return { success: false, error: "Failed to update categories order" }
   }
 }
 
@@ -184,7 +212,10 @@ export async function deleteCategory(id: string) {
 export async function getSites() {
   try {
     const sites = await prisma.site.findMany({
-      orderBy: { order: 'asc' },
+      orderBy: [
+        { isPinned: 'desc' },
+        { order: 'asc' },
+      ],
       include: {
         category: true,
       },
@@ -202,6 +233,7 @@ export async function getSitesWithPagination(params: {
   categoryId?: string
   search?: string
   isPublished?: boolean
+  isPinned?: boolean
   submitterIp?: string
 }) {
   try {
@@ -227,6 +259,10 @@ export async function getSitesWithPagination(params: {
       where.isPublished = params.isPublished
     }
 
+    if (params.isPinned !== undefined) {
+      where.isPinned = params.isPinned
+    }
+
     if (params.submitterIp === "true") {
       where.submitterIp = { not: null }
     } else if (params.submitterIp === "false") {
@@ -238,7 +274,10 @@ export async function getSitesWithPagination(params: {
         where,
         skip,
         take: pageSize,
-        orderBy: { order: 'asc' },
+        orderBy: [
+          { isPinned: 'desc' },
+          { order: 'asc' },
+        ],
         include: {
           category: true,
         },
@@ -306,6 +345,7 @@ export async function createSite(data: {
   submitterIp?: string
   categoryId: string
   isPublished?: boolean
+  isPinned?: boolean
   order?: number
 }) {
   try {
@@ -319,6 +359,7 @@ export async function createSite(data: {
         submitterIp: data.submitterIp,
         categoryId: data.categoryId,
         isPublished: data.isPublished ?? false,
+        isPinned: data.isPinned ?? false,
         order: data.order ?? 0,
       },
       include: {
@@ -344,6 +385,7 @@ export async function updateSite(id: string, data: {
   submitterIp?: string
   categoryId?: string
   isPublished?: boolean
+  isPinned?: boolean
   order?: number
 }) {
   try {
@@ -379,6 +421,33 @@ export async function deleteSite(id: string) {
   } catch (error) {
     console.error("Error deleting site:", error)
     return { success: false, error: "Failed to delete site" }
+  }
+}
+
+export async function toggleSitePinned(id: string) {
+  try {
+    const currentSite = await prisma.site.findUnique({
+      where: { id },
+      select: { isPinned: true },
+    })
+
+    if (!currentSite) {
+      return { success: false, error: "Site not found" }
+    }
+
+    const site = await prisma.site.update({
+      where: { id },
+      data: { isPinned: !currentSite.isPinned },
+      include: {
+        category: true,
+      },
+    })
+    revalidatePath("/admin/sites")
+    revalidatePath("/")
+    return { success: true, data: site }
+  } catch (error) {
+    console.error("Error toggling site pinned status:", error)
+    return { success: false, error: "Failed to toggle site pinned status" }
   }
 }
 
