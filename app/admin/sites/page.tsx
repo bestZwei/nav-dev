@@ -42,7 +42,6 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink } from "lucide-react"
@@ -322,8 +321,7 @@ export default function AdminSitesPage() {
 
           {/* 重置按钮 */}
           {(filterCategory !== "all" || filterStatus !== "all" || filterPinned !== "all" || filterSubmitter !== "all") && (
-            <TooltipProvider>
-              <Tooltip>
+                          <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
@@ -337,8 +335,7 @@ export default function AdminSitesPage() {
                 <TooltipContent>
                   <p>重置筛选</p>
                 </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                          </Tooltip>
           )}
         </div>
 
@@ -443,8 +440,7 @@ export default function AdminSitesPage() {
 
                       {/* 置顶切换开关 */}
                       <TableCell className="text-center">
-                        <TooltipProvider>
-                          <Tooltip>
+                                                  <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 variant={site.isPinned ? "default" : "ghost"}
@@ -463,8 +459,7 @@ export default function AdminSitesPage() {
                             <TooltipContent>
                               <p>{site.isPinned ? "点击取消置顶" : "点击置顶该网站"}</p>
                             </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                                                  </Tooltip>
                       </TableCell>
 
                       {/* 状态 */}
@@ -492,8 +487,7 @@ export default function AdminSitesPage() {
                       {/* 操作 */}
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <TooltipProvider>
-                            <Tooltip>
+                                                      <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
@@ -507,11 +501,9 @@ export default function AdminSitesPage() {
                               <TooltipContent>
                                 <p>{site.isPublished ? "取消发布" : "立即发布"}</p>
                               </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                                      </Tooltip>
 
-                          <TooltipProvider>
-                            <Tooltip>
+                                                      <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
@@ -525,11 +517,9 @@ export default function AdminSitesPage() {
                               <TooltipContent>
                                 <p>编辑网站</p>
                               </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                                      </Tooltip>
 
-                          <TooltipProvider>
-                            <Tooltip>
+                                                      <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
@@ -543,8 +533,7 @@ export default function AdminSitesPage() {
                               <TooltipContent>
                                 <p>删除网站</p>
                               </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                                      </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>

@@ -33,7 +33,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
@@ -378,8 +377,7 @@ export default function AdminCategoriesPage() {
                         {/* 快捷上移/下移按钮 */}
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <TooltipProvider>
-                              <Tooltip>
+                                                          <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
@@ -394,11 +392,9 @@ export default function AdminCategoriesPage() {
                                 <TooltipContent>
                                   <p>上移一位</p>
                                 </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                                          </Tooltip>
 
-                            <TooltipProvider>
-                              <Tooltip>
+                                                          <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
@@ -413,16 +409,14 @@ export default function AdminCategoriesPage() {
                                 <TooltipContent>
                                   <p>下移一位</p>
                                 </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                                          </Tooltip>
                           </div>
                         </TableCell>
 
                         {/* 操作按钮 */}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <TooltipProvider>
-                              <Tooltip>
+                                                          <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
@@ -436,11 +430,9 @@ export default function AdminCategoriesPage() {
                                 <TooltipContent>
                                   <p>编辑分类</p>
                                 </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                                          </Tooltip>
 
-                            <TooltipProvider>
-                              <Tooltip>
+                                                          <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
@@ -454,8 +446,7 @@ export default function AdminCategoriesPage() {
                                 <TooltipContent>
                                   <p>删除分类</p>
                                 </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                                                          </Tooltip>
                           </div>
                         </TableCell>
                       </TableRow>
