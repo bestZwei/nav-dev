@@ -16,7 +16,7 @@ export default function DataManagementPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
         {/* 导入数据 - 主要操作 */}
         <Card className="border-primary/20 bg-primary/5">

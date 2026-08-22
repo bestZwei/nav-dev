@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -257,10 +257,9 @@ export default function AdminSitesPage() {
   }
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4">
       {/* 筛选器工具栏 */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
           {/* 分类筛选 */}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>分类</FieldLabel>
@@ -344,21 +343,17 @@ export default function AdminSitesPage() {
           )}
         </div>
 
-        <Button onClick={handleCreate} className="gap-1.5">
-          <Plus className="h-4 w-4" />
-          新增网站
-        </Button>
-      </div>
-
       {/* 网站列表卡片 */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>收录你的宝藏网站</CardTitle>
-            <span className="text-xs text-muted-foreground">
-              共 {pagination?.total || 0} 个网站
-            </span>
-          </div>
+          <CardTitle>收录你的宝藏网站</CardTitle>
+          <CardDescription>共 {pagination?.total || 0} 个网站</CardDescription>
+          <CardAction>
+            <Button onClick={handleCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              新增网站
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent>
           {loading ? (

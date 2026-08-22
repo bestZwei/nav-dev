@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -247,7 +247,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* 提示信息栏 */}
       <div className="bg-primary/5 border border-primary/20 rounded-lg p-3.5 flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
@@ -266,20 +266,16 @@ export default function AdminCategoriesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">分类管理</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                管理分类图标、自定义排序与网址归属，调整前台导航展示结构
-              </p>
-            </div>
-            <CardAction>
-              <Button onClick={handleCreate} className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                新增分类
-              </Button>
-            </CardAction>
-          </div>
+          <CardTitle>分类，让导航井井有条</CardTitle>
+          <CardDescription>
+            共 {pagination?.total || 0} 个分类，拖拽调整前台导航展示顺序
+          </CardDescription>
+          <CardAction>
+            <Button onClick={handleCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              新增分类
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent>
           {loading ? (

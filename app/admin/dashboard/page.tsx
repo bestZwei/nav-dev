@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* 统计卡片 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {siteStats.map((stat) => (
