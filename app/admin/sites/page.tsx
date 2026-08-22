@@ -392,20 +392,20 @@ export default function AdminSitesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-14 text-center">图标</TableHead>
-                    <TableHead>名称 & 描述</TableHead>
-                    <TableHead className="w-36">分类</TableHead>
-                    <TableHead className="w-24 text-center">置顶推荐</TableHead>
-                    <TableHead className="w-24 text-center">状态</TableHead>
-                    <TableHead className="w-28 text-center">来源</TableHead>
-                    <TableHead className="text-right w-36">操作</TableHead>
+                    <TableHead className="w-20 min-w-[72px] text-center whitespace-nowrap">图标</TableHead>
+                    <TableHead className="min-w-[180px] whitespace-nowrap">名称 & 描述</TableHead>
+                    <TableHead className="w-36 whitespace-nowrap">分类</TableHead>
+                    <TableHead className="w-24 text-center whitespace-nowrap">置顶推荐</TableHead>
+                    <TableHead className="w-24 text-center whitespace-nowrap">状态</TableHead>
+                    <TableHead className="w-28 text-center whitespace-nowrap">来源</TableHead>
+                    <TableHead className="text-right w-36 whitespace-nowrap">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sites.map((site) => (
                     <TableRow key={site.id} className={site.isPinned ? "bg-amber-500/5" : ""}>
                       {/* 图标 */}
-                      <TableCell className="text-center">
+                      <TableCell className="text-center w-20 min-w-[72px]">
                         <div className="flex items-center justify-center">
                           {site.iconUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element

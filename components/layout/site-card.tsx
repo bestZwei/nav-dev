@@ -185,9 +185,8 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-semibold text-sm text-foreground">{site.name}</span>
               {site.isPinned && (
-                <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                  <Pin className="h-2.5 w-2.5 fill-current" />
-                  置顶
+                <span title="置顶推荐" className="inline-flex items-center">
+                  <Pin className="h-3 w-3 text-amber-500 fill-amber-500" />
                 </span>
               )}
               {site.category?.name && (
@@ -240,9 +239,8 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               {site.name}
             </h3>
             {site.isPinned && (
-              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0.2 text-[10px] font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                <Pin className="h-2.5 w-2.5 fill-current" />
-                置顶
+              <span title="置顶推荐" className="inline-flex shrink-0">
+                <Pin className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
               </span>
             )}
           </div>

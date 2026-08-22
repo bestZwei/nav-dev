@@ -33,9 +33,11 @@ export default async function HomePage() {
             <section key={category.id} id={`category-${category.slug}`}>
               <div className="flex items-center justify-between mb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
-                    <CategoryIcon icon={category.icon} className="h-4 w-4" size={16} />
-                  </div>
+                  {category.icon && (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
+                      <CategoryIcon icon={category.icon} className="h-4 w-4" size={16} />
+                    </div>
+                  )}
                   <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground/95">{category.name}</h2>
                   {category.sites && category.sites.length > 0 && (
                     <Badge variant="secondary" className="px-1.5 py-0 text-[11px] font-medium h-5 rounded-full">

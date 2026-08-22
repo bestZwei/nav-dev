@@ -39,9 +39,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     >
       <div className="mb-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
-            <CategoryIcon icon={(category as any).icon} className="h-5 w-5" size={20} />
-          </div>
+          {(category as any).icon && (
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
+              <CategoryIcon icon={(category as any).icon} className="h-5 w-5" size={20} />
+            </div>
+          )}
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground/95">{category.name}</h1>
           {category.sites && category.sites.length > 0 && (
             <Badge variant="secondary" className="px-2 py-0 text-[11px] font-medium h-5 rounded-full">

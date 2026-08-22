@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CategoryIcon, POPULAR_CATEGORY_ICONS } from "@/components/category-icon"
-import { Search, Upload, Link as LinkIcon, Trash2, Check, Sparkles, Image as ImageIcon } from "lucide-react"
+import { Search, Upload, Link as LinkIcon, Trash2, Check, Sparkles, Image as ImageIcon, Plus } from "lucide-react"
 
 interface CategoryIconPickerProps {
   value?: string | null
@@ -23,14 +23,21 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [customUrl, setCustomUrl] = useState("")
+  const [activeGroup, setActiveGroup] = useState<string>("全部")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const filteredIcons = POPULAR_CATEGORY_ICONS.filter(
-    (item) =>
+  const groups = ["全部", "智能科技", "研发编程", "创意设计", "办公效率", "知识教育", "社交网络", "生活娱乐", "常用收藏"]
+
+  const filteredIcons = POPULAR_CATEGORY_ICONS.filter((item) => {
+    const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.label.toLowerCase().includes(search.toLowerCase()) ||
-      item.category.toLowerCase().includes(search.toLowerCase())
-  )
+      item.group.toLowerCase().includes(search.toLowerCase())
+
+    const matchesGroup = activeGroup === "全部" || item.group === activeGroup
+
+    return matchesSearch && matchesGroup
+  })
 
   const handleSelectIcon = (iconName: string) => {
     onChange(iconName)
@@ -86,37 +93,43 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
             <Button
               type="button"
               variant="outline"
-              className="h-10 px-3 flex items-center gap-2.5 justify-start min-w-[160px] border-dashed hover:border-primary/50 transition-colors"
+              className="h-10 px-3 flex items-center gap-2.5 justify-start min-w-[180px] border-dashed hover:border-primary/50 transition-colors"
             >
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary border border-primary/20 shrink-0">
-                <CategoryIcon icon={value} className="h-4 w-4" size={16} />
-              </div>
+              {value ? (
+                <div className={`flex h-6 w-6 items-center justify-center rounded-md border shrink-0 ${selectedItem?.color || "bg-primary/10 text-primary border-primary/20"}`}>
+                  <CategoryIcon icon={value} className="h-3.5 w-3.5" size={14} />
+                </div>
+              ) : (
+                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 text-muted-foreground/50 shrink-0">
+                  <Plus className="h-3.5 w-3.5" />
+                </div>
+              )}
               <span className="text-xs truncate font-medium">
-                {value ? (selectedItem ? `${selectedItem.label} (${selectedItem.name})` : "自定义图标") : "选择分类图标..."}
+                {value ? (selectedItem ? `${selectedItem.label} (${selectedItem.name})` : "自定义图标") : "未设置（点击添加图标）"}
               </span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[340px] p-0" align="start">
+          <PopoverContent className="w-[360px] p-0" align="start">
             <Tabs defaultValue="preset" className="w-full">
               <div className="p-2 border-b">
                 <TabsList className="grid grid-cols-3 w-full h-8">
                   <TabsTrigger value="preset" className="text-xs">
-                    <Sparkles className="h-3.5 w-3.5 mr-1" />
+                    <Sparkles className="h-3.5 w-3.5 mr-1 text-amber-500" />
                     精选图标
                   </TabsTrigger>
                   <TabsTrigger value="url" className="text-xs">
-                    <LinkIcon className="h-3.5 w-3.5 mr-1" />
+                    <LinkIcon className="h-3.5 w-3.5 mr-1 text-blue-500" />
                     图片链接
                   </TabsTrigger>
                   <TabsTrigger value="upload" className="text-xs">
-                    <Upload className="h-3.5 w-3.5 mr-1" />
+                    <Upload className="h-3.5 w-3.5 mr-1 text-emerald-500" />
                     本地上传
                   </TabsTrigger>
                 </TabsList>
               </div>
 
-              {/* Tab 1: 常用 Lucide 图标库 */}
-              <TabsContent value="preset" className="p-2 space-y-2 m-0 focus-visible:outline-none">
+              {/* Tab 1: 常用 Lucide 图标库（分类别、多色彩丰富呈现） */}
+              <TabsContent value="preset" className="p-2.5 space-y-2.5 m-0 focus-visible:outline-none">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
@@ -126,8 +139,27 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                     className="h-8 pl-8 text-xs"
                   />
                 </div>
+
+                {/* 分组过滤器 */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide text-[11px]">
+                  {groups.map((group) => (
+                    <button
+                      key={group}
+                      type="button"
+                      onClick={() => setActiveGroup(group)}
+                      className={`px-2 py-0.5 rounded-full whitespace-nowrap transition-colors ${
+                        activeGroup === group
+                          ? "bg-primary text-primary-foreground font-medium"
+                          : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      {group}
+                    </button>
+                  ))}
+                </div>
+
                 <ScrollArea className="h-[210px] pr-2">
-                  <div className="grid grid-cols-5 gap-1.5 p-1">
+                  <div className="grid grid-cols-4 gap-2 p-1">
                     {filteredIcons.map((item) => {
                       const isSelected = value === item.name
                       return (
@@ -135,23 +167,28 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                           key={item.name}
                           type="button"
                           onClick={() => handleSelectIcon(item.name)}
-                          title={`${item.label} (${item.name})`}
-                          className={`flex flex-col items-center justify-center p-2 rounded-lg text-center transition-all hover:bg-accent hover:scale-105 active:scale-95 group relative ${
+                          title={`${item.label} (${item.name}) - ${item.group}`}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg text-center transition-all hover:scale-105 active:scale-95 group relative border ${
                             isSelected
-                              ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30"
-                              : "text-muted-foreground hover:text-foreground bg-muted/40"
+                              ? "ring-2 ring-primary border-primary bg-accent shadow-xs"
+                              : "border-border/60 hover:border-primary/40 bg-card hover:bg-accent/40"
                           }`}
                         >
-                          <CategoryIcon
-                            icon={item.name}
-                            className={`h-4 w-4 ${isSelected ? "text-primary-foreground" : "text-foreground/80 group-hover:text-foreground"}`}
-                            size={16}
-                          />
-                          <span className="text-[10px] mt-1 truncate max-w-full scale-90 leading-tight">
+                          <div className={`flex h-7 w-7 items-center justify-center rounded-md border mb-1.5 transition-transform group-hover:scale-110 ${item.color}`}>
+                            <CategoryIcon
+                              icon={item.name}
+                              className="h-4 w-4"
+                              size={16}
+                            />
+                          </div>
+                          <span className="text-[11px] font-medium truncate max-w-full leading-tight text-foreground/90">
+                            {item.label}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground/70 truncate max-w-full font-mono scale-95">
                             {item.name}
                           </span>
                           {isSelected && (
-                            <span className="absolute top-0.5 right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-white text-primary text-[8px] font-bold">
+                            <span className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[9px] font-bold">
                               ✓
                             </span>
                           )}
@@ -223,8 +260,8 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
               {/* Footer: 清除图标 */}
               {value && (
                 <div className="p-2 border-t bg-muted/20 flex justify-between items-center">
-                  <span className="text-[11px] text-muted-foreground truncate max-w-[180px]">
-                    已选: {value.startsWith("data:") ? "本地图片" : value}
+                  <span className="text-[11px] text-muted-foreground truncate max-w-[200px]">
+                    已设置: {value.startsWith("data:") ? "本地图片" : value}
                   </span>
                   <Button
                     type="button"
@@ -252,7 +289,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
             title="移除图标"
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            移除
+            不使用图标
           </Button>
         )}
       </div>
