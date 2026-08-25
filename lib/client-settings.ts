@@ -15,7 +15,7 @@ export interface PublicSettings {
   enableSubmission: boolean
   submissionMaxPerDay: number
   githubUrl: string | null
-  defaultLanguage: "zh" | "en"
+  defaultLanguage: string
 }
 
 export const defaultSettings: PublicSettings = {

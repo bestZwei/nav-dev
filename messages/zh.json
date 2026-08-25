@@ -12,10 +12,7 @@
   },
   "locale": {
     "switch": "切换语言",
-    "switchedToZh": "已切换为中文",
-    "switchedToEn": "Switched to English",
-    "chinese": "中文",
-    "english": "English"
+    "switchedTo": "已切换为{language}"
   },
   "theme": {
     "toggle": "切换主题",
@@ -504,8 +501,6 @@
       "faviconHint": "浏览器标签图标，建议尺寸：32x32 或 16x16 像素",
       "defaultLanguageLabel": "默认语言",
       "defaultLanguageHint": "未设置语言偏好的访客将使用此语言",
-      "langZh": "中文",
-      "langEn": "English",
       "trackingLabel": "启用访问统计",
       "trackingHint": "记录网站访问次数，用于数据统计",
       "submissionLabel": "启用网站收录",

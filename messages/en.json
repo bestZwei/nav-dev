@@ -12,10 +12,7 @@
   },
   "locale": {
     "switch": "Switch language",
-    "switchedToZh": "Switched to Chinese",
-    "switchedToEn": "Switched to English",
-    "chinese": "中文",
-    "english": "English"
+    "switchedTo": "Switched to {language}"
   },
   "theme": {
     "toggle": "Toggle theme",
@@ -504,8 +501,6 @@
       "faviconHint": "Browser tab icon; 32x32 or 16x16 px recommended",
       "defaultLanguageLabel": "Default language",
       "defaultLanguageHint": "Used for visitors without a language preference",
-      "langZh": "中文",
-      "langEn": "English",
       "trackingLabel": "Enable visit tracking",
       "trackingHint": "Record site visits for analytics",
       "submissionLabel": "Enable site submission",

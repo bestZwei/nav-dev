@@ -4,6 +4,7 @@ import { prisma } from "./prisma"
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
+import { isLocale, type Locale } from "./i18n"
 
 // ==================== Categories ====================
 
@@ -624,11 +625,11 @@ export async function updateSystemSettings(data: {
   enableSubmission?: boolean
   submissionMaxPerDay?: number
   githubUrl?: string
-  defaultLanguage?: "zh" | "en"
+  defaultLanguage?: Locale
 }) {
   try {
     // 校验默认语言取值
-    if (data.defaultLanguage && data.defaultLanguage !== "zh" && data.defaultLanguage !== "en") {
+    if (data.defaultLanguage && !isLocale(data.defaultLanguage)) {
       return { success: false, error: "Invalid defaultLanguage" }
     }
 

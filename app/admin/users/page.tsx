@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Loader2, Plus, Trash2, Info, Zap, Link2, PanelBottom } from "lucide-react"
 import { getSystemSettings, updateSystemSettings } from "@/lib/actions"
 import { useTranslations } from "next-intl"
+import { locales, localeNames, isLocale, type Locale } from "@/lib/i18n"
 import {
   Select,
   SelectContent,
@@ -38,7 +39,7 @@ interface SystemSettingsData {
   showIcp: boolean
   icpNumber: string | undefined
   icpLink: string | undefined
-  defaultLanguage: "zh" | "en"
+  defaultLanguage: Locale
 }
 
 const sections = [
@@ -95,7 +96,7 @@ export default function AdminSettingsPage() {
         icpLink: result.data.icpLink || undefined,
         enableSubmission: result.data.enableSubmission ?? true,
         submissionMaxPerDay: result.data.submissionMaxPerDay ?? 3,
-        defaultLanguage: result.data.defaultLanguage === "en" ? "en" : "zh",
+        defaultLanguage: isLocale(result.data.defaultLanguage) ? result.data.defaultLanguage : "zh",
       })
     }
   }
@@ -258,15 +259,18 @@ export default function AdminSettingsPage() {
                   <Select
                     value={settings.defaultLanguage}
                     onValueChange={(value) =>
-                      setSettings({ ...settings, defaultLanguage: value as "zh" | "en" })
+                      setSettings({ ...settings, defaultLanguage: value as Locale })
                     }
                   >
                     <SelectTrigger id="default-language" className="w-44">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="zh">{t("langZh")}</SelectItem>
-                      <SelectItem value="en">{t("langEn")}</SelectItem>
+                      {locales.map((l) => (
+                        <SelectItem key={l} value={l}>
+                          {localeNames[l]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-muted-foreground">
