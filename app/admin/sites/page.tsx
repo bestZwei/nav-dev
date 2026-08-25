@@ -145,9 +145,18 @@ export default function AdminSitesPage() {
     }
   }
 
+  // 持有最新的 loadSites/loadCategories，供仅需挂载或按指定依赖触发的 effect 调用，
+  // 避免 exhaustive-deps 缺依赖告警，同时不引入额外重新请求
+  const loadSitesRef = useRef(loadSites)
+  const loadCategoriesRef = useRef(loadCategories)
   useEffect(() => {
-    loadSites(1)
-    loadCategories()
+    loadSitesRef.current = loadSites
+    loadCategoriesRef.current = loadCategories
+  })
+
+  useEffect(() => {
+    loadSitesRef.current(1)
+    loadCategoriesRef.current()
   }, [])
 
   // 重置筛选
@@ -162,7 +171,7 @@ export default function AdminSitesPage() {
 
   // 筛选条件改变时重新加载
   useEffect(() => {
-    loadSites(1)
+    loadSitesRef.current(1)
   }, [filterCategory, filterStatus, filterPinned, filterSubmitter])
 
   // 搜索防抖，300ms 后重新加载
@@ -171,7 +180,7 @@ export default function AdminSitesPage() {
       isFirstSearch.current = false
       return
     }
-    const timer = setTimeout(() => loadSites(1), 300)
+    const timer = setTimeout(() => loadSitesRef.current(1), 300)
     return () => clearTimeout(timer)
   }, [searchKeyword])
 

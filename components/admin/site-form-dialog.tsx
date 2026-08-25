@@ -67,18 +67,25 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
     isPinned: false,
   })
 
-  // 加载分类列表
+  // 加载分类列表（仅挂载时执行；默认分类通过函数式更新读取最新表单值）
   useEffect(() => {
+    let cancelled = false
     async function loadCategories() {
       const result = await getAllCategories()
-      if (result.success && result.data) {
-        setCategories(result.data)
-        if (result.data.length > 0 && !formData.categoryId) {
-          setFormData(prev => ({ ...prev, categoryId: result.data[0].id }))
+      if (!cancelled && result.success && result.data) {
+        const list = result.data
+        setCategories(list)
+        if (list.length > 0) {
+          setFormData(prev =>
+            prev.categoryId ? prev : { ...prev, categoryId: list[0].id }
+          )
         }
       }
     }
     loadCategories()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // 编辑模式：填充表单数据

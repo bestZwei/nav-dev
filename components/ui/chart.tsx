@@ -147,7 +147,10 @@ const ChartTooltipContent = React.forwardRef<
   ) => {
     const { config } = useChart()
 
-    const items = (payload || []) as unknown as TooltipPayloadItem[]
+    const items = React.useMemo(
+      () => (payload || []) as unknown as TooltipPayloadItem[],
+      [payload]
+    )
 
     const tooltipLabel = React.useMemo(() => {
       if (hideLabel || !items.length) {
@@ -178,11 +181,11 @@ const ChartTooltipContent = React.forwardRef<
     }, [
       label,
       labelFormatter,
-      payload,
       hideLabel,
       labelClassName,
       config,
       labelKey,
+      items,
     ])
 
     if (!active || !items.length) {

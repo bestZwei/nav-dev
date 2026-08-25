@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import {
@@ -117,8 +117,14 @@ export default function AdminCategoriesPage() {
     }
   }
 
+  // 持有最新的 loadCategories，挂载 effect 仅执行一次且不缺依赖
+  const loadCategoriesRef = useRef(loadCategories)
   useEffect(() => {
-    loadCategories(1)
+    loadCategoriesRef.current = loadCategories
+  })
+
+  useEffect(() => {
+    loadCategoriesRef.current(1)
   }, [])
 
   // 保存排序到数据库
