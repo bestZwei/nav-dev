@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import {
@@ -41,7 +41,8 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe } from "lucide-react"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
 import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter } from "@/lib/actions"
 import { toast } from "sonner"
@@ -88,6 +89,10 @@ export default function AdminSitesPage() {
   const [filterPinned, setFilterPinned] = useState<string>("all")
   const [filterSubmitter, setFilterSubmitter] = useState<string>("all")
 
+  // 搜索状态
+  const [searchKeyword, setSearchKeyword] = useState("")
+  const isFirstSearch = useRef(true)
+
   // 分页状态
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -101,6 +106,7 @@ export default function AdminSitesPage() {
       const result = await getSitesWithPagination({
         page: currentPage,
         pageSize: currentPageSize,
+        search: searchKeyword.trim() || undefined,
         categoryId: filterCategory !== "all" ? filterCategory : undefined,
         isPublished: filterStatus !== "all" ? (filterStatus === "true") : undefined,
         isPinned: filterPinned !== "all" ? (filterPinned === "true") : undefined,
@@ -147,6 +153,7 @@ export default function AdminSitesPage() {
     setFilterStatus("all")
     setFilterPinned("all")
     setFilterSubmitter("all")
+    setSearchKeyword("")
     setPage(1)
   }
 
@@ -154,6 +161,16 @@ export default function AdminSitesPage() {
   useEffect(() => {
     loadSites(1)
   }, [filterCategory, filterStatus, filterPinned, filterSubmitter])
+
+  // 搜索防抖，300ms 后重新加载
+  useEffect(() => {
+    if (isFirstSearch.current) {
+      isFirstSearch.current = false
+      return
+    }
+    const timer = setTimeout(() => loadSites(1), 300)
+    return () => clearTimeout(timer)
+  }, [searchKeyword])
 
   // 每页数量改变时重新加载
   const handlePageSizeChange = (value: string) => {
@@ -260,6 +277,18 @@ export default function AdminSitesPage() {
     <div className="space-y-4">
       {/* 筛选器工具栏 */}
       <div className="flex flex-wrap items-center gap-4">
+          {/* 搜索 */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="搜索名称/描述/网址"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-[220px] pl-8"
+            />
+          </div>
+
           {/* 分类筛选 */}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>分类</FieldLabel>
@@ -303,7 +332,7 @@ export default function AdminSitesPage() {
               <SelectContent>
                 <SelectItem value="all">全部状态</SelectItem>
                 <SelectItem value="true">已发布</SelectItem>
-                <SelectItem value="false">草稿</SelectItem>
+                <SelectItem value="false">未发布</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -478,7 +507,7 @@ export default function AdminSitesPage() {
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="text-muted-foreground">
-                            草稿
+                            未发布
                           </Badge>
                         )}
                       </TableCell>
