@@ -6,6 +6,7 @@ import { ScrollHeader } from "./scroll-header"
 import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
 import { JinrishiciCardWrapper } from "./jinrishici-card-wrapper"
+import { SiteDetailProvider } from "./site-detail-provider"
 import { Badge } from "@/components/ui/badge"
 import { usePoetryToggle } from "@/hooks/use-poetry-toggle"
 
@@ -16,6 +17,7 @@ interface Site {
   description: string
   iconUrl: string | null
   isPinned?: boolean
+  hasDetail?: boolean
   category?: {
     name: string
   } | null
@@ -32,6 +34,7 @@ interface SearchableLayoutProps {
   siteName?: string
   currentCategory?: string
   useAnchorLinks?: boolean
+  enableSiteDetail?: boolean
   children: React.ReactNode
 }
 
@@ -41,6 +44,7 @@ export function SearchableLayout({
   siteName,
   currentCategory,
   useAnchorLinks,
+  enableSiteDetail,
   children,
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -70,7 +74,8 @@ export function SearchableLayout({
   const hasPoetryRightSpace = poetryMounted && isPoetryVisible
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <SiteDetailProvider initialEnableSiteDetail={enableSiteDetail}>
+      <div className="min-h-screen flex flex-col">
       <ScrollHeader
         categories={allCategories}
         siteName={siteName}
@@ -136,6 +141,7 @@ export function SearchableLayout({
       </main>
 
       <Footer />
-    </div>
+      </div>
+    </SiteDetailProvider>
   )
 }

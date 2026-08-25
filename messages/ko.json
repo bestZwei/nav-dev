@@ -296,7 +296,25 @@
       "createSuccess": "생성됨",
       "updateSuccess": "업데이트됨",
       "createSuccessDesc": "사이트 \"{name}\"이(가) 생성되었습니다",
-      "updateSuccessDesc": "사이트 \"{name}\"이(가) 업데이트되었습니다"
+      "updateSuccessDesc": "사이트 \"{name}\"이(가) 업데이트되었습니다",
+      "tabBasic": "기본 정보",
+      "tabDetail": "상세 콘텐츠",
+      "detailContentLabel": "상세 소개 (Markdown)",
+      "detailPlaceholder": "Markdown 지원: 제목, 목록, 링크, 이미지, 코드 블록, 표…\n\n## 사용 방법\n\n1. 웹사이트 열기\n2. 계정 등록\n3. 시작하기",
+      "mdEdit": "편집",
+      "mdPreview": "미리보기",
+      "previewEmpty": "미리볼 콘텐츠가 없습니다",
+      "detailHint": "비워 두면 상세 팝업 기능을 켜도 이 사이트는 바로 이동합니다",
+      "screenshotsLabel": "스크린샷 관리",
+      "screenshotUrlPlaceholder": "이미지 URL을 입력하고 Enter 또는 추가 클릭",
+      "screenshotUrlInvalid": "유효한 http/https 이미지 URL을 입력하세요",
+      "addByUrl": "추가",
+      "uploadScreenshot": "스크린샷 업로드",
+      "uploadDisabled": "이 환경에서는 파일 업로드를 사용할 수 없습니다(데이터베이스 쓰기 불가). URL을 사용하세요",
+      "screenshotLimit": "최대 {count}장까지 가능합니다",
+      "screenshotTypeInvalid": "png/jpg/jpeg/webp/gif/avif 이미지만 지원합니다",
+      "screenshotTooLarge": "이미지 크기는 {size}MB 이하여야 합니다",
+      "screenshotReadFailed": "파일을 읽지 못했습니다. 다시 시도하세요"
     },
     "import": {
       "title": "데이터 가져오기",
@@ -527,7 +545,9 @@
       "friendLinksHint": "파트너 사이트나 자주 쓰는 사이트 링크를 추가하세요",
       "addLink": "링크 추가",
       "linkNamePlaceholder": "링크 이름",
-      "linkUrlPlaceholder": "링크 URL"
+      "linkUrlPlaceholder": "링크 URL",
+      "siteDetailLabel": "사이트 상세 팝업",
+      "siteDetailHint": "켜면 상세 콘텐츠가 있는 사이트는 카드 클릭 시 소개 팝업(소개·스크린샷·사용법)을 표시한 후 이동합니다"
     },
     "profile": {
       "admin": "관리자",
@@ -566,5 +586,14 @@
       "changeFailedDesc": "비밀번호를 변경할 수 없습니다. 잠시 후 다시 시도해 주세요",
       "confirmChange": "확인"
     }
+  },
+  "siteDetail": {
+    "visit": "웹사이트 방문",
+    "screenshots": "스크린샷",
+    "introduction": "상세 소개",
+    "loadError": "상세 정보를 불러오지 못했습니다",
+    "retry": "재시도",
+    "emptyHint": "상세 소개가 아직 없습니다",
+    "noScreenshots": "아직 스크린샷이 없습니다"
   }
 }

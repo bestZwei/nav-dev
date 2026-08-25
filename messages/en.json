@@ -296,7 +296,25 @@
       "createSuccess": "Created",
       "updateSuccess": "Updated",
       "createSuccessDesc": "Site \"{name}\" has been created",
-      "updateSuccessDesc": "Site \"{name}\" has been updated"
+      "updateSuccessDesc": "Site \"{name}\" has been updated",
+      "tabBasic": "Basic Info",
+      "tabDetail": "Detail Content",
+      "detailContentLabel": "Introduction (Markdown)",
+      "detailPlaceholder": "Markdown supported: headings, lists, links, images, code blocks, tables…\n\n## How to Use\n\n1. Open the website\n2. Sign up\n3. Get started",
+      "mdEdit": "Edit",
+      "mdPreview": "Preview",
+      "previewEmpty": "Nothing to preview",
+      "detailHint": "Leave empty to keep direct redirect for this site when the detail dialog feature is enabled",
+      "screenshotsLabel": "Screenshots",
+      "screenshotUrlPlaceholder": "Enter an image URL, then press Enter or click Add",
+      "screenshotUrlInvalid": "Please enter a valid http/https image URL",
+      "addByUrl": "Add",
+      "uploadScreenshot": "Upload Screenshot",
+      "uploadDisabled": "File upload is unavailable in this environment (database not writable). Use URL instead",
+      "screenshotLimit": "Up to {count} screenshots",
+      "screenshotTypeInvalid": "Only png/jpg/jpeg/webp/gif/avif images are supported",
+      "screenshotTooLarge": "Image must not exceed {size}MB",
+      "screenshotReadFailed": "Failed to read the file, please retry"
     },
     "import": {
       "title": "Import data",
@@ -527,7 +545,9 @@
       "friendLinksHint": "Add partner or frequently used links",
       "addLink": "Add link",
       "linkNamePlaceholder": "Link name",
-      "linkUrlPlaceholder": "Link URL"
+      "linkUrlPlaceholder": "Link URL",
+      "siteDetailLabel": "Site Detail Dialog",
+      "siteDetailHint": "When enabled, sites with detail content show an introduction dialog (text, screenshots, usage) before redirecting"
     },
     "profile": {
       "admin": "Admin",
@@ -566,5 +586,14 @@
       "changeFailedDesc": "Unable to change the password, please try again later",
       "confirmChange": "Confirm"
     }
+  },
+  "siteDetail": {
+    "visit": "Visit Website",
+    "screenshots": "Screenshots",
+    "introduction": "Introduction",
+    "loadError": "Failed to load details",
+    "retry": "Retry",
+    "emptyHint": "No detailed introduction yet",
+    "noScreenshots": "No screenshots yet"
   }
 }

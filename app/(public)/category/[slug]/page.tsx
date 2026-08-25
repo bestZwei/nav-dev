@@ -28,13 +28,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   // 将所有网站扁平化，用于客户端搜索
   const flatSites = allSites?.filter(site => site.isPublished) || []
 
-  return (
-    <SearchableLayout
-      allCategories={allCategories || []}
-      flatSites={flatSites}
-      siteName={settings?.siteName}
-      currentCategory={slug}
-    >
+    return (
+      <SearchableLayout
+        allCategories={allCategories || []}
+        flatSites={flatSites}
+        siteName={settings?.siteName}
+        currentCategory={slug}
+        enableSiteDetail={settings?.enableSiteDetail}
+      >
       <div className="mb-6">
         <div className="flex items-center gap-3">
           {(category as any).icon && (

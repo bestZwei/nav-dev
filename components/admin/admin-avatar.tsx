@@ -59,8 +59,13 @@ export function AdminAvatar() {
             console.error("No user data in response:", data)
           }
         } else if (res.status !== 401) {
-          // 只在非 401 错误时打印日志 (401 是未登录,属于正常情况)
-          console.error("Failed to fetch user, status:", res.status)
+          // 仅在 API 真的返回了 JSON 错误时记录日志；5xx 或 HTML 响应
+          // （如反向代理 530 / 网关超时）属于网络层问题，避免在控制台刷红
+          const ctype = res.headers.get("content-type") || ""
+          if (ctype.includes("application/json")) {
+            const body = await res.json().catch(() => null)
+            console.error("Failed to fetch user:", res.status, body)
+          }
         }
       } catch (error) {
         console.error("Failed to fetch user:", error)

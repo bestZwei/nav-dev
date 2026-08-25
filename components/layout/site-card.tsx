@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl"
 import { ExternalLink, Copy, Check, Pin } from "lucide-react"
 import { useFaviconService, getProxiedFaviconUrl, proxyIconUrlIfPossible } from "@/hooks/use-favicon-service"
 import { useCardDensity } from "@/hooks/use-card-density"
+import { useSiteDetail } from "@/components/layout/site-detail-provider"
+import { SiteDetailDialog } from "@/components/layout/site-detail-dialog"
 import {
   Tooltip,
   TooltipContent,
@@ -29,6 +31,7 @@ export interface SiteItemProps {
   iconUrl: string | null
   categoryId?: string
   isPinned?: boolean
+  hasDetail?: boolean
   category?: {
     name: string
   } | null
@@ -112,12 +115,17 @@ function SiteIcon({
 
 export function SiteCard({ site, density: propDensity }: SiteCardProps) {
   const [copied, setCopied] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
   const { service } = useFaviconService()
   const { density: contextDensity } = useCardDensity()
+  const { enableSiteDetail } = useSiteDetail()
   const t = useTranslations("siteCard")
 
   const density = propDensity || contextDensity
   const isCompact = density === "compact"
+
+  // 详情弹窗开启条件：全局开关开启 且 站点已填写详情内容
+  const useDetailDialog = enableSiteDetail && site.hasDetail === true
 
   const iconSrc = useMemo(() => {
     if (site.iconUrl) return proxyIconUrlIfPossible(site.iconUrl)
@@ -131,9 +139,19 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
   }, [site.iconUrl, site.url, service])
 
   const handleClick = () => {
-    if (navigator.sendBeacon) {
+    if (navigator.sendBeacon && !useDetailDialog) {
       const data = JSON.stringify({ siteId: site.id })
       navigator.sendBeacon("/api/visit", new Blob([data], { type: "application/json" }))
+    }
+  }
+
+  // 弹窗模式下拦截默认导航，改为打开详情弹窗
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (useDetailDialog) {
+      e.preventDefault()
+      setDetailOpen(true)
+    } else {
+      handleClick()
     }
   }
 
@@ -148,6 +166,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
   // ================= 紧凑模式 (Compact Mode) =================
   if (isCompact) {
     return (
+      <>
       <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -155,7 +174,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               href={site.url}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={handleClick}
+              onClick={handleCardClick}
               aria-label={t("visit", { name: site.name })}
               className={`group relative flex h-12 items-center gap-2.5 rounded-lg border px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs select-none ${
                 site.isPinned
@@ -212,16 +231,25 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+      {detailOpen && (
+        <SiteDetailDialog
+          site={site}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+        />
+      )}
+      </>
     )
   }
 
   // ================= 标准模式 (Standard Mode) =================
   return (
+    <>
     <Link
       href={site.url}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={handleClick}
+      onClick={handleCardClick}
       aria-label={t("visit", { name: site.name })}
       className="group relative block h-full select-none"
     >
@@ -280,6 +308,14 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
         </div>
       </div>
     </Link>
+    {detailOpen && (
+      <SiteDetailDialog
+        site={site}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
+    )}
+    </>
   )
 }
 

@@ -296,7 +296,25 @@
       "createSuccess": "创建成功",
       "updateSuccess": "更新成功",
       "createSuccessDesc": "网站「{name}」已创建",
-      "updateSuccessDesc": "网站「{name}」已更新"
+      "updateSuccessDesc": "网站「{name}」已更新",
+      "tabBasic": "基本信息",
+      "tabDetail": "详情内容",
+      "detailContentLabel": "详细介绍（Markdown）",
+      "detailPlaceholder": "支持 Markdown 语法：标题、列表、链接、图片、代码块、表格…\n\n## 使用方法\n\n1. 打开网站\n2. 注册账号\n3. 开始使用",
+      "mdEdit": "编辑",
+      "mdPreview": "预览",
+      "previewEmpty": "暂无内容可预览",
+      "detailHint": "留空则该站点在开启详情弹窗功能后仍保持直接跳转",
+      "screenshotsLabel": "截图管理",
+      "screenshotUrlPlaceholder": "输入图片 URL 后回车或点击添加",
+      "screenshotUrlInvalid": "请输入有效的 http/https 图片链接",
+      "addByUrl": "添加",
+      "uploadScreenshot": "上传截图",
+      "uploadDisabled": "当前环境不支持文件上传（数据库不可写），请使用 URL 方式添加",
+      "screenshotLimit": "最多添加 {count} 张截图",
+      "screenshotTypeInvalid": "仅支持 png/jpg/jpeg/webp/gif/avif 图片",
+      "screenshotTooLarge": "图片大小不能超过 {size}MB",
+      "screenshotReadFailed": "文件读取失败，请重试"
     },
     "import": {
       "title": "导入数据",
@@ -527,7 +545,9 @@
       "friendLinksHint": "添加合作伙伴或常用网站链接",
       "addLink": "添加链接",
       "linkNamePlaceholder": "链接名称",
-      "linkUrlPlaceholder": "链接地址"
+      "linkUrlPlaceholder": "链接地址",
+      "siteDetailLabel": "站点详情弹窗",
+      "siteDetailHint": "开启后，填写了详情内容的站点点击卡片先弹出图文介绍（介绍、截图、使用方法），再跳转目标网站"
     },
     "profile": {
       "admin": "管理员",
@@ -566,5 +586,14 @@
       "changeFailedDesc": "无法修改密码，请稍后重试",
       "confirmChange": "确认修改"
     }
+  },
+  "siteDetail": {
+    "visit": "访问网站",
+    "screenshots": "截图预览",
+    "introduction": "详细介绍",
+    "loadError": "详情加载失败",
+    "retry": "重试",
+    "emptyHint": "暂无详细介绍内容",
+    "noScreenshots": "暂无截图"
   }
 }

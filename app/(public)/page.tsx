@@ -18,12 +18,13 @@ export default async function HomePage() {
   // 将所有网站扁平化，用于客户端搜索
   const flatSites = allSites?.filter(site => site.isPublished) || []
 
-  return (
-    <SearchableLayout
-      allCategories={allCategories || []}
-      flatSites={flatSites}
-      siteName={settings?.siteName}
-    >
+    return (
+      <SearchableLayout
+        allCategories={allCategories || []}
+        flatSites={flatSites}
+        siteName={settings?.siteName}
+        enableSiteDetail={settings?.enableSiteDetail}
+      >
       <div className="space-y-8">
         {/* 分类内容 */}
         {categories && categories.length > 0 ? (

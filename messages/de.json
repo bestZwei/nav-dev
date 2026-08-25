@@ -296,7 +296,25 @@
       "createSuccess": "Erstellt",
       "updateSuccess": "Aktualisiert",
       "createSuccessDesc": "Seite „{name}“ wurde erstellt",
-      "updateSuccessDesc": "Seite „{name}“ wurde aktualisiert"
+      "updateSuccessDesc": "Seite „{name}“ wurde aktualisiert",
+      "tabBasic": "Grunddaten",
+      "tabDetail": "Detailinhalt",
+      "detailContentLabel": "Vorstellung (Markdown)",
+      "detailPlaceholder": "Markdown wird unterstützt: Überschriften, Listen, Links, Bilder, Codeblöcke, Tabellen…\n\n## Anleitung\n\n1. Website öffnen\n2. Konto registrieren\n3. Loslegen",
+      "mdEdit": "Bearbeiten",
+      "mdPreview": "Vorschau",
+      "previewEmpty": "Nichts anzuzeigen",
+      "detailHint": "Leer lassen, damit die Seite bei aktivierter Detailfunktion direkt weiterleitet",
+      "screenshotsLabel": "Screenshot-Verwaltung",
+      "screenshotUrlPlaceholder": "Bild-URL eingeben, dann Enter oder Hinzufügen klicken",
+      "screenshotUrlInvalid": "Bitte eine gültige http/https-Bild-URL eingeben",
+      "addByUrl": "Hinzufügen",
+      "uploadScreenshot": "Screenshot hochladen",
+      "uploadDisabled": "Datei-Upload ist in dieser Umgebung nicht verfügbar (Datenbank schreibgeschützt). Bitte URL verwenden",
+      "screenshotLimit": "Bis zu {count} Screenshots",
+      "screenshotTypeInvalid": "Nur png/jpg/jpeg/webp/gif/avif Bilder werden unterstützt",
+      "screenshotTooLarge": "Bild darf {size} MB nicht überschreiten",
+      "screenshotReadFailed": "Datei konnte nicht gelesen werden, bitte erneut versuchen"
     },
     "import": {
       "title": "Daten importieren",
@@ -527,7 +545,9 @@
       "friendLinksHint": "Links zu Partnern oder oft genutzten Seiten hinzufügen",
       "addLink": "Link hinzufügen",
       "linkNamePlaceholder": "Linkname",
-      "linkUrlPlaceholder": "Link-URL"
+      "linkUrlPlaceholder": "Link-URL",
+      "siteDetailLabel": "Website-Detaildialog",
+      "siteDetailHint": "Wenn aktiviert, zeigen Websites mit Detailinhalt einen Vorstellungsdialog (Text, Screenshots, Nutzung) vor der Weiterleitung"
     },
     "profile": {
       "admin": "Admin",
@@ -566,5 +586,14 @@
       "changeFailedDesc": "Passwort konnte nicht geändert werden, bitte später erneut versuchen",
       "confirmChange": "Bestätigen"
     }
+  },
+  "siteDetail": {
+    "visit": "Website besuchen",
+    "screenshots": "Screenshots",
+    "introduction": "Detaillierte Vorstellung",
+    "loadError": "Details konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "emptyHint": "Noch keine detaillierte Vorstellung",
+    "noScreenshots": "Noch keine Screenshots vorhanden"
   }
 }

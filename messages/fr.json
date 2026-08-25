@@ -296,7 +296,25 @@
       "createSuccess": "Créé",
       "updateSuccess": "Mis à jour",
       "createSuccessDesc": "Le site « {name} » a été créé",
-      "updateSuccessDesc": "Le site « {name} » a été mis à jour"
+      "updateSuccessDesc": "Le site « {name} » a été mis à jour",
+      "tabBasic": "Infos de base",
+      "tabDetail": "Contenu détaillé",
+      "detailContentLabel": "Présentation (Markdown)",
+      "detailPlaceholder": "Markdown pris en charge : titres, listes, liens, images, blocs de code, tableaux…\n\n## Mode d'emploi\n\n1. Ouvrir le site\n2. Créer un compte\n3. Commencer",
+      "mdEdit": "Éditer",
+      "mdPreview": "Aperçu",
+      "previewEmpty": "Rien à prévisualiser",
+      "detailHint": "Laissez vide pour conserver la redirection directe pour ce site lorsque la fonction détail est activée",
+      "screenshotsLabel": "Gestion des captures",
+      "screenshotUrlPlaceholder": "Saisissez une URL d'image, puis Entrée ou Ajouter",
+      "screenshotUrlInvalid": "Veuillez saisir une URL d'image http/https valide",
+      "addByUrl": "Ajouter",
+      "uploadScreenshot": "Téléverser une capture",
+      "uploadDisabled": "Le téléversement est indisponible dans cet environnement (base non inscriptible). Utilisez une URL",
+      "screenshotLimit": "Jusqu'à {count} captures d'écran",
+      "screenshotTypeInvalid": "Seules les images png/jpg/jpeg/webp/gif/avif sont acceptées",
+      "screenshotTooLarge": "L'image ne doit pas dépasser {size} Mo",
+      "screenshotReadFailed": "Échec de lecture du fichier, veuillez réessayer"
     },
     "import": {
       "title": "Importer des données",
@@ -527,7 +545,9 @@
       "friendLinksHint": "Ajouter des liens de partenaires ou de sites fréquemment utilisés",
       "addLink": "Ajouter un lien",
       "linkNamePlaceholder": "Nom du lien",
-      "linkUrlPlaceholder": "URL du lien"
+      "linkUrlPlaceholder": "URL du lien",
+      "siteDetailLabel": "Dialogue de détail du site",
+      "siteDetailHint": "Si activé, les sites avec contenu détaillé affichent un dialogue de présentation (texte, captures, usage) avant la redirection"
     },
     "profile": {
       "admin": "Admin",
@@ -566,5 +586,14 @@
       "changeFailedDesc": "Impossible de changer le mot de passe, veuillez réessayer plus tard",
       "confirmChange": "Confirmer"
     }
+  },
+  "siteDetail": {
+    "visit": "Visiter le site",
+    "screenshots": "Captures d'écran",
+    "introduction": "Présentation détaillée",
+    "loadError": "Échec du chargement des détails",
+    "retry": "Réessayer",
+    "emptyHint": "Pas encore de présentation détaillée",
+    "noScreenshots": "Aucune capture d'écran pour l'instant"
   }
 }

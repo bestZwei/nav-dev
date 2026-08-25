@@ -34,6 +34,7 @@ interface SystemSettingsData {
   showAdminLink: boolean
   enableVisitTracking: boolean
   enableSubmission: boolean
+  enableSiteDetail: boolean
   submissionMaxPerDay: number
   githubUrl: string | undefined
   showIcp: boolean
@@ -67,6 +68,7 @@ export default function AdminSettingsPage() {
     showAdminLink: true,
     enableVisitTracking: true,
     enableSubmission: true,
+    enableSiteDetail: false,
     submissionMaxPerDay: 3,
     githubUrl: undefined,
     showIcp: false,
@@ -95,6 +97,7 @@ export default function AdminSettingsPage() {
         icpNumber: result.data.icpNumber || undefined,
         icpLink: result.data.icpLink || undefined,
         enableSubmission: result.data.enableSubmission ?? true,
+        enableSiteDetail: result.data.enableSiteDetail ?? false,
         submissionMaxPerDay: result.data.submissionMaxPerDay ?? 3,
         defaultLanguage: isLocale(result.data.defaultLanguage) ? result.data.defaultLanguage : "zh",
       })
@@ -294,6 +297,19 @@ export default function AdminSettingsPage() {
                     id="enable-tracking"
                     checked={settings.enableVisitTracking}
                     onCheckedChange={(checked) => setSettings({ ...settings, enableVisitTracking: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="enable-site-detail">{t("siteDetailLabel")}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t("siteDetailHint")}
+                    </p>
+                  </div>
+                  <Switch
+                    id="enable-site-detail"
+                    checked={settings.enableSiteDetail}
+                    onCheckedChange={(checked) => setSettings({ ...settings, enableSiteDetail: checked })}
                   />
                 </div>
                 <div className="space-y-4">

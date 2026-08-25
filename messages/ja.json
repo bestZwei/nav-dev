@@ -296,7 +296,25 @@
       "createSuccess": "作成しました",
       "updateSuccess": "更新しました",
       "createSuccessDesc": "サイト「{name}」を作成しました",
-      "updateSuccessDesc": "サイト「{name}」を更新しました"
+      "updateSuccessDesc": "サイト「{name}」を更新しました",
+      "tabBasic": "基本情報",
+      "tabDetail": "詳細コンテンツ",
+      "detailContentLabel": "詳細紹介（Markdown）",
+      "detailPlaceholder": "Markdown 対応：見出し、リスト、リンク、画像、コードブロック、表…\n\n## 使い方\n\n1. サイトを開く\n2. アカウント登録\n3. 利用開始",
+      "mdEdit": "編集",
+      "mdPreview": "プレビュー",
+      "previewEmpty": "プレビューする内容がありません",
+      "detailHint": "空欄の場合、詳細ダイアログ機能が有効でもこのサイトは直接ジャンプします",
+      "screenshotsLabel": "スクリーンショット管理",
+      "screenshotUrlPlaceholder": "画像 URL を入力して Enter または追加をクリック",
+      "screenshotUrlInvalid": "有効な http/https 画像 URL を入力してください",
+      "addByUrl": "追加",
+      "uploadScreenshot": "スクリーンショットをアップロード",
+      "uploadDisabled": "この環境ではファイルアップロードは利用できません（データベース書き込み不可）。URL をご利用ください",
+      "screenshotLimit": "スクリーンショットは最大 {count} 枚です",
+      "screenshotTypeInvalid": "png/jpg/jpeg/webp/gif/avif のみ対応しています",
+      "screenshotTooLarge": "画像サイズは {size}MB 以下にしてください",
+      "screenshotReadFailed": "ファイルの読み取りに失敗しました。再試行してください"
     },
     "import": {
       "title": "データをインポート",
@@ -527,7 +545,9 @@
       "friendLinksHint": "パートナーサイトやよく使うサイトのリンクを追加",
       "addLink": "リンクを追加",
       "linkNamePlaceholder": "リンク名",
-      "linkUrlPlaceholder": "リンク URL"
+      "linkUrlPlaceholder": "リンク URL",
+      "siteDetailLabel": "サイト詳細ダイアログ",
+      "siteDetailHint": "有効にすると、詳細コンテンツがあるサイトはカードクリック時に紹介ダイアログ（紹介・スクリーンショット・使い方）を表示してから移動します"
     },
     "profile": {
       "admin": "管理者",
@@ -566,5 +586,14 @@
       "changeFailedDesc": "パスワードを変更できません。しばらくしてからもう一度お試しください",
       "confirmChange": "変更する"
     }
+  },
+  "siteDetail": {
+    "visit": "サイトを見る",
+    "screenshots": "スクリーンショット",
+    "introduction": "詳細紹介",
+    "loadError": "詳細の読み込みに失敗しました",
+    "retry": "再試行",
+    "emptyHint": "詳細な紹介はまだありません",
+    "noScreenshots": "スクリーンショットはまだありません"
   }
 }

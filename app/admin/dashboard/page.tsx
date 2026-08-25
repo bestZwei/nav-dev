@@ -126,6 +126,13 @@ export default function AdminDashboardPage() {
     return t("rangeDays", { days })
   }
 
+  // 解析响应 body，失败时返回 null（用于网络层 HTML 错误页等异常情况）
+  async function safeJson(res: Response): Promise<unknown> {
+    const ctype = res.headers.get("content-type") || ""
+    if (!ctype.includes("application/json")) return null
+    return res.json().catch(() => null)
+  }
+
   // 加载统计数据
   useEffect(() => {
     async function loadStats() {
@@ -150,14 +157,14 @@ export default function AdminDashboardPage() {
           fetch("/api/admin/stats/category-distribution"),
         ])
 
-        const sitesData = await sitesRes.json()
-        const categoriesData = await categoriesRes.json()
-        const usersData = await usersRes.json()
-        const visitsData = await visitsRes.json()
-        const frequencyData = await frequencyRes.json()
-        const todayData = await todayRes.json()
-        const contentData = await contentRes.json()
-        const distributionData = await distributionRes.json()
+        const sitesData = ((await safeJson(sitesRes)) ?? {}) as { total?: number }
+        const categoriesData = ((await safeJson(categoriesRes)) ?? {}) as { total?: number }
+        const usersData = ((await safeJson(usersRes)) ?? {}) as { total?: number }
+        const visitsData = ((await safeJson(visitsRes)) ?? {}) as { totalVisits?: number; topSites?: unknown[] }
+        const frequencyData = ((await safeJson(frequencyRes)) ?? { frequency: [] }) as { frequency: Array<{ date: string; count: number }> }
+        const todayData = ((await safeJson(todayRes)) ?? { today: 0, growthRate: null }) as { today: number; growthRate: number | null }
+        const contentData = ((await safeJson(contentRes)) ?? { pendingSubmissions: 0, weekNewSites: 0, missingIcons: 0 }) as { pendingSubmissions: number; weekNewSites: number; missingIcons: number }
+        const distributionData = ((await safeJson(distributionRes)) ?? { data: [], total: 0 }) as { data: Array<{ category: string; count: number; share: number }>; total: number }
 
         setSiteStats([
           { titleKey: "statSites", value: sitesData.total || 0, loading: false, icon: Globe },
@@ -170,11 +177,11 @@ export default function AdminDashboardPage() {
           { titleKey: "statMissingIcons", value: contentData.missingIcons || 0, loading: false, icon: Globe, href: "/admin/sites" },
         ])
 
-        setVisitStats(visitsData)
-        setFrequencyData(frequencyData)
-        setTodayStats(todayData)
-        setContentStats(contentData)
-        setCategoryDistribution(distributionData)
+        setVisitStats(visitsData as unknown as Parameters<typeof setVisitStats>[0])
+        setFrequencyData(frequencyData as unknown as Parameters<typeof setFrequencyData>[0])
+        setTodayStats(todayData as unknown as Parameters<typeof setTodayStats>[0])
+        setContentStats(contentData as unknown as Parameters<typeof setContentStats>[0])
+        setCategoryDistribution(distributionData as unknown as Parameters<typeof setCategoryDistribution>[0])
       } catch (error) {
         console.error("Failed to load stats:", error)
       } finally {

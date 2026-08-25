@@ -267,6 +267,11 @@ export async function getSitesWithPagination(params: {
         orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
         include: {
           category: true,
+          // 编辑回填用：仅元数据，不含 base64 data 字段
+          screenshots: {
+            orderBy: { order: 'asc' },
+            select: { id: true, source: true, url: true, mimeType: true, order: true },
+          },
         },
       }),
       prisma.site.count({ where }),
@@ -323,6 +328,162 @@ export async function getSiteById(id: string) {
   }
 }
 
+// ==================== Site Detail ====================
+
+const MAX_SCREENSHOTS_PER_SITE = 10
+const MAX_SCREENSHOT_BYTES = 2 * 1024 * 1024
+const ALLOWED_SCREENSHOT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif']
+
+export interface ScreenshotInput {
+  source: 'URL' | 'UPLOAD'
+  url?: string
+  data?: string
+  mimeType?: string
+  order?: number
+}
+
+// 校验截图入参：数量、类型、大小、字段完整性
+function validateScreenshots(screenshots: ScreenshotInput[]): string | null {
+  if (screenshots.length > MAX_SCREENSHOTS_PER_SITE) {
+    return `Screenshots exceed the limit of ${MAX_SCREENSHOTS_PER_SITE}`
+  }
+  for (const shot of screenshots) {
+    if (shot.source === 'URL') {
+      if (!shot.url || typeof shot.url !== 'string') {
+        return 'URL screenshot requires a valid url'
+      }
+      try {
+        const parsed = new URL(shot.url)
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          return 'Screenshot url must use http or https'
+        }
+      } catch {
+        return 'Screenshot url is invalid'
+      }
+    } else if (shot.source === 'UPLOAD') {
+      if (!shot.data || typeof shot.data !== 'string') {
+        return 'Uploaded screenshot requires base64 data'
+      }
+      if (!shot.mimeType || !ALLOWED_SCREENSHOT_MIME_TYPES.includes(shot.mimeType)) {
+        return 'Screenshot mime type is not allowed'
+      }
+      const approxBytes = Math.floor((shot.data.length * 3) / 4)
+      if (approxBytes > MAX_SCREENSHOT_BYTES) {
+        return 'Screenshot exceeds the 2MB size limit'
+      }
+    } else {
+      return 'Invalid screenshot source'
+    }
+  }
+  return null
+}
+
+// 规范化详情内容：空白文本视为无内容
+function normalizeDetailContent(content?: string | null): string | null {
+  if (content === undefined || content === null) return null
+  const trimmed = content.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+// 计算冗余标志：详情文本或截图任一存在即为 true
+function computeHasDetail(detailContent: string | null, screenshotCount: number): boolean {
+  return detailContent !== null || screenshotCount > 0
+}
+
+// 替换式重写站点截图记录（事务内调用）
+function buildScreenshotCreateMany(siteId: string, screenshots: ScreenshotInput[]) {
+  return screenshots.map((shot, index) => ({
+    siteId,
+    source: shot.source,
+    url: shot.source === 'URL' ? shot.url! : null,
+    data: shot.source === 'UPLOAD' ? shot.data! : null,
+    mimeType: shot.source === 'UPLOAD' ? shot.mimeType! : null,
+    order: index,
+  }))
+}
+
+// 获取站点详情（弹窗渲染与管理编辑回填共用）
+// 仅返回截图元数据与展示地址，不返回 base64 大字段
+export async function getSiteDetail(siteId: string) {
+  try {
+    const site = await prisma.site.findUnique({
+      where: { id: siteId },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        description: true,
+        iconUrl: true,
+        isPublished: true,
+        detailContent: true,
+        hasDetail: true,
+        category: {
+          select: { name: true, slug: true },
+        },
+        screenshots: {
+          orderBy: { order: 'asc' },
+          select: { id: true, source: true, url: true, order: true },
+        },
+      },
+    })
+    if (!site) {
+      return { success: false, error: "Site not found" }
+    }
+    const data = {
+      ...site,
+      screenshots: site.screenshots.map(shot => ({
+        id: shot.id,
+        order: shot.order,
+        displayUrl: shot.source === 'URL' ? shot.url! : `/api/screenshots/${shot.id}`,
+      })),
+    }
+    return { success: true, data }
+  } catch (error) {
+    console.error("Error fetching site detail:", error)
+    return { success: false, error: "Failed to fetch site detail" }
+  }
+}
+
+// 截图上传能力检测：对 SystemSettings 执行一次同值写探测（不产生数据变化）
+// 结果内存缓存 60 秒，避免频繁探测
+let capabilityCache: { supported: boolean; checkedAt: number; reason?: string } | null = null
+
+export async function checkScreenshotUploadCapability() {
+  const now = Date.now()
+  if (capabilityCache && now - capabilityCache.checkedAt < 60_000) {
+    return { success: true, data: capabilityCache }
+  }
+  try {
+    const probe = await prisma.$transaction(async (tx) => {
+      // 确保设置记录存在
+      const settings = await tx.systemSettings.upsert({
+        where: { id: 'default' },
+        update: {},
+        create: {
+          id: 'default',
+          footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+        },
+      })
+      // 同值写入：验证写权限且不改变任何数据
+      await tx.systemSettings.update({
+        where: { id: settings.id },
+        data: { siteName: settings.siteName },
+      })
+      return true
+    }, { timeout: 10_000 })
+    capabilityCache = { supported: probe, checkedAt: now }
+    return { success: true, data: capabilityCache }
+  } catch (error) {
+    console.warn("Screenshot upload capability check failed:", error)
+    capabilityCache = {
+      supported: false,
+      checkedAt: now,
+      reason: "Database is not writable",
+    }
+    return { success: true, data: capabilityCache }
+  }
+}
+
 export async function createSite(data: {
   name: string
   url: string
@@ -334,25 +495,46 @@ export async function createSite(data: {
   isPublished?: boolean
   isPinned?: boolean
   order?: number
+  detailContent?: string | null
+  screenshots?: ScreenshotInput[]
 }) {
   try {
-    const site = await prisma.site.create({
-      data: {
-        name: data.name,
-        url: data.url,
-        description: data.description,
-        iconUrl: data.iconUrl,
-        submitterContact: data.submitterContact,
-        submitterIp: data.submitterIp,
-        categoryId: data.categoryId,
-        isPublished: data.isPublished ?? false,
-        isPinned: data.isPinned ?? false,
-        order: data.order ?? 0,
-      },
-      include: {
-        category: true,
-      },
+    const detailContent = normalizeDetailContent(data.detailContent)
+    const screenshots = data.screenshots ?? []
+    const validationError = validateScreenshots(screenshots)
+    if (validationError) {
+      return { success: false, error: validationError }
+    }
+    const hasDetail = computeHasDetail(detailContent, screenshots.length)
+
+    const site = await prisma.$transaction(async (tx) => {
+      const created = await tx.site.create({
+        data: {
+          name: data.name,
+          url: data.url,
+          description: data.description,
+          iconUrl: data.iconUrl,
+          submitterContact: data.submitterContact,
+          submitterIp: data.submitterIp,
+          categoryId: data.categoryId,
+          isPublished: data.isPublished ?? false,
+          isPinned: data.isPinned ?? false,
+          order: data.order ?? 0,
+          detailContent,
+          hasDetail,
+        },
+        include: {
+          category: true,
+        },
+      })
+      if (screenshots.length > 0) {
+        await tx.screenshot.createMany({
+          data: buildScreenshotCreateMany(created.id, screenshots),
+        })
+      }
+      return created
     })
+
     revalidatePath("/admin/sites")
     revalidatePath("/")
     revalidatePath(`/category/${site.category?.slug || ''}`)
@@ -374,15 +556,73 @@ export async function updateSite(id: string, data: {
   isPublished?: boolean
   isPinned?: boolean
   order?: number
+  detailContent?: string | null
+  screenshots?: ScreenshotInput[]
 }) {
   try {
-    const site = await prisma.site.update({
-      where: { id },
-      data,
-      include: {
-        category: true,
-      },
+    let detailContent: string | null | undefined = undefined
+    if (data.detailContent !== undefined) {
+      detailContent = normalizeDetailContent(data.detailContent)
+    }
+    const screenshotsProvided = data.screenshots !== undefined
+    const screenshots = data.screenshots ?? []
+    const validationError = validateScreenshots(screenshots)
+    if (validationError) {
+      return { success: false, error: validationError }
+    }
+
+    const site = await prisma.$transaction(async (tx) => {
+      const updateData: Prisma.SiteUpdateInput = {}
+      if (data.name !== undefined) updateData.name = data.name
+      if (data.url !== undefined) updateData.url = data.url
+      if (data.description !== undefined) updateData.description = data.description
+      if (data.iconUrl !== undefined) updateData.iconUrl = data.iconUrl
+      if (data.submitterContact !== undefined) updateData.submitterContact = data.submitterContact
+      if (data.submitterIp !== undefined) updateData.submitterIp = data.submitterIp
+      if (data.categoryId !== undefined) updateData.category = { connect: { id: data.categoryId } }
+      if (data.isPublished !== undefined) updateData.isPublished = data.isPublished
+      if (data.isPinned !== undefined) updateData.isPinned = data.isPinned
+      if (data.order !== undefined) updateData.order = data.order
+
+      // 详情相关：合并现值与新值后统一计算 hasDetail
+      // - 仅传 detailContent → 截图数取现值
+      // - 仅传 screenshots  → 详情文本取现值
+      // - 都传或都不传之外的情况按需补查
+      if (detailContent !== undefined || screenshotsProvided) {
+        const [currentContent, currentShotCount] = await Promise.all([
+          detailContent === undefined
+            ? tx.site.findUnique({ where: { id }, select: { detailContent: true } })
+            : null,
+          !screenshotsProvided
+            ? tx.screenshot.count({ where: { siteId: id } })
+            : null,
+        ])
+        const effectiveContent = detailContent !== undefined
+          ? detailContent
+          : normalizeDetailContent(currentContent?.detailContent)
+        const effectiveShotCount = screenshotsProvided ? screenshots.length : (currentShotCount ?? 0)
+        if (detailContent !== undefined) updateData.detailContent = detailContent
+        updateData.hasDetail = computeHasDetail(effectiveContent, effectiveShotCount)
+      }
+
+      const updated = await tx.site.update({
+        where: { id },
+        data: updateData,
+        include: { category: true },
+      })
+
+      if (screenshotsProvided) {
+        await tx.screenshot.deleteMany({ where: { siteId: id } })
+        if (screenshots.length > 0) {
+          await tx.screenshot.createMany({
+            data: buildScreenshotCreateMany(id, screenshots),
+          })
+        }
+      }
+
+      return updated
     })
+
     revalidatePath("/admin/sites")
     revalidatePath("/")
     revalidatePath(`/category/${site.category?.slug || ''}`)
@@ -623,6 +863,7 @@ export async function updateSystemSettings(data: {
   showAdminLink?: boolean
   enableVisitTracking?: boolean
   enableSubmission?: boolean
+  enableSiteDetail?: boolean
   submissionMaxPerDay?: number
   githubUrl?: string
   defaultLanguage?: Locale
@@ -812,11 +1053,17 @@ export async function exportData() {
       include: {
         sites: {
           orderBy: { order: 'asc' },
+          include: {
+            screenshots: {
+              orderBy: { order: 'asc' },
+              select: { source: true, url: true, data: true, mimeType: true, order: true },
+            },
+          },
         },
       },
     })
 
-    // 导出完整数据（包含描述、排序等所有字段）
+    // 导出完整数据（包含描述、排序、详情内容、截图等所有字段）
     const fullData = categories.map(category => ({
       name: category.name,
       slug: category.slug,
@@ -828,6 +1075,14 @@ export async function exportData() {
         iconUrl: site.iconUrl,
         order: site.order,
         isPublished: site.isPublished,
+        detailContent: site.detailContent,
+        screenshots: site.screenshots.map(shot => ({
+          source: shot.source,
+          url: shot.url,
+          data: shot.data,
+          mimeType: shot.mimeType,
+          order: shot.order,
+        })),
       })),
     }))
 
@@ -929,7 +1184,14 @@ export async function importData(
 
       // 导入网站
       for (const siteData of categoryData.sites) {
-        await prisma.site.create({
+        const detailContent = normalizeDetailContent(siteData.detailContent)
+        const screenshots = Array.isArray(siteData.screenshots)
+          ? siteData.screenshots.filter((shot: ScreenshotInput) =>
+              shot && (shot.source === 'URL' || shot.source === 'UPLOAD'))
+          : []
+        const hasDetail = computeHasDetail(detailContent, screenshots.length)
+
+        const createdSite = await prisma.site.create({
           data: {
             name: siteData.name,
             url: siteData.url,
@@ -938,8 +1200,22 @@ export async function importData(
             categoryId: category.id,
             order: siteData.order || 0,
             isPublished: siteData.isPublished !== undefined ? siteData.isPublished : true,
+            detailContent,
+            hasDetail,
           },
         })
+        if (screenshots.length > 0) {
+          await prisma.screenshot.createMany({
+            data: screenshots.map((shot: ScreenshotInput, index: number) => ({
+              siteId: createdSite.id,
+              source: shot.source,
+              url: shot.source === 'URL' ? shot.url || null : null,
+              data: shot.source === 'UPLOAD' ? shot.data || null : null,
+              mimeType: shot.source === 'UPLOAD' ? shot.mimeType || null : null,
+              order: shot.order !== undefined ? shot.order : index,
+            })),
+          })
+        }
       }
     }
 

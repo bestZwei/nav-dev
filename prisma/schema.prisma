@@ -26,17 +26,20 @@ model Site {
   name             String
   url              String
   description      String
-  iconUrl          String?
+  iconUrl          String?   @map("icon_url")
   submitterContact String?   @map("submitter_contact")
-  submitterIp       String?   @map("submitter_ip")
+  submitterIp       String?  @map("submitter_ip")
   categoryId       String
   category         Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   isPublished      Boolean   @default(false)
   isPinned         Boolean   @default(false)
   order            Int       @default(0)
+  detailContent    String?   @map("detail_content")
+  hasDetail        Boolean   @default(false) @map("has_detail")
   createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   visits           Visit[]
+  screenshots      Screenshot[]
 
   @@index([categoryId])
   @@index([isPublished])
@@ -44,6 +47,26 @@ model Site {
   @@index([categoryId, isPublished])
   @@index([order])
   @@map("Site")
+}
+
+enum ScreenshotSource {
+  URL
+  UPLOAD
+}
+
+model Screenshot {
+  id        String           @id @default(cuid())
+  siteId    String
+  site      Site             @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  source    ScreenshotSource
+  url       String?
+  data      String?
+  mimeType  String?          @map("mime_type")
+  order     Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  @@index([siteId])
+  @@map("Screenshot")
 }
 
 model User {
@@ -80,8 +103,10 @@ model SystemSettings {
   // Visit tracking settings
   enableVisitTracking Boolean @default(true) @map("enable_visit_tracking")
   // Submission settings (网站收录设置)
-  enableSubmission     Boolean @default(true) @map("enable_submission")
+  enableSubmission     Boolean  @default(true) @map("enable_submission")
   submissionMaxPerDay  Int     @default(3) @map("submission_max_per_day")
+  // Site detail dialog (二级详情弹窗)
+  enableSiteDetail     Boolean  @default(false) @map("enable_site_detail")
   // GitHub link
   githubUrl        String?  @map("github_url")
   // Default site language for visitors without a locale cookie (zh/en)
