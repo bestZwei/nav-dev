@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CategoryIconBadge, POPULAR_CATEGORY_ICONS } from "@/components/category-icon"
+import { useTranslations } from "next-intl"
 import { Search, Upload, Link as LinkIcon, Trash2, Check, Sparkles, Image as ImageIcon, Plus } from "lucide-react"
 
 interface CategoryIconPickerProps {
@@ -19,10 +20,11 @@ interface CategoryIconPickerProps {
 }
 
 export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps) {
+  const t = useTranslations("admin.iconPicker")
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [customUrl, setCustomUrl] = useState("")
-  const [activeGroup, setActiveGroup] = useState<string>("全部")
+  const [activeGroupKey, setActiveGroupKey] = useState<string>("all")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [iconScrollNode, setIconScrollNode] = useState<HTMLDivElement | null>(null)
 
@@ -45,7 +47,19 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
     return () => iconScrollNode.removeEventListener("wheel", onWheel)
   }, [iconScrollNode])
 
-  const groups = ["全部", "智能科技", "研发编程", "创意设计", "办公效率", "知识教育", "社交网络", "生活娱乐", "常用收藏"]
+  // 分组 key 到数据 group 值的映射，显示文案走消息 key
+  const groups: Array<{ key: string; match: string | null }> = [
+    { key: "all", match: null },
+    { key: "tech", match: "智能科技" },
+    { key: "dev", match: "研发编程" },
+    { key: "design", match: "创意设计" },
+    { key: "office", match: "办公效率" },
+    { key: "edu", match: "知识教育" },
+    { key: "social", match: "社交网络" },
+    { key: "life", match: "生活娱乐" },
+    { key: "fav", match: "常用收藏" },
+  ]
+  const activeGroup = groups.find((g) => g.key === activeGroupKey)?.match ?? null
 
   const filteredIcons = POPULAR_CATEGORY_ICONS.filter((item) => {
     const matchesSearch =
@@ -53,7 +67,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
       item.label.toLowerCase().includes(search.toLowerCase()) ||
       item.group.toLowerCase().includes(search.toLowerCase())
 
-    const matchesGroup = activeGroup === "全部" || item.group === activeGroup
+    const matchesGroup = activeGroup === null || item.group === activeGroup
 
     return matchesSearch && matchesGroup
   })
@@ -76,13 +90,13 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
     if (!file) return
 
     if (!file.type.startsWith("image/")) {
-      alert("请选择有效的图片文件")
+      alert(t("invalidImage"))
       return
     }
 
     // Limit size to 500KB
     if (file.size > 500 * 1024) {
-      alert("图片大小不能超过 500KB")
+      alert(t("imageTooLarge"))
       return
     }
 
@@ -122,7 +136,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                 </div>
               )}
               <span className="text-xs truncate font-medium">
-                {value ? (selectedItem ? `${selectedItem.label} (${selectedItem.name})` : "自定义图标") : "未设置（点击添加图标）"}
+                {value ? (selectedItem ? `${selectedItem.label} (${selectedItem.name})` : t("customIcon")) : t("notSet")}
               </span>
             </Button>
           </PopoverTrigger>
@@ -135,15 +149,15 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                 <TabsList className="grid grid-cols-3 w-full h-8">
                   <TabsTrigger value="preset" className="text-xs">
                     <Sparkles className="h-3.5 w-3.5 mr-1 text-amber-500" />
-                    精选图标
+                    {t("tabPreset")}
                   </TabsTrigger>
                   <TabsTrigger value="url" className="text-xs">
                     <LinkIcon className="h-3.5 w-3.5 mr-1 text-blue-500" />
-                    图片链接
+                    {t("tabUrl")}
                   </TabsTrigger>
                   <TabsTrigger value="upload" className="text-xs">
                     <Upload className="h-3.5 w-3.5 mr-1 text-emerald-500" />
-                    本地上传
+                    {t("tabUpload")}
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -156,7 +170,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="搜索图标名称或类型..."
+                    placeholder={t("searchPlaceholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="h-8 pl-8 text-xs"
@@ -167,16 +181,16 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                 <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide text-[11px]">
                   {groups.map((group) => (
                     <button
-                      key={group}
+                      key={group.key}
                       type="button"
-                      onClick={() => setActiveGroup(group)}
+                      onClick={() => setActiveGroupKey(group.key)}
                       className={`px-2 py-0.5 rounded-full whitespace-nowrap transition-colors ${
-                        activeGroup === group
+                        activeGroupKey === group.key
                           ? "bg-primary text-primary-foreground font-medium"
                           : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
                       }`}
                     >
-                      {group}
+                      {t(`group_${group.key}` as never)}
                     </button>
                   ))}
                 </div>
@@ -221,7 +235,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                   </div>
                   {filteredIcons.length === 0 && (
                     <div className="py-8 text-center text-xs text-muted-foreground">
-                      未找到相关图标
+                      {t("noIconsFound")}
                     </div>
                   )}
                 </div>
@@ -233,7 +247,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                 className="p-3 space-y-3 m-0 mt-2 focus-visible:outline-none"
               >
                 <div className="space-y-1.5">
-                  <Label className="text-xs">图片 URL 地址</Label>
+                  <Label className="text-xs">{t("urlLabel")}</Label>
                   <Input
                     placeholder="https://example.com/icon.png"
                     value={customUrl}
@@ -241,12 +255,12 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                     className="h-8 text-xs"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    支持 SVG, PNG, WebP 或 JPG 格式图标链接
+                    {t("urlHint")}
                   </p>
                 </div>
                 {customUrl && (
                   <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
-                    <span className="text-xs text-muted-foreground">预览:</span>
+                    <span className="text-xs text-muted-foreground">{t("preview")}</span>
                     <CategoryIconBadge icon={customUrl} size="md" className="h-9 w-9" />
                   </div>
                 )}
@@ -258,7 +272,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                   className="w-full h-8 text-xs"
                 >
                   <Check className="h-3.5 w-3.5 mr-1" />
-                  应用此链接
+                  {t("applyUrl")}
                 </Button>
               </TabsContent>
 
@@ -281,8 +295,8 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <ImageIcon className="h-4 w-4" />
                   </div>
-                  <span className="text-xs font-medium">点击选择本地图标图片</span>
-                  <span className="text-[10px] text-muted-foreground">支持 PNG, SVG, JPG (小于 500KB)</span>
+                  <span className="text-xs font-medium">{t("uploadTitle")}</span>
+                  <span className="text-[10px] text-muted-foreground">{t("uploadHint")}</span>
                 </div>
               </TabsContent>
 
@@ -290,7 +304,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
               {value && (
                 <div className="p-2 border-t bg-muted/20 flex justify-between items-center shrink-0">
                   <span className="text-[11px] text-muted-foreground truncate max-w-[200px]">
-                    已设置: {value.startsWith("data:") ? "本地图片" : value}
+                    {t("setLabel")}{value.startsWith("data:") ? t("localImage") : value}
                   </span>
                   <Button
                     type="button"
@@ -300,7 +314,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                     className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
-                    清除图标
+                    {t("clearIcon")}
                   </Button>
                 </div>
               )}
@@ -315,10 +329,10 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
             size="sm"
             onClick={handleClear}
             className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
-            title="移除图标"
+            title={t("removeIcon")}
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            不使用图标
+            {t("noIconBtn")}
           </Button>
         )}
       </div>

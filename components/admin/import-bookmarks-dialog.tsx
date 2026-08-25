@@ -25,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Upload, AlertTriangle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { importBookmarks } from "@/lib/actions"
+import { useTranslations } from "next-intl"
 
 interface ImportBookmarksDialogProps {
   open: boolean
@@ -36,6 +37,8 @@ export function ImportBookmarksDialog({
   onOpenChange,
 }: ImportBookmarksDialogProps) {
   const router = useRouter()
+  const t = useTranslations("admin.import")
+  const tc = useTranslations("common")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [importMode, setImportMode] = useState<'overwrite' | 'append'>('append')
@@ -50,8 +53,8 @@ export function ImportBookmarksDialog({
       const isJson = file.name.endsWith('.json')
 
       if (!isHtml && !isJson) {
-        toast.error("文件格式错误", {
-          description: "请选择JSON备份文件或Chrome书签文件（.html/.htm）",
+        toast.error(t("fileFormatError"), {
+          description: t("fileFormatErrorDesc"),
         })
         return
       }
@@ -61,8 +64,8 @@ export function ImportBookmarksDialog({
 
   const handleImport = async () => {
     if (!selectedFile) {
-      toast.error("未选择文件", {
-        description: "请先选择要导入的书签文件",
+      toast.error(t("noFileSelected"), {
+        description: t("noFileSelectedDesc"),
       })
       return
     }
@@ -107,7 +110,7 @@ export function ImportBookmarksDialog({
       }
 
       if (result.success) {
-        toast.success("导入成功", {
+        toast.success(t("importSuccess"), {
           description: result.message,
         })
         setSelectedFile(null)
@@ -118,13 +121,13 @@ export function ImportBookmarksDialog({
         router.refresh()
         onOpenChange(false)
       } else {
-        toast.error("导入失败", {
+        toast.error(t("importFailed"), {
           description: result.error,
         })
       }
     } catch (error) {
-      toast.error("导入失败", {
-        description: error instanceof Error ? error.message : "未知错误",
+      toast.error(t("importFailed"), {
+        description: error instanceof Error ? error.message : t("unknownError"),
       })
     } finally {
       setIsImporting(false)
@@ -136,16 +139,16 @@ export function ImportBookmarksDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>导入数据</DialogTitle>
+            <DialogTitle>{t("title")}</DialogTitle>
             <DialogDescription>
-              支持从浏览器导入书签，或导入本系统JSON备份文件
+              {t("desc")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
             {/* 文件选择 - 主要操作 */}
             <div className="space-y-3">
-              <label className="text-sm font-medium">1. 选择文件</label>
+              <label className="text-sm font-medium">{t("step1")}</label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -166,12 +169,12 @@ export function ImportBookmarksDialog({
                     <Upload className="h-8 w-8 text-muted-foreground" />
                     <div className="text-center">
                       <p className="font-medium">
-                        {selectedFile ? selectedFile.name : "点击选择文件"}
+                        {selectedFile ? selectedFile.name : t("selectFile")}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {selectedFile
                           ? `${(selectedFile.size / 1024).toFixed(1)} KB`
-                          : "支持 .json 或 .html/.htm 格式"}
+                          : t("formatHint")}
                       </p>
                     </div>
                   </div>
@@ -181,7 +184,7 @@ export function ImportBookmarksDialog({
 
             {/* 导入模式选择 */}
             <div className="space-y-3">
-              <label className="text-sm font-medium">2. 选择导入模式</label>
+              <label className="text-sm font-medium">{t("step2")}</label>
 
               {/* 追加模式 */}
               <button
@@ -201,9 +204,9 @@ export function ImportBookmarksDialog({
                       : 'border-muted-foreground'
                   }`} />
                   <div>
-                    <p className="font-medium">追加到现有数据</p>
+                    <p className="font-medium">{t("appendTitle")}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      保留现有的所有网站和分类，将新书签添加到末尾。如果分类名称相同，网站会添加到该分类下。
+                      {t("appendDesc")}
                     </p>
                   </div>
                 </div>
@@ -227,9 +230,9 @@ export function ImportBookmarksDialog({
                       : 'border-muted-foreground'
                   }`} />
                   <div>
-                    <p className="font-medium">覆盖现有数据</p>
+                    <p className="font-medium">{t("overwriteTitle")}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      删除所有现有的网站和分类，仅保留导入的书签数据。
+                      {t("overwriteDesc")}
                     </p>
                   </div>
                 </div>
@@ -240,29 +243,28 @@ export function ImportBookmarksDialog({
             {importMode === 'overwrite' && selectedFile && (
               <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle className="font-semibold">危险操作警告</AlertTitle>
+                <AlertTitle className="font-semibold">{t("warningTitle")}</AlertTitle>
                 <AlertDescription className="mt-2">
-                  您选择了<strong>覆盖模式</strong>，这将永久删除所有现有的网站和分类数据！
-                  此操作<strong>不可撤销</strong>，请确保您有备份。
+                  {t("warningPart1")}<strong>{t("overwriteMode")}</strong>{t("warningPart2")}
+                  {t("irreversible")}{t("warningPart3")}
                 </AlertDescription>
               </Alert>
             )}
 
             {/* 格式说明 */}
             <Alert>
-              <AlertTitle className="font-semibold">支持的文件格式</AlertTitle>
+              <AlertTitle className="font-semibold">{t("formatTitle")}</AlertTitle>
               <AlertDescription className="mt-2 text-sm space-y-3">
                 <div>
-                  <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">JSON格式（推荐）</p>
+                  <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">{t("jsonFormatTitle")}</p>
                   <p className="text-muted-foreground text-xs leading-relaxed">
-                    本系统完整备份格式，包含描述、排序、发布状态等所有字段。导入后不会丢失任何数据，适合数据迁移和恢复。
+                    {t("jsonFormatDesc")}
                   </p>
                 </div>
                 <div>
-                  <p className="font-medium text-muted-foreground mb-1">Chrome书签</p>
+                  <p className="font-medium text-muted-foreground mb-1">{t("chromeFormatTitle")}</p>
                   <p className="text-muted-foreground text-xs leading-relaxed">
-                    从Chrome等浏览器导入的书签格式，仅包含名称、URL和图标。如果浏览器书签包含多层嵌套文件夹（如 <code className="px-1 py-0.5 rounded bg-background font-mono">/云服务/Cloudflare</code>），
-                    系统会自动将每个文件夹拆分为独立分类。
+                    {t("chromeFormatDesc")}
                   </p>
                 </div>
               </AlertDescription>
@@ -275,7 +277,7 @@ export function ImportBookmarksDialog({
               onClick={() => onOpenChange(false)}
               disabled={isImporting}
             >
-              取消
+              {tc("cancel")}
             </Button>
             <Button
               onClick={handleImport}
@@ -284,12 +286,12 @@ export function ImportBookmarksDialog({
               {isImporting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  导入中...
+                  {t("importing")}
                 </>
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  导入数据
+                  {t("importBtn")}
                 </>
               )}
             </Button>
@@ -303,30 +305,30 @@ export function ImportBookmarksDialog({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              确认覆盖所有数据？
+              {t("confirmOverwriteTitle")}
             </AlertDialogTitle>
           </AlertDialogHeader>
           <div className="space-y-2 pt-2">
             <div className="font-semibold text-destructive">
-              此操作将永久删除所有现有的网站和分类！
+              {t("confirmOverwriteLead")}
             </div>
             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-              <li>删除所有网站数据</li>
-              <li>删除所有分类数据</li>
-              <li>删除所有访问统计记录（⚠️ 无法恢复）</li>
-              <li>此操作<span className="font-semibold">不可撤销</span></li>
+              <li>{t("deleteSites")}</li>
+              <li>{t("deleteCategories")}</li>
+              <li>{t("deleteVisits")}</li>
+              <li>{t("irreversibleItemPre")}<span className="font-semibold">{t("irreversibleItem")}</span></li>
             </ul>
             <div className="text-sm font-medium pt-2">
-              建议在覆盖前先导出当前数据作为备份。
+              {t("backupAdvice")}
             </div>
             <div className="mt-2 p-2 rounded bg-muted border-l-2 border-muted-foreground">
               <p className="text-xs text-muted-foreground">
-                💡 <strong>提示</strong>：导出的JSON文件不包含访问统计数据，导入后访问记录将丢失。如需保留统计数据，请使用数据库备份。
+                {t("tipDesc")}
               </p>
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isImporting}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={isImporting}>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={performImport}
               disabled={isImporting}
@@ -335,10 +337,10 @@ export function ImportBookmarksDialog({
               {isImporting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  导入中...
+                  {t("importing")}
                 </>
               ) : (
-                "确认覆盖"
+                t("confirmOverwrite")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,28 +1,35 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LocaleToggle } from "@/components/locale-toggle"
 import Link from "next/link"
 import { Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
-// 路径到标题的映射
-const pageTitleMap: Record<string, string> = {
-  "/admin/dashboard": "数据统计",
-  "/admin/sites": "网站管理",
-  "/admin/categories": "分类管理",
-  "/admin/data": "数据管理",
-  "/admin/users": "系统设置",
+// 路径到标题 key 的映射（文案位于 admin.sidebar 命名空间）
+type PageTitleKey = "dashboard" | "sites" | "categories" | "data" | "settings"
+
+const pageTitleKeyMap: Record<string, PageTitleKey> = {
+  "/admin/dashboard": "dashboard",
+  "/admin/sites": "sites",
+  "/admin/categories": "categories",
+  "/admin/data": "data",
+  "/admin/users": "settings",
 }
 
 // 导出供内容区使用的页面标题 hook
 export function usePageTitle(pathname: string) {
-  return pageTitleMap[pathname] || "管理后台"
+  const t = useTranslations("admin.sidebar")
+  const key = pageTitleKeyMap[pathname]
+  return key ? t(key) : t("adminTitle")
 }
 
 export function AdminHeader() {
+  const t = useTranslations("admin.sidebar")
   const [offset, setOffset] = useState(0)
 
   useEffect(() => {
@@ -54,9 +61,10 @@ export function AdminHeader() {
           <Button variant="ghost" size="icon" asChild>
             <Link href="/">
               <Home className="h-5 w-5" />
-              <span className="sr-only">访问网站首页</span>
+              <span className="sr-only">{t("visitSite")}</span>
             </Link>
           </Button>
+          <LocaleToggle />
           <ThemeToggle />
         </div>
       </div>

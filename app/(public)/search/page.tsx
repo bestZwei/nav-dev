@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/footer"
 import { SiteCard } from "@/components/layout/site-card"
 import { searchSites, getAllCategories, getSystemSettings } from "@/lib/actions"
 import { redirect } from "next/navigation"
+import { getTranslations } from "next-intl/server"
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -14,6 +15,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q: query } = await searchParams
   const { data: categories } = await getAllCategories()
   const { data: settings } = await getSystemSettings()
+  const t = await getTranslations("search")
 
   if (!query) {
     redirect("/")
@@ -28,12 +30,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 page-enter">
         <div className="mx-auto max-w-7xl w-full">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">搜索结果</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t("resultsTitle")}</h1>
             <p className="text-muted-foreground mt-2">
-              关键词：<span className="font-semibold text-foreground">「{query}」</span>
+              {t("keyword")}：<span className="font-semibold text-foreground">{t("quoted", { query })}</span>
               {sites && (
                 <span className="ml-2">
-                  找到 <span className="font-semibold">{sites.length}</span> 个结果
+                  {t("foundResults", { count: sites.length })}
                 </span>
               )}
             </p>
@@ -41,9 +43,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
           {!sites || sites.length === 0 ? (
             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed">
-              <p className="text-lg text-muted-foreground">未找到匹配的网站</p>
+              <p className="text-lg text-muted-foreground">{t("notFoundTitle")}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                请尝试其他关键词
+                {t("tryOtherKeywords")}
               </p>
             </div>
           ) : (

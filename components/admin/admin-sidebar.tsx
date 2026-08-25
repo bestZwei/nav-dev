@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import {
   LayoutDashboard,
   Globe,
@@ -27,36 +28,38 @@ import {
 import { AdminAvatar } from "./admin-avatar"
 import { fetchPublicSettings } from "@/lib/client-settings"
 
+// 菜单标题使用 admin.sidebar 命名空间的消息 key
 const navItems = [
   {
-    title: "数据统计",
+    titleKey: "dashboard",
     href: "/admin/dashboard",
     icon: LayoutDashboard,
   },
   {
-    title: "网站管理",
+    titleKey: "sites",
     href: "/admin/sites",
     icon: Globe,
   },
   {
-    title: "分类管理",
+    titleKey: "categories",
     href: "/admin/categories",
     icon: FolderKanban,
   },
   {
-    title: "数据管理",
+    titleKey: "data",
     href: "/admin/data",
     icon: Database,
   },
   {
-    title: "系统设置",
+    titleKey: "settings",
     href: "/admin/users",
     icon: Users,
   },
-]
+] as const
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const t = useTranslations("admin.sidebar")
   const [siteName, setSiteName] = useState("Conan Nav")
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
 
@@ -101,7 +104,7 @@ export function AdminSidebar() {
                 )}
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate font-bold">{siteName}</span>
-                  <span className="truncate text-xs text-muted-foreground">管理后台</span>
+                  <span className="truncate text-xs text-muted-foreground">{t("adminTitle")}</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -111,7 +114,7 @@ export function AdminSidebar() {
 
       <SidebarContent>
         <SidebarGroup className="px-3 py-4 group-data-[collapsible=icon]:!px-2">
-          <SidebarGroupLabel className="px-2 text-xs text-muted-foreground">管理菜单</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-2 text-xs text-muted-foreground">{t("menuLabel")}</SidebarGroupLabel>
           <SidebarGroupContent className="mt-1">
             <SidebarMenu>
               {navItems.map((item) => (
@@ -119,11 +122,11 @@ export function AdminSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
-                    tooltip={item.title}
+                    tooltip={t(item.titleKey)}
                   >
                     <Link href={item.href}>
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span>{t(item.titleKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

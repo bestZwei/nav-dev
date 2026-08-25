@@ -21,6 +21,7 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 import { TrendingUp } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useMemo } from "react"
 
@@ -34,6 +35,8 @@ interface VisitFrequencyChartProps {
 }
 
 export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: VisitFrequencyChartProps) {
+  const t = useTranslations("admin.chart")
+
   // 填充缺失的日期数据
   const displayData = useMemo(() => {
     if (timeRange === 0) {
@@ -84,9 +87,8 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
     const year = date.getFullYear()
     const month = date.getMonth() + 1
     const day = date.getDate()
-    const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-    const weekDay = weekDays[date.getDay()]
-    return year + "年" + month + "月" + day + "日 " + weekDay
+    const weekDay = t(`weekDay${date.getDay()}` as never)
+    return t("fullDate", { year, month, day, weekday: weekDay })
   }
 
   // 计算总访问量
@@ -98,10 +100,10 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
 
   // 获取时间范围标签
   const getTimeRangeLabel = () => {
-    if (timeRange === 0) return "全部时间"
-    if (timeRange === 90) return "近3个月"
-    if (timeRange === 30) return "近30天"
-    return "近" + timeRange + "天"
+    if (timeRange === 0) return t("rangeAll")
+    if (timeRange === 90) return t("range3months")
+    if (timeRange === 30) return t("range30days")
+    return t("rangeDays", { days: timeRange })
   }
 
   return (
@@ -109,11 +111,11 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          访问频次统计
+          {t("frequencyTitle")}
         </CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            {getTimeRangeLabel()} · {totalVisits.toLocaleString()} 次访问
+            {getTimeRangeLabel()} · {t('visitsTotal', { count: totalVisits.toLocaleString() })}
           </span>
           <span className="@[540px]/card:hidden">
             {getTimeRangeLabel()}
@@ -138,9 +140,9 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
           >
             <SelectTrigger
               className="flex w-32 md:hidden"
-              aria-label="选择时间范围"
+              aria-label={t("selectRangeLabel")}
             >
-              <SelectValue placeholder="选择时间范围" />
+              <SelectValue placeholder={t("selectRangeLabel")} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="7" className="rounded-lg">Last 7 days</SelectItem>
@@ -179,8 +181,8 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
                 }}
                 labelFormatter={(label) => formatFullDate(label)}
                 formatter={(value: any) => [
-                  value ? (value + " 次") : '0 次',
-                  '访问量',
+                  t("visitCountWithUnit", { count: value ?? 0 }),
+                  t("visitsLabel"),
                 ]}
               />
               <Bar
@@ -196,9 +198,9 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
               <EmptyMedia variant="icon">
                 <TrendingUp className="size-5" />
               </EmptyMedia>
-              <EmptyTitle>暂无数据</EmptyTitle>
+              <EmptyTitle>{t("noData")}</EmptyTitle>
               <EmptyDescription>
-                当前时间范围内还没有访问记录
+                {t("noVisits")}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

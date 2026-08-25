@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react"
 import { updateUser } from "@/lib/actions"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useTranslations } from "next-intl"
 
 interface UpdatedUser {
   id: string
@@ -42,6 +43,8 @@ export function UserEditDialog({
   userName,
   onUpdate,
 }: UserEditDialogProps) {
+  const t = useTranslations("admin.profile")
+  const tc = useTranslations("common")
   const [name, setName] = useState(userName || "")
   const [email, setEmail] = useState(userEmail)
   const [avatar, setAvatar] = useState("")
@@ -76,23 +79,23 @@ export function UserEditDialog({
     // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      toast.error("邮箱格式错误", {
-        description: "请输入有效的邮箱地址",
+      toast.error(t("emailInvalid"), {
+        description: t("emailInvalidDesc"),
       })
       return
     }
 
     // 如果填写了密码，验证密码
     if (password && password.length < 6) {
-      toast.error("密码太短", {
-        description: "密码长度至少为6个字符",
+      toast.error(t("passwordTooShort"), {
+        description: t("passwordTooShortDesc"),
       })
       return
     }
 
     if (password && password !== confirmPassword) {
-      toast.error("密码不匹配", {
-        description: "两次输入的密码不一致",
+      toast.error(t("passwordMismatch"), {
+        description: t("passwordMismatchDesc"),
       })
       return
     }
@@ -131,8 +134,8 @@ export function UserEditDialog({
 
       const result = await updateUser(userId, updateData)
       if (result.success) {
-        toast.success("更新成功", {
-          description: "管理员信息已成功更新",
+        toast.success(t("updateSuccess"), {
+          description: t("updateSuccessDesc"),
         })
         // 更新缓存中的用户信息
         if (onUpdate && result.data) {
@@ -140,13 +143,13 @@ export function UserEditDialog({
         }
         onOpenChange(false)
       } else {
-        toast.error("更新失败", {
-          description: result.error || "无法更新信息，请稍后重试",
+        toast.error(t("updateFailed"), {
+          description: result.error || t("updateFailedDesc"),
         })
       }
     } catch (error) {
-      toast.error("更新失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(t("updateFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setLoading(false)
@@ -158,18 +161,18 @@ export function UserEditDialog({
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>编辑管理员信息</DialogTitle>
+            <DialogTitle>{t("editTitle")}</DialogTitle>
             <DialogDescription>
-              修改管理员的头像、名称、邮箱和密码
+              {t("editDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {/* 头像预览和输入 */}
             <div className="space-y-2">
-              <Label htmlFor="avatar">头像 URL</Label>
+              <Label htmlFor="avatar">{t("avatarLabel")}</Label>
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={avatar || undefined} alt="头像预览" />
+                  <AvatarImage src={avatar || undefined} alt={t("avatarPreviewAlt")} />
                   <AvatarFallback className="text-lg">
                     {initials}
                   </AvatarFallback>
@@ -180,56 +183,56 @@ export function UserEditDialog({
                     type="url"
                     value={avatar}
                     onChange={(e) => setAvatar(e.target.value)}
-                    placeholder="请输入头像图片 URL（可选）"
+                    placeholder={t("avatarPlaceholder")}
                   />
                   <p className="text-xs text-muted-foreground">
-                    推荐使用正方形图片，建议尺寸 200x200 像素
+                    {t("avatarHint")}
                   </p>
                 </div>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              <Label htmlFor="email">{t("emailLabel")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="请输入邮箱"
+                placeholder={t("emailPlaceholder")}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">姓名</Label>
+              <Label htmlFor="name">{t("nameLabel")}</Label>
               <Input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="请输入姓名（可选）"
+                placeholder={t("namePlaceholder")}
               />
             </div>
             <Separator />
             <div className="space-y-2">
-              <Label htmlFor="password">新密码（留空则不修改）</Label>
+              <Label htmlFor="password">{t("passwordLabel")}</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入新密码（至少6个字符）"
+                placeholder={t("passwordPlaceholder")}
                 minLength={password ? 6 : undefined}
               />
             </div>
             {password && (
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">确认密码</Label>
+                <Label htmlFor="confirm-password">{t("confirmPasswordLabel")}</Label>
                 <Input
                   id="confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="请再次输入新密码"
+                  placeholder={t("confirmPasswordPlaceholder")}
                   required
                   minLength={6}
                 />
@@ -243,11 +246,11 @@ export function UserEditDialog({
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              取消
+              {tc("cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              保存修改
+              {t("saveChanges")}
             </Button>
           </DialogFooter>
         </form>

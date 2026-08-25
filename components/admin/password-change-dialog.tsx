@@ -15,6 +15,7 @@ import {
 import { Loader2 } from "lucide-react"
 import { updateUser } from "@/lib/actions"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 interface PasswordChangeDialogProps {
   open: boolean
@@ -29,6 +30,8 @@ export function PasswordChangeDialog({
   userId,
   userEmail,
 }: PasswordChangeDialogProps) {
+  const t = useTranslations("admin.profile")
+  const tc = useTranslations("common")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -37,15 +40,15 @@ export function PasswordChangeDialog({
     e.preventDefault()
 
     if (password.length < 6) {
-      toast.error("密码太短", {
-        description: "密码长度至少为6个字符",
+      toast.error(t("passwordTooShort"), {
+        description: t("passwordTooShortDesc"),
       })
       return
     }
 
     if (password !== confirmPassword) {
-      toast.error("密码不匹配", {
-        description: "两次输入的密码不一致",
+      toast.error(t("passwordMismatch"), {
+        description: t("passwordMismatchDesc"),
       })
       return
     }
@@ -54,20 +57,20 @@ export function PasswordChangeDialog({
     try {
       const result = await updateUser(userId, { password })
       if (result.success) {
-        toast.success("密码已修改", {
-          description: "用户密码已成功更新",
+        toast.success(t("passwordChanged"), {
+          description: t("passwordChangedDesc"),
         })
         onOpenChange(false)
         setPassword("")
         setConfirmPassword("")
       } else {
-        toast.error("修改失败", {
-          description: result.error || "无法修改密码，请稍后重试",
+        toast.error(t("changeFailed"), {
+          description: result.error || t("changeFailedDesc"),
         })
       }
     } catch (error) {
-      toast.error("修改失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(t("changeFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setLoading(false)
@@ -79,32 +82,32 @@ export function PasswordChangeDialog({
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>修改密码</DialogTitle>
+            <DialogTitle>{t("changePasswordTitle")}</DialogTitle>
             <DialogDescription>
-              为用户 <span className="font-semibold">{userEmail}</span> 修改密码
+              {t("changePasswordDesc", { email: userEmail })}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="password">新密码</Label>
+              <Label htmlFor="password">{t("newPasswordLabel")}</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入新密码（至少6个字符）"
+                placeholder={t("passwordPlaceholder")}
                 required
                 minLength={6}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">确认密码</Label>
+              <Label htmlFor="confirm-password">{t("confirmPasswordLabel")}</Label>
               <Input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="请再次输入新密码"
+                placeholder={t("confirmPasswordPlaceholder")}
                 required
                 minLength={6}
               />
@@ -117,11 +120,11 @@ export function PasswordChangeDialog({
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              取消
+              {tc("cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              确认修改
+              {t("confirmChange")}
             </Button>
           </DialogFooter>
         </form>

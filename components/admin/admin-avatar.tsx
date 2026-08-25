@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserEditDialog } from "./user-edit-dialog"
 import { LogOut } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   SidebarMenu,
   SidebarMenuAction,
@@ -30,6 +31,7 @@ export function clearUserCache() {
 
 export function AdminAvatar() {
   const router = useRouter()
+  const t = useTranslations("admin.profile")
   const [user, setUser] = useState<UserData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -119,7 +121,7 @@ export function AdminAvatar() {
           size="lg"
           className="cursor-pointer"
           onClick={() => setEditDialogOpen(true)}
-          tooltip={user.name || "管理员"}
+          tooltip={user.name || t("admin")}
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatar || undefined} alt={user.name || user.email} />
@@ -128,17 +130,17 @@ export function AdminAvatar() {
             </AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left leading-tight">
-            <span className="truncate text-sm font-medium">{user.name || "管理员"}</span>
+            <span className="truncate text-sm font-medium">{user.name || t("admin")}</span>
             <span className="truncate text-xs text-muted-foreground">{user.email}</span>
           </div>
         </SidebarMenuButton>
         <SidebarMenuAction
-          title="退出登录"
+          title={t("logout")}
           onClick={handleLogout}
           className="hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
         >
           <LogOut />
-          <span className="sr-only">退出登录</span>
+          <span className="sr-only">{t("logout")}</span>
         </SidebarMenuAction>
       </SidebarMenuItem>
 

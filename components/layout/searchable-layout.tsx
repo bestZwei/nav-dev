@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { ScrollHeader } from "./scroll-header"
 import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
@@ -45,6 +46,7 @@ export function SearchableLayout({
   const [searchQuery, setSearchQuery] = useState("")
   const [isHomePath, setIsHomePath] = useState(false)
   const { isVisible: isPoetryVisible, mounted: poetryMounted } = usePoetryToggle()
+  const t = useTranslations("search")
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -89,12 +91,12 @@ export function SearchableLayout({
               // 搜索结果
               <div className="animate-fade-in">
                 <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">搜索结果</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t("resultsTitle")}</h1>
                   <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
-                    找到 {filteredSites.length} 个站点
+                    {t("found", { count: filteredSites.length })}
                   </Badge>
                   <p className="text-sm text-muted-foreground">
-                    关键词：<span className="font-semibold text-foreground">「{searchQuery}」</span>
+                    {t("keyword")}：<span className="font-semibold text-foreground">{t("quoted", { query: searchQuery })}</span>
                   </p>
                 </div>
 
@@ -116,9 +118,9 @@ export function SearchableLayout({
                         />
                       </svg>
                     </div>
-                    <p className="text-base font-semibold text-foreground">未找到匹配的网站</p>
+                    <p className="text-base font-semibold text-foreground">{t("notFoundTitle")}</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                      没有找到与「{searchQuery}」相关的站点，请尝试更换关键词或缩短搜索字词。
+                      {t("notFoundDesc", { query: searchQuery })}
                     </p>
                   </div>
                 ) : (

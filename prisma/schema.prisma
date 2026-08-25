@@ -84,6 +84,8 @@ model SystemSettings {
   submissionMaxPerDay  Int     @default(3) @map("submission_max_per_day")
   // GitHub link
   githubUrl        String?  @map("github_url")
+  // Default site language for visitors without a locale cookie (zh/en)
+  defaultLanguage  String   @default("zh") @map("default_language")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 

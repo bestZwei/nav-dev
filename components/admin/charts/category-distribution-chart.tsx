@@ -15,6 +15,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { FolderKanban } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Empty,
   EmptyDescription,
@@ -41,19 +42,21 @@ const CHART_COLORS = [
 ]
 
 export function CategoryDistributionChart({ data }: CategoryDistributionChartProps) {
+  const t = useTranslations("admin.chart")
+
   // 图例最多显示 8 项，超出部分滚动查看；环形图全量渲染
   const displayData = data
 
   const chartConfig = {
-    count: { label: "网站数" },
+    count: { label: t("siteCountLabel") },
   } satisfies ChartConfig
 
   if (displayData.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>分类分布</CardTitle>
-          <CardDescription>各分类已发布网站占比</CardDescription>
+          <CardTitle>{t("distributionTitle")}</CardTitle>
+          <CardDescription>{t("distributionDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Empty className="h-[240px]">
@@ -61,8 +64,8 @@ export function CategoryDistributionChart({ data }: CategoryDistributionChartPro
               <EmptyMedia variant="icon">
                 <FolderKanban className="size-5" />
               </EmptyMedia>
-              <EmptyTitle>暂无数据</EmptyTitle>
-              <EmptyDescription>发布网站后即可查看分类分布</EmptyDescription>
+              <EmptyTitle>{t("noData")}</EmptyTitle>
+              <EmptyDescription>{t("distributionEmptyDesc")}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         </CardContent>
@@ -73,8 +76,8 @@ export function CategoryDistributionChart({ data }: CategoryDistributionChartPro
   return (
     <Card>
       <CardHeader>
-        <CardTitle>分类分布</CardTitle>
-        <CardDescription>各分类已发布网站占比</CardDescription>
+        <CardTitle>{t("distributionTitle")}</CardTitle>
+        <CardDescription>{t("distributionDesc")}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center gap-4 sm:flex-row">

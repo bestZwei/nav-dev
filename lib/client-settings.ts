@@ -15,6 +15,7 @@ export interface PublicSettings {
   enableSubmission: boolean
   submissionMaxPerDay: number
   githubUrl: string | null
+  defaultLanguage: "zh" | "en"
 }
 
 export const defaultSettings: PublicSettings = {
@@ -34,6 +35,7 @@ export const defaultSettings: PublicSettings = {
   enableSubmission: true,
   submissionMaxPerDay: 3,
   githubUrl: "https://github.com/kenanlabs/nav",
+  defaultLanguage: "zh",
 }
 
 let cachedSettings: PublicSettings | null = null

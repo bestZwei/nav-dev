@@ -624,8 +624,14 @@ export async function updateSystemSettings(data: {
   enableSubmission?: boolean
   submissionMaxPerDay?: number
   githubUrl?: string
+  defaultLanguage?: "zh" | "en"
 }) {
   try {
+    // 校验默认语言取值
+    if (data.defaultLanguage && data.defaultLanguage !== "zh" && data.defaultLanguage !== "en") {
+      return { success: false, error: "Invalid defaultLanguage" }
+    }
+
     // 获取第一条设置记录
     let settings = await prisma.systemSettings.findFirst()
 

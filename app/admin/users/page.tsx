@@ -9,6 +9,14 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Plus, Trash2, Info, Zap, Link2, PanelBottom } from "lucide-react"
 import { getSystemSettings, updateSystemSettings } from "@/lib/actions"
+import { useTranslations } from "next-intl"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -30,18 +38,21 @@ interface SystemSettingsData {
   showIcp: boolean
   icpNumber: string | undefined
   icpLink: string | undefined
+  defaultLanguage: "zh" | "en"
 }
 
 const sections = [
-  { id: "basic", title: "基本信息", icon: Info },
-  { id: "features", title: "功能开关", icon: Zap },
-  { id: "links", title: "外部链接", icon: Link2 },
-  { id: "footer", title: "页脚与版权", icon: PanelBottom },
+  { id: "basic", titleKey: "secBasic", icon: Info },
+  { id: "features", titleKey: "secFeatures", icon: Zap },
+  { id: "links", titleKey: "secLinks", icon: Link2 },
+  { id: "footer", titleKey: "secFooter", icon: PanelBottom },
 ] as const
 
 type SectionId = (typeof sections)[number]["id"]
 
 export default function AdminSettingsPage() {
+  const t = useTranslations("admin.settings")
+  const tc = useTranslations("common")
   const [settings, setSettings] = useState<SystemSettingsData>({
     id: "",
     siteName: "Conan Nav",
@@ -60,6 +71,7 @@ export default function AdminSettingsPage() {
     showIcp: false,
     icpNumber: undefined,
     icpLink: undefined,
+    defaultLanguage: "zh",
   })
   const [savingSettings, setSavingSettings] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
@@ -83,6 +95,7 @@ export default function AdminSettingsPage() {
         icpLink: result.data.icpLink || undefined,
         enableSubmission: result.data.enableSubmission ?? true,
         submissionMaxPerDay: result.data.submissionMaxPerDay ?? 3,
+        defaultLanguage: result.data.defaultLanguage === "en" ? "en" : "zh",
       })
     }
   }
@@ -92,18 +105,18 @@ export default function AdminSettingsPage() {
     try {
       const result = await updateSystemSettings(settings)
       if (result.success) {
-        toast.success("保存成功", {
-          description: "系统设置已更新",
+        toast.success(t("saveSuccess"), {
+          description: t("saveSuccessDesc"),
         })
         setTimeout(() => window.location.reload(), 500)
       } else {
-        toast.error("保存失败", {
-          description: result.error || "保存设置失败，请稍后重试",
+        toast.error(t("saveFailed"), {
+          description: result.error || t("saveFailedDesc"),
         })
       }
     } catch (error) {
-      toast.error("保存失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(t("saveFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setSavingSettings(false)
@@ -129,10 +142,10 @@ export default function AdminSettingsPage() {
   }
 
   const sectionMeta: Record<SectionId, { title: string; description: string }> = {
-    basic: { title: "基本信息", description: "配置网站的基本信息和图片资源" },
-    features: { title: "功能开关", description: "启用或禁用系统功能" },
-    links: { title: "外部链接", description: "配置外部链接" },
-    footer: { title: "页脚与版权", description: "配置页面底部信息" },
+    basic: { title: t("secBasic"), description: t("secBasicDesc") },
+    features: { title: t("secFeatures"), description: t("secFeaturesDesc") },
+    links: { title: t("secLinks"), description: t("secLinksDesc") },
+    footer: { title: t("secFooter"), description: t("secFooterDesc") },
   }
 
   return (
@@ -140,14 +153,14 @@ export default function AdminSettingsPage() {
       {/* 顶部标题区 */}
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1">
-          <h3 className="text-lg font-semibold">系统设置</h3>
+          <h3 className="text-lg font-semibold">{t("pageTitle")}</h3>
           <p className="text-sm text-muted-foreground">
-            定制网站信息、功能开关，开启你的个性化导航
+            {t("pageDesc")}
           </p>
         </div>
         <Button onClick={handleSaveSettings} disabled={savingSettings} className="shrink-0">
           {savingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          保存设置
+          {t("saveBtn")}
         </Button>
       </div>
       <Separator />
@@ -155,7 +168,7 @@ export default function AdminSettingsPage() {
       {/* 内容区：左侧选项 + 右侧表单 */}
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* 左侧选项导航 */}
-        <nav className="shrink-0 lg:w-48" aria-label="设置分类">
+        <nav className="shrink-0 lg:w-48" aria-label={t("navLabel")}>
           <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
             {sections.map((section) => (
               <li key={section.id}>
@@ -170,7 +183,7 @@ export default function AdminSettingsPage() {
                   )}
                 >
                   <section.icon className="h-4 w-4 shrink-0" />
-                  {section.title}
+                  {t(section.titleKey as never)}
                 </button>
               </li>
             ))}
@@ -192,32 +205,32 @@ export default function AdminSettingsPage() {
             {activeSection === "basic" && (
               <div className="space-y-8">
                 <div className="space-y-2">
-                  <Label htmlFor="site-name">网站名称</Label>
+                  <Label htmlFor="site-name">{t("siteNameLabel")}</Label>
                   <Input
                     id="site-name"
                     value={settings.siteName}
                     onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                    placeholder="请输入网站名称"
+                    placeholder={t("siteNamePlaceholder")}
                   />
                   <p className="text-sm text-muted-foreground">
-                    显示在浏览器标签和页面标题中
+                    {t("siteNameHint")}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="site-description">网站描述</Label>
+                  <Label htmlFor="site-description">{t("siteDescLabel")}</Label>
                   <Textarea
                     id="site-description"
                     value={settings.siteDescription}
                     onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
-                    placeholder="请输入网站描述"
+                    placeholder={t("siteDescPlaceholder")}
                     rows={3}
                   />
                   <p className="text-sm text-muted-foreground">
-                    网站简介，有助于搜索引擎优化（SEO）
+                    {t("siteDescHint")}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="site-logo">网站 Logo URL</Label>
+                  <Label htmlFor="site-logo">{t("logoLabel")}</Label>
                   <Input
                     id="site-logo"
                     value={settings.siteLogo || ""}
@@ -225,7 +238,7 @@ export default function AdminSettingsPage() {
                     placeholder="https://example.com/logo.png"
                   />
                   <p className="text-sm text-muted-foreground">
-                    建议尺寸：200x60 像素，支持 PNG、JPG、SVG 格式
+                    {t("logoHint")}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -237,7 +250,27 @@ export default function AdminSettingsPage() {
                     placeholder="https://example.com/favicon.ico"
                   />
                   <p className="text-sm text-muted-foreground">
-                    浏览器标签图标，建议尺寸：32x32 或 16x16 像素
+                    {t("faviconHint")}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="default-language">{t("defaultLanguageLabel")}</Label>
+                  <Select
+                    value={settings.defaultLanguage}
+                    onValueChange={(value) =>
+                      setSettings({ ...settings, defaultLanguage: value as "zh" | "en" })
+                    }
+                  >
+                    <SelectTrigger id="default-language" className="w-44">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="zh">{t("langZh")}</SelectItem>
+                      <SelectItem value="en">{t("langEn")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    {t("defaultLanguageHint")}
                   </p>
                 </div>
               </div>
@@ -248,9 +281,9 @@ export default function AdminSettingsPage() {
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="enable-tracking">启用访问统计</Label>
+                    <Label htmlFor="enable-tracking">{t("trackingLabel")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      记录网站访问次数，用于数据统计
+                      {t("trackingHint")}
                     </p>
                   </div>
                   <Switch
@@ -262,9 +295,9 @@ export default function AdminSettingsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="enable-submission">启用网站收录</Label>
+                      <Label htmlFor="enable-submission">{t("submissionLabel")}</Label>
                       <p className="text-sm text-muted-foreground">
-                        允许访客提交网站收录申请，管理员审核后发布
+                        {t("submissionHint")}
                       </p>
                     </div>
                     <Switch
@@ -275,7 +308,7 @@ export default function AdminSettingsPage() {
                   </div>
                   {settings.enableSubmission && (
                     <div className="space-y-2">
-                      <Label htmlFor="submission-limit">每日提交限制</Label>
+                      <Label htmlFor="submission-limit">{t("submissionLimitLabel")}</Label>
                       <Input
                         id="submission-limit"
                         type="number"
@@ -286,7 +319,7 @@ export default function AdminSettingsPage() {
                         className="w-32"
                       />
                       <p className="text-sm text-muted-foreground">
-                        同一 IP 24 小时内最多可以提交 {settings.submissionMaxPerDay} 次网站收录申请
+                        {t("submissionLimitHint", { count: settings.submissionMaxPerDay })}
                       </p>
                     </div>
                   )}
@@ -298,7 +331,7 @@ export default function AdminSettingsPage() {
             {activeSection === "links" && (
               <div className="space-y-8">
                 <div className="space-y-2">
-                  <Label htmlFor="github-url">GitHub 仓库地址</Label>
+                  <Label htmlFor="github-url">{t("githubLabel")}</Label>
                   <Input
                     id="github-url"
                     value={settings.githubUrl || ""}
@@ -306,7 +339,7 @@ export default function AdminSettingsPage() {
                     placeholder="https://github.com/username/repo"
                   />
                   <p className="text-sm text-muted-foreground">
-                    将显示在登录页面底部，用于项目展示或源码分享
+                    {t("githubHint")}
                   </p>
                 </div>
               </div>
@@ -317,9 +350,9 @@ export default function AdminSettingsPage() {
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="show-footer">底部信息</Label>
+                    <Label htmlFor="show-footer">{t("footerLabel")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      启用后将在页面底部显示版权信息和友情链接
+                      {t("footerHint")}
                     </p>
                   </div>
                   <Switch
@@ -330,9 +363,9 @@ export default function AdminSettingsPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="show-admin-link">管理后台链接</Label>
+                    <Label htmlFor="show-admin-link">{t("adminLinkLabel")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      在底部添加管理后台入口，方便管理员快速登录
+                      {t("adminLinkHint")}
                     </p>
                   </div>
                   <Switch
@@ -342,24 +375,24 @@ export default function AdminSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="footer-copyright">版权信息</Label>
+                  <Label htmlFor="footer-copyright">{t("copyrightLabel")}</Label>
                   <Textarea
                     id="footer-copyright"
                     value={settings.footerCopyright}
                     onChange={(e) => setSettings({ ...settings, footerCopyright: e.target.value })}
                     rows={2}
-                    placeholder="© 2026 公司名称. All rights reserved."
+                    placeholder={t("copyrightPlaceholder")}
                   />
                   <p className="text-sm text-muted-foreground">
-                    显示在页面底部的版权声明，支持 HTML 标签
+                    {t("copyrightHint")}
                   </p>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="show-icp">备案信息</Label>
+                      <Label htmlFor="show-icp">{t("icpLabel")}</Label>
                       <p className="text-sm text-muted-foreground">
-                        在页面底部显示 ICP 备案号，符合中国大陆网站法规要求
+                        {t("icpHint")}
                       </p>
                     </div>
                     <Switch
@@ -371,19 +404,19 @@ export default function AdminSettingsPage() {
                   {settings.showIcp && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="icp-number">ICP 备案号</Label>
+                        <Label htmlFor="icp-number">{t("icpNumberLabel")}</Label>
                         <Input
                           id="icp-number"
                           value={settings.icpNumber || ""}
                           onChange={(e) => setSettings({ ...settings, icpNumber: e.target.value })}
-                          placeholder="例如：京ICP备12345678号-1"
+                          placeholder={t("icpNumberPlaceholder")}
                         />
                         <p className="text-sm text-muted-foreground">
-                          请填写您的网站备案号，可在工信部备案系统查询
+                          {t("icpNumberHint")}
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="icp-link">ICP 备案链接（可选）</Label>
+                        <Label htmlFor="icp-link">{t("icpLinkLabel")}</Label>
                         <Input
                           id="icp-link"
                           value={settings.icpLink || ""}
@@ -391,7 +424,7 @@ export default function AdminSettingsPage() {
                           placeholder="https://beian.miit.gov.cn"
                         />
                         <p className="text-sm text-muted-foreground">
-                          填写后备案号将显示为可点击的链接，跳转到工信部备案查询页面
+                          {t("icpLinkHint")}
                         </p>
                       </div>
                     </>
@@ -400,26 +433,26 @@ export default function AdminSettingsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>友情链接</Label>
+                      <Label>{t("friendLinksLabel")}</Label>
                       <p className="text-sm text-muted-foreground">
-                        添加合作伙伴或常用网站链接
+                        {t("friendLinksHint")}
                       </p>
                     </div>
                     <Button onClick={addFooterLink} size="sm" variant="outline">
                       <Plus className="h-4 w-4 mr-1" />
-                      添加链接
+                      {t("addLink")}
                     </Button>
                   </div>
                   {settings.footerLinks.map((link, index) => (
                     <div key={index} className="flex gap-2 items-start">
                       <Input
-                        placeholder="链接名称"
+                        placeholder={t("linkNamePlaceholder")}
                         value={link.name}
                         onChange={(e) => updateFooterLink(index, "name", e.target.value)}
                         className="flex-1"
                       />
                       <Input
-                        placeholder="链接地址"
+                        placeholder={t("linkUrlPlaceholder")}
                         value={link.url}
                         onChange={(e) => updateFooterLink(index, "url", e.target.value)}
                         className="flex-1"

@@ -67,6 +67,7 @@ export interface SystemSettingsItem {
   enableSubmission: boolean
   submissionMaxPerDay: number
   githubUrl: string | null
+  defaultLanguage: string
   createdAt: Date
   updatedAt: Date
 }
@@ -218,6 +219,7 @@ const initialSystemSettings: SystemSettingsItem = {
   enableSubmission: true,
   submissionMaxPerDay: 3,
   githubUrl: 'https://github.com/kenanlabs/nav',
+  defaultLanguage: 'zh',
   createdAt: new Date(),
   updatedAt: new Date(),
 }

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useTranslations } from "next-intl"
 import {
   Dialog,
   DialogContent,
@@ -41,17 +42,6 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { submitSite } from "@/lib/actions"
 
-// 表单验证 Schema
-const formSchema = z.object({
-  name: z.string().min(1, "网站名称不能为空").max(50, "网站名称不能超过50个字符"),
-  url: z.string().min(1, "网站链接不能为空").url("请输入有效的URL"),
-  description: z.string().min(1, "网站描述不能为空").max(200, "描述不能超过200个字符"),
-  categoryId: z.string().min(1, "请选择分类"),
-  submitterContact: z.string().max(100, "联系方式不能超过100个字符").optional(),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
 interface SiteSubmissionDialogProps {
   categories: Array<{
     id: string
@@ -63,6 +53,28 @@ interface SiteSubmissionDialogProps {
 export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) {
   const [open, setOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const t = useTranslations("submission")
+
+  // 校验消息跟随当前语言，schema 在组件内按语言重建
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, t("nameRequired")).max(50, t("nameMax")),
+        url: z.string().min(1, t("urlRequired")).url(t("urlInvalid")),
+        description: z
+          .string()
+          .min(1, t("descRequired"))
+          .max(200, t("descMax")),
+        categoryId: z.string().min(1, t("categoryRequired")),
+        submitterContact: z
+          .string()
+          .max(100, t("contactMax"))
+          .optional(),
+      }),
+    [t]
+  )
+
+  type FormValues = z.infer<typeof formSchema>
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -83,14 +95,14 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
       })
 
       if (result.success) {
-        toast.success(result.message || "提交成功！我们会尽快审核，感谢您的贡献")
+        toast.success(result.message || t("success"))
         form.reset()
         setOpen(false)
       } else {
-        toast.error(result.error || "提交失败")
+        toast.error(result.error || t("failed"))
       }
     } catch (error) {
-      toast.error("提交失败，请稍后重试")
+      toast.error(t("retry"))
     } finally {
       setIsSubmitting(false)
     }
@@ -119,20 +131,20 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
                   <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path>
                   <path d="M10 12h4"></path>
                 </svg>
-                <span className="sr-only">提交网站</span>
+                <span className="sr-only">{t("trigger")}</span>
               </Button>
             </DialogTrigger>
           </TooltipTrigger>
           <TooltipContent>
-            <p>提交网站</p>
+            <p>{t("trigger")}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>提交网站收录</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            填写网站信息，管理员审核通过后会发布到导航站
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -142,9 +154,9 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>网站名称 *</FormLabel>
+                  <FormLabel>{t("nameLabel")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="例如：GitHub" {...field} />
+                    <Input placeholder={t("namePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,7 +168,7 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
               name="url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>网站链接 *</FormLabel>
+                  <FormLabel>{t("urlLabel")}</FormLabel>
                   <FormControl>
                     <Input placeholder="https://github.com" {...field} />
                   </FormControl>
@@ -170,17 +182,17 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>网站描述 *</FormLabel>
+                  <FormLabel>{t("descLabel")}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="简要描述网站的功能和特点"
+                      placeholder={t("descPlaceholder")}
                       className="resize-none"
                       rows={3}
                       {...field}
                     />
                   </FormControl>
                   <FormDescription className="text-xs">
-                    {field.value.length}/200 字符
+                    {t("charCount", { count: field.value.length })}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -192,11 +204,11 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
               name="categoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>分类 *</FormLabel>
+                  <FormLabel>{t("categoryLabel")}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="选择分类" />
+                        <SelectValue placeholder={t("categoryPlaceholder")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -217,12 +229,12 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
               name="submitterContact"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>联系方式（可选）</FormLabel>
+                  <FormLabel>{t("contactLabel")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="邮箱或微信，方便审核联系" {...field} />
+                    <Input placeholder={t("contactPlaceholder")} {...field} />
                   </FormControl>
                   <FormDescription className="text-xs">
-                    管理员审核时可能需要联系您
+                    {t("contactHint")}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -236,11 +248,11 @@ export function SiteSubmissionDialog({ categories }: SiteSubmissionDialogProps) 
                 onClick={() => setOpen(false)}
                 disabled={isSubmitting}
               >
-                取消
+                {t("cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                提交审核
+                {t("submit")}
               </Button>
             </div>
           </form>

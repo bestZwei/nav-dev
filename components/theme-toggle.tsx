@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTheme } from "next-themes"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -14,6 +15,7 @@ import { toast } from "sonner"
 
 export function ThemeToggle() {
   const { setTheme, theme, resolvedTheme } = useTheme()
+  const t = useTranslations("theme")
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -37,14 +39,14 @@ export function ThemeToggle() {
     }
 
     // 获取主题名称
-    const getThemeName = (t: string) => {
-      if (t === "system") return "跟随系统"
-      if (t === "light") return "浅色模式"
-      return "深色模式"
+    const getThemeName = (tm: string) => {
+      if (tm === "system") return t("system")
+      if (tm === "light") return t("light")
+      return t("dark")
     }
 
     // 显示提示
-    toast.success("换个氛围", {
+    toast.success(t("changedTitle"), {
       description: `${getThemeName(currentTheme)} → ${getThemeName(nextTheme)}`,
     })
   }
@@ -52,10 +54,10 @@ export function ThemeToggle() {
   // 获取当前主题的显示名称
   const getThemeLabel = () => {
     if (theme === "system") {
-      return `跟随系统 (${resolvedTheme === "dark" ? "深色" : "浅色"})`
+      return `${t("system")} (${resolvedTheme === "dark" ? t("darkShort") : t("lightShort")})`
     }
-    if (theme === "light") return "浅色模式"
-    return "深色模式"
+    if (theme === "light") return t("light")
+    return t("dark")
   }
 
   if (!mounted) {
@@ -87,7 +89,7 @@ export function ThemeToggle() {
             <Laptop className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
               theme === 'system' ? 'rotate-0 scale-100' : 'rotate-90 scale-0'
             }`} />
-            <span className="sr-only">切换主题</span>
+            <span className="sr-only">{t("toggle")}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>

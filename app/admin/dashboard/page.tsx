@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
+import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 import { Loader2, BarChart3, TrendingUp, Globe, FolderKanban, Users, CalendarPlus, Inbox, Sparkles } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -74,9 +75,30 @@ interface CategoryDistribution {
 type TimeRange = 0 | 7 | 30 | 90
 type TopCount = 5 | 10 | 30 | 0
 
+// 统计卡片标题的消息 key 集合
+type StatTitleKey =
+  | "statSites"
+  | "statCategories"
+  | "statVisitors"
+  | "statTotalVisits"
+  | "statTodayVisits"
+  | "statPending"
+  | "statWeekNew"
+  | "statMissingIcons"
+
+interface StatItem {
+  titleKey: StatTitleKey
+  value: number
+  loading: boolean
+  icon: typeof Globe
+  href?: string
+  badge?: number | null
+}
+
 const formatNumber = (value: number) => value.toLocaleString()
 
 export default function AdminDashboardPage() {
+  const t = useTranslations("admin.dashboard")
   const [loading, setLoading] = useState(true)
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null)
   const [frequencyData, setFrequencyData] = useState<FrequencyData | null>(null)
@@ -85,23 +107,23 @@ export default function AdminDashboardPage() {
   const [categoryDistribution, setCategoryDistribution] = useState<CategoryDistribution | null>(null)
   const [timeRange, setTimeRange] = useState<TimeRange>(7)
   const [topCount, setTopCount] = useState<TopCount>(5)
-  const [siteStats, setSiteStats] = useState([
-    { title: "网站总数", value: 0, loading: true, icon: Globe },
-    { title: "分类总数", value: 0, loading: true, icon: FolderKanban },
-    { title: "独立访客数", value: 0, loading: true, icon: Users },
-    { title: "总访问量", value: 0, loading: true, icon: TrendingUp },
-    { title: "今日访问", value: 0, loading: true, icon: CalendarPlus, badge: null as number | null },
-    { title: "待审核提交", value: 0, loading: true, icon: Inbox, href: "/admin/sites" },
-    { title: "近7天新增", value: 0, loading: true, icon: Sparkles, href: "/admin/sites" },
-    { title: "缺少图标", value: 0, loading: true, icon: Globe, href: "/admin/sites" },
+  const [siteStats, setSiteStats] = useState<StatItem[]>([
+    { titleKey: "statSites", value: 0, loading: true, icon: Globe },
+    { titleKey: "statCategories", value: 0, loading: true, icon: FolderKanban },
+    { titleKey: "statVisitors", value: 0, loading: true, icon: Users },
+    { titleKey: "statTotalVisits", value: 0, loading: true, icon: TrendingUp },
+    { titleKey: "statTodayVisits", value: 0, loading: true, icon: CalendarPlus, badge: null as number | null },
+    { titleKey: "statPending", value: 0, loading: true, icon: Inbox, href: "/admin/sites" },
+    { titleKey: "statWeekNew", value: 0, loading: true, icon: Sparkles, href: "/admin/sites" },
+    { titleKey: "statMissingIcons", value: 0, loading: true, icon: Globe, href: "/admin/sites" },
   ])
 
   // 获取时间范围描述
   const getTimeRangeLabel = (days: TimeRange) => {
-    if (days === 0) return "全部时间"
-    if (days === 90) return "近3个月"
-    if (days === 30) return "近30天"
-    return `近${days}天`
+    if (days === 0) return t("rangeAll")
+    if (days === 90) return t("range3months")
+    if (days === 30) return t("range30days")
+    return t("rangeDays", { days })
   }
 
   // 加载统计数据
@@ -138,14 +160,14 @@ export default function AdminDashboardPage() {
         const distributionData = await distributionRes.json()
 
         setSiteStats([
-          { title: "网站总数", value: sitesData.total || 0, loading: false, icon: Globe },
-          { title: "分类总数", value: categoriesData.total || 0, loading: false, icon: FolderKanban },
-          { title: "独立访客数", value: usersData.total || 0, loading: false, icon: Users },
-          { title: "总访问量", value: visitsData.totalVisits || 0, loading: false, icon: TrendingUp },
-          { title: "今日访问", value: todayData.today || 0, loading: false, icon: CalendarPlus, badge: todayData.growthRate ?? null },
-          { title: "待审核提交", value: contentData.pendingSubmissions || 0, loading: false, icon: Inbox, href: "/admin/sites" },
-          { title: "近7天新增", value: contentData.weekNewSites || 0, loading: false, icon: Sparkles, href: "/admin/sites" },
-          { title: "缺少图标", value: contentData.missingIcons || 0, loading: false, icon: Globe, href: "/admin/sites" },
+          { titleKey: "statSites", value: sitesData.total || 0, loading: false, icon: Globe },
+          { titleKey: "statCategories", value: categoriesData.total || 0, loading: false, icon: FolderKanban },
+          { titleKey: "statVisitors", value: usersData.total || 0, loading: false, icon: Users },
+          { titleKey: "statTotalVisits", value: visitsData.totalVisits || 0, loading: false, icon: TrendingUp },
+          { titleKey: "statTodayVisits", value: todayData.today || 0, loading: false, icon: CalendarPlus, badge: todayData.growthRate ?? null },
+          { titleKey: "statPending", value: contentData.pendingSubmissions || 0, loading: false, icon: Inbox, href: "/admin/sites" },
+          { titleKey: "statWeekNew", value: contentData.weekNewSites || 0, loading: false, icon: Sparkles, href: "/admin/sites" },
+          { titleKey: "statMissingIcons", value: contentData.missingIcons || 0, loading: false, icon: Globe, href: "/admin/sites" },
         ])
 
         setVisitStats(visitsData)
@@ -184,9 +206,9 @@ export default function AdminDashboardPage() {
       {/* 统计卡片 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {siteStats.map((stat) => (
-          <Card key={stat.title} className="@container/card">
+          <Card key={stat.titleKey} className="@container/card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <CardTitle className="text-sm font-medium">{t(stat.titleKey)}</CardTitle>
               <CardAction>
                 <stat.icon className="h-4 w-4 text-muted-foreground" />
               </CardAction>
@@ -214,9 +236,9 @@ export default function AdminDashboardPage() {
                   </Badge>
                 )}
               </div>
-              {stat.title === "今日访问" && todayStats && (
+              {stat.titleKey === "statTodayVisits" && todayStats && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  昨日 {formatNumber(todayStats.yesterday)}
+                  {t("yesterday", { count: formatNumber(todayStats.yesterday) })}
                 </p>
               )}
             </CardContent>
@@ -230,11 +252,11 @@ export default function AdminDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              网站访问排行
+              {t("rankTitle")}
             </CardTitle>
             <CardDescription>
-              {getTimeRangeLabel(timeRange)}热门网站
-              {topCount > 5 || topCount === 0 ? "（表内滚动查看更多）" : ""}
+              {t("rankDesc", { range: getTimeRangeLabel(timeRange) })}
+              {topCount > 5 || topCount === 0 ? t("rankDescScrollHint") : ""}
             </CardDescription>
             <CardAction>
               <ToggleGroup
@@ -255,9 +277,9 @@ export default function AdminDashboardPage() {
               >
                 <SelectTrigger
                   className="flex w-28 md:hidden"
-                  aria-label="选择显示数量"
+                  aria-label={t("selectCountLabel")}
                 >
-                  <SelectValue placeholder="选择数量" />
+                  <SelectValue placeholder={t("selectCountLabel")} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="5" className="rounded-lg">Top 5</SelectItem>
@@ -274,9 +296,9 @@ export default function AdminDashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-12">排名</TableHead>
-                      <TableHead>网站名称</TableHead>
-                      <TableHead className="text-right">访问次数</TableHead>
+                      <TableHead className="w-12">{t("thRank")}</TableHead>
+                      <TableHead>{t("thSiteName")}</TableHead>
+                      <TableHead className="text-right">{t("thVisitCount")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -322,9 +344,9 @@ export default function AdminDashboardPage() {
                   <EmptyMedia variant="icon">
                     <BarChart3 className="size-5" />
                   </EmptyMedia>
-                  <EmptyTitle>暂无访问数据</EmptyTitle>
+                  <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
                   <EmptyDescription>
-                    当前时间范围内还没有访问记录
+                    {t("emptyDesc")}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

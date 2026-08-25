@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CategoryIconPicker } from "@/components/admin/category-icon-picker"
 import { createCategory, updateCategory, getCategoryById } from "@/lib/actions"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
@@ -36,6 +37,8 @@ interface CategoryFormDialogProps {
 
 export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuccess }: CategoryFormDialogProps) {
   const router = useRouter()
+  const t = useTranslations("admin.categoryForm")
+  const tc = useTranslations("common")
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<{
     name: string
@@ -97,20 +100,22 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
         : await updateCategory(categoryId!, formData)
 
       if (result.success) {
-        toast.success(mode === "create" ? "创建成功" : "更新成功", {
-          description: `分类"${formData.name}"已${mode === "create" ? "创建" : "更新"}`,
+        toast.success(mode === "create" ? t("createSuccess") : t("updateSuccess"), {
+          description: mode === "create"
+            ? t("createSuccessDesc", { name: formData.name })
+            : t("updateSuccessDesc", { name: formData.name }),
         })
         onOpenChange(false)
         onSuccess?.()
         router.refresh()
       } else {
-        toast.error("操作失败", {
-          description: result.error || "操作失败，请稍后重试",
+        toast.error(tc("operationFailed"), {
+          description: result.error || tc("operationFailed"),
         })
       }
     } catch (error) {
-      toast.error("操作失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(tc("operationFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setLoading(false)
@@ -121,38 +126,38 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "新增分类" : "编辑分类"}</DialogTitle>
+          <DialogTitle>{mode === "create" ? t("createTitle") : t("editTitle")}</DialogTitle>
           <DialogDescription>
-            {mode === "create" ? "添加一个新的分类" : "修改分类信息"}
+            {mode === "create" ? t("createDesc") : t("editDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">分类名称 *</Label>
+              <Label htmlFor="name">{t("nameLabel")}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="例如：技术"
+                placeholder={t("namePlaceholder")}
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label>分类图标</Label>
+              <Label>{t("iconLabel")}</Label>
               <CategoryIconPicker
                 value={formData.icon}
                 onChange={(icon) => setFormData({ ...formData, icon })}
               />
               <p className="text-xs text-muted-foreground">
-                选择精选图标或自定义图片链接，将显示在前台导航及分类标题旁
+                {t("iconHint")}
               </p>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="slug">标识 (Slug) *</Label>
+              <Label htmlFor="slug">{t("slugLabel")}</Label>
               <Input
                 id="slug"
                 value={formData.slug}
@@ -161,12 +166,12 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
                 required
               />
               <p className="text-xs text-muted-foreground">
-                URL 中的标识符，只能包含小写字母、数字和连字符
+                {t("slugHint")}
               </p>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="order">排序</Label>
+              <Label htmlFor="order">{t("orderLabel")}</Label>
               <Input
                 id="order"
                 type="number"
@@ -175,7 +180,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
                 min="0"
               />
               <p className="text-xs text-muted-foreground">
-                数字越小排序越靠前
+                {t("orderHint")}
               </p>
             </div>
           </div>
@@ -187,11 +192,11 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              取消
+              {tc("cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "create" ? "创建" : "保存"}
+              {mode === "create" ? t("createBtn") : t("saveBtn")}
             </Button>
           </DialogFooter>
         </form>

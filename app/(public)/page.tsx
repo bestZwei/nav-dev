@@ -4,17 +4,16 @@ import { CategoryIconBadge } from "@/components/category-icon"
 import { getAllCategories, getCategories, getSystemSettings, getSites } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { getTranslations } from "next-intl/server"
 
-// ISR 配置：每 10 秒自动重新生成页面
-// 这样在 seed 后 10 秒内会自动看到新数据
-// 当后台更新数据时，revalidatePath("/") 会触发立即重新生成
-export const revalidate = 10
-
+// 语言解析依赖请求级 Cookie（i18n/request.ts），页面按请求动态渲染；
+// 后台数据更新时由 revalidatePath("/") 触发立即重新渲染
 export default async function HomePage() {
   const { data: categories } = await getCategories()
   const { data: allCategories } = await getAllCategories()
   const { data: settings } = await getSystemSettings()
   const { data: allSites } = await getSites()
+  const t = await getTranslations("home")
 
   // 将所有网站扁平化，用于客户端搜索
   const flatSites = allSites?.filter(site => site.isPublished) || []
@@ -49,7 +48,7 @@ export default async function HomePage() {
                 <SiteGrid sites={category.sites} />
               ) : (
                 <div className="flex min-h-[100px] items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20">
-                  <p className="text-xs text-muted-foreground">暂无网站</p>
+                  <p className="text-xs text-muted-foreground">{t("noSitesInCategory")}</p>
                 </div>
               )}
 
@@ -59,9 +58,9 @@ export default async function HomePage() {
           </>
         ) : (
           <div className="flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-8">
-            <p className="text-sm font-semibold text-foreground">暂无分类数据</p>
+            <p className="text-sm font-semibold text-foreground">{t("noCategoriesTitle")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              请先在后台创建分类和网站
+              {t("noCategoriesDesc")}
             </p>
           </div>
         )}

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -15,6 +16,7 @@ const SERVICES: FaviconService[] = ["favicon-im", "bqb-cool", "duckduckgo"]
 
 export function FaviconServiceToggle() {
   const { service, setService } = useFaviconService()
+  const t = useTranslations("favicon")
 
   const handleToggle = () => {
     const currentIndex = SERVICES.indexOf(service)
@@ -22,8 +24,8 @@ export function FaviconServiceToggle() {
     const nextService = SERVICES[nextIndex]
 
     // 显示提示
-    toast.success("切换图标服务", {
-      description: `智能图标由 ${FAVICON_SERVICES[nextService].name} 提供服务`,
+    toast.success(t("switched"), {
+      description: t("provider", { name: FAVICON_SERVICES[nextService].name }),
     })
 
     setService(nextService)
@@ -44,7 +46,7 @@ export function FaviconServiceToggle() {
             onClick={handleToggle}
           >
             <Images className="h-4 w-4" />
-            <span className="sr-only">切换图标服务</span>
+            <span className="sr-only">{t("srToggle")}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>

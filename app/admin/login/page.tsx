@@ -14,10 +14,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Loader2 } from "lucide-react"
 import { fetchPublicSettings } from "@/lib/client-settings"
+import { useTranslations } from "next-intl"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const t = useTranslations("admin.login")
   const redirectUrl = searchParams.get("redirect") || "/admin/dashboard"
 
   const [email, setEmail] = useState("")
@@ -25,7 +27,7 @@ function LoginForm() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [siteName, setSiteName] = useState("Conan Nav")
-  const [siteDescription, setSiteDescription] = useState("简洁现代化的网址导航系统")
+  const [siteDescription, setSiteDescription] = useState("")
   const [githubUrl, setGithubUrl] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
@@ -41,7 +43,7 @@ function LoginForm() {
       const settings = await fetchPublicSettings()
       if (!cancelled) {
         if (settings.siteName) setSiteName(settings.siteName)
-        if (settings.siteDescription) setSiteDescription(settings.siteDescription)
+        setSiteDescription(settings.siteDescription || t("descriptionFallback"))
         if (settings.githubUrl) setGithubUrl(settings.githubUrl)
         setSettingsLoaded(true)
       }
@@ -59,7 +61,7 @@ function LoginForm() {
       cancelled = true
       window.removeEventListener('focus', handleFocus)
     }
-  }, [])
+  }, [t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,10 +81,10 @@ function LoginForm() {
         // 使用 window.location.href 进行硬重定向，确保浏览器环境完整同步 Cookie 状态
         window.location.href = redirectUrl
       } else {
-        setError(data.error || "登录失败")
+        setError(data.error || t("loginFailed"))
       }
     } catch (err) {
-      setError("登录失败，请稍后重试")
+      setError(t("retry"))
     } finally {
       setLoading(false)
     }
@@ -132,12 +134,12 @@ function LoginForm() {
           <div className="absolute top-[4%] right-[6%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <FolderTree className="size-4 text-primary" />
-              <span className="text-xs font-medium">分类导航</span>
+              <span className="text-xs font-medium">{t("featureCategories")}</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[9px]">技术</span>
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[9px]">设计</span>
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[9px]">工具</span>
+              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[9px]">{t("featureTagTech")}</span>
+              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[9px]">{t("featureTagDesign")}</span>
+              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[9px]">{t("featureTagTools")}</span>
             </div>
           </div>
 
@@ -145,7 +147,7 @@ function LoginForm() {
           <div className="absolute top-[10.5%] right-[16%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <Smartphone className="size-4 text-primary" />
-              <span className="text-xs font-medium">响应式设计</span>
+              <span className="text-xs font-medium">{t("featureResponsive")}</span>
             </div>
             <div className="flex gap-1">
               <div className="bg-primary/20 px-1.5 py-0.5 rounded text-[8px]">📱</div>
@@ -158,14 +160,14 @@ function LoginForm() {
           <div className="absolute top-[17%] right-[4%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <BarChart3 className="size-4 text-primary" />
-              <span className="text-xs font-medium">数据统计</span>
+              <span className="text-xs font-medium">{t("featureStats")}</span>
             </div>
             <div className="space-y-1">
               <div className="h-1.5 bg-primary/20 rounded-full overflow-hidden">
                 <div className="h-full w-3/4 bg-primary/60 rounded-full" />
               </div>
               <div className="flex justify-between text-[10px] text-muted-foreground">
-                <span>访问量</span>
+                <span>{t("featureVisits")}</span>
                 <span>+12.5%</span>
               </div>
             </div>
@@ -175,12 +177,12 @@ function LoginForm() {
           <div className="absolute top-[23.5%] right-[14%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <Search className="size-4 text-primary" />
-              <span className="text-xs font-medium">实时搜索</span>
+              <span className="text-xs font-medium">{t("featureSearch")}</span>
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-1">
                 <div className="size-1.5 bg-green-500 rounded-full" />
-                <span className="text-[9px] text-muted-foreground">毫秒级响应</span>
+                <span className="text-[9px] text-muted-foreground">{t("featureMsResponse")}</span>
               </div>
             </div>
           </div>
@@ -189,7 +191,7 @@ function LoginForm() {
           <div className="absolute top-[30%] right-[8%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <Scroll className="size-4 text-primary" />
-              <span className="text-xs font-medium">古诗词展示</span>
+              <span className="text-xs font-medium">{t("featurePoetry")}</span>
             </div>
             <p className="text-[9px] text-muted-foreground leading-tight">
               海内存知己<br />天涯若比邻
@@ -200,14 +202,14 @@ function LoginForm() {
           <div className="absolute top-[36.5%] right-[18%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <Moon className="size-4 text-primary" />
-              <span className="text-xs font-medium">暗黑模式</span>
+              <span className="text-xs font-medium">{t("featureDark")}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-[9px] text-muted-foreground">浅色</span>
+              <span className="text-[9px] text-muted-foreground">{t("featureLight")}</span>
               <div className="h-3 w-px bg-primary/20" />
-              <span className="text-[9px] text-muted-foreground">深色</span>
+              <span className="text-[9px] text-muted-foreground">{t("featureDarkShort")}</span>
               <div className="h-3 w-px bg-primary/20" />
-              <span className="text-[9px] text-muted-foreground">系统</span>
+              <span className="text-[9px] text-muted-foreground">{t("featureSystem")}</span>
             </div>
           </div>
 
@@ -215,15 +217,15 @@ function LoginForm() {
           <div className="absolute top-[43%] right-[5%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <FileEdit className="size-4 text-primary" />
-              <span className="text-xs font-medium">网站收录</span>
+              <span className="text-xs font-medium">{t("featureSubmission")}</span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[9px] text-muted-foreground">今日收录</span>
+                <span className="text-[9px] text-muted-foreground">{t("featureTodayCount")}</span>
                 <span className="text-[9px] font-medium text-primary">+3</span>
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[9px] text-muted-foreground">待审核</span>
+                <span className="text-[9px] text-muted-foreground">{t("featurePending")}</span>
                 <span className="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[8px]">2</span>
               </div>
             </div>
@@ -233,12 +235,12 @@ function LoginForm() {
           <div className="absolute top-[49.5%] right-[15%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <Palette className="size-4 text-primary" />
-              <span className="text-xs font-medium">简洁优雅</span>
+              <span className="text-xs font-medium">{t("featureElegant")}</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              <span className="border-primary/20 bg-primary/5 text-primary px-2 py-0.5 rounded-full text-[8px]">克制</span>
-              <span className="border-primary/20 bg-primary/5 text-primary px-2 py-0.5 rounded-full text-[8px]">现代</span>
-              <span className="border-primary/20 bg-primary/5 text-primary px-2 py-0.5 rounded-full text-[8px]">精致</span>
+              <span className="border-primary/20 bg-primary/5 text-primary px-2 py-0.5 rounded-full text-[8px]">{t("featureTagRestraint")}</span>
+              <span className="border-primary/20 bg-primary/5 text-primary px-2 py-0.5 rounded-full text-[8px]">{t("featureTagModern")}</span>
+              <span className="border-primary/20 bg-primary/5 text-primary px-2 py-0.5 rounded-full text-[8px]">{t("featureTagRefined")}</span>
             </div>
           </div>
 
@@ -246,20 +248,20 @@ function LoginForm() {
           <div className="absolute top-[56%] right-[9%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
             <div className="flex items-center gap-2 mb-2">
               <ImageIcon className="size-4 text-primary" />
-              <span className="text-xs font-medium">智能图标</span>
+              <span className="text-xs font-medium">{t("featureIcons")}</span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center gap-1">
                 <div className="size-2 rounded-full bg-green-500/20 flex items-center justify-center">
                   <div className="size-1 rounded-full bg-green-500" />
                 </div>
-                <span className="text-[9px] text-muted-foreground">自动获取</span>
+                <span className="text-[9px] text-muted-foreground">{t("featureAutoFetch")}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="size-2 rounded-full bg-primary/20 flex items-center justify-center">
                   <div className="size-1 rounded-full bg-primary" />
                 </div>
-                <span className="text-[9px] text-muted-foreground">首字母降级</span>
+                <span className="text-[9px] text-muted-foreground">{t("featureFallback")}</span>
               </div>
             </div>
           </div>
@@ -291,7 +293,7 @@ function LoginForm() {
               {/* 欢迎语 */}
               <div className="space-y-4">
                 <h2 className="text-foreground text-5xl font-bold leading-tight tracking-tight">
-                  欢迎回来
+                  {t("welcomeBack")}
                 </h2>
                 <p className="text-muted-foreground text-lg leading-relaxed max-w-md">
                   {siteDescription}
@@ -338,7 +340,7 @@ function LoginForm() {
                 </svg>
               </div>
               <p className="mt-2 text-muted-foreground">
-                登录以管理您的导航站点
+                {t("subtitle")}
               </p>
             </div>
 
@@ -353,7 +355,7 @@ function LoginForm() {
                       </div>
                     )}
                     <Field>
-                      <FieldLabel htmlFor="email">邮箱</FieldLabel>
+                      <FieldLabel htmlFor="email">{t("email")}</FieldLabel>
                       <Input
                         id="email"
                         placeholder="admin@example.com"
@@ -369,7 +371,7 @@ function LoginForm() {
                       />
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="password">密码</FieldLabel>
+                      <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
                       <Input
                         id="password"
                         placeholder="••••••••"
@@ -391,11 +393,11 @@ function LoginForm() {
                         {loading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            登录中
+                            {t("loggingIn")}
                           </>
                         ) : (
                           <>
-                            登录
+                            {t("login")}
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </>
                         )}
@@ -446,7 +448,7 @@ function LoginForm() {
                 </svg>
               </div>
               <p className="mt-2 text-muted-foreground">
-                登录以管理您的导航站点
+                {t("subtitle")}
               </p>
             </div>
 
@@ -461,7 +463,7 @@ function LoginForm() {
                       </div>
                     )}
                     <Field>
-                      <FieldLabel htmlFor="email">邮箱</FieldLabel>
+                      <FieldLabel htmlFor="email">{t("email")}</FieldLabel>
                       <Input
                         id="email"
                         placeholder="admin@example.com"
@@ -477,7 +479,7 @@ function LoginForm() {
                       />
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="password">密码</FieldLabel>
+                      <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
                       <Input
                         id="password"
                         placeholder="••••••••"
@@ -499,11 +501,11 @@ function LoginForm() {
                         {loading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            登录中
+                            {t("loggingIn")}
                           </>
                         ) : (
                           <>
-                            登录
+                            {t("login")}
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </>
                         )}

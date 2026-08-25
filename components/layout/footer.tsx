@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Separator } from "@/components/ui/separator"
 import { fetchPublicSettings, type PublicSettings } from "@/lib/client-settings"
 
@@ -12,6 +13,7 @@ function getDefaultCopyright(): string {
 
 export function Footer() {
   const [settings, setSettings] = useState<PublicSettings | null>(null)
+  const t = useTranslations("footer")
 
   useEffect(() => {
     let cancelled = false
@@ -93,7 +95,7 @@ export function Footer() {
                   href="/admin"
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
-                  管理后台
+                  {t("admin")}
                 </a>
               )}
             </div>

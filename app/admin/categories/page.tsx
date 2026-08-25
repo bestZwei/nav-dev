@@ -54,6 +54,7 @@ import { CategoryIconBadge } from "@/components/category-icon"
 import { getCategoriesWithPagination, deleteCategory, updateCategoriesOrder } from "@/lib/actions"
 import { toast } from "sonner"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { useTranslations } from "next-intl"
 
 interface Category {
   id: string
@@ -74,6 +75,8 @@ interface PaginationInfo {
 }
 
 export default function AdminCategoriesPage() {
+  const t = useTranslations("admin.categories")
+  const tc = useTranslations("common")
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [isSavingOrder, setIsSavingOrder] = useState(false)
@@ -101,13 +104,13 @@ export default function AdminCategoriesPage() {
         setPagination(result.pagination || null)
         setPage(result.pagination?.page || 1)
       } else {
-        toast.error("加载失败", {
-          description: result.error || "无法加载分类列表",
+        toast.error(tc("loadFailed"), {
+          description: result.error || t("cannotLoad"),
         })
       }
     } catch (error) {
-      toast.error("加载失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(tc("loadFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setLoading(false)
@@ -128,18 +131,18 @@ export default function AdminCategoriesPage() {
       }))
       const result = await updateCategoriesOrder(orderPayload)
       if (result.success) {
-        toast.success("排序已保存", {
-          description: "分类顺序已成功更新并同步至前台",
+        toast.success(t("orderSaved"), {
+          description: t("orderSavedDesc"),
         })
       } else {
-        toast.error("排序保存失败", {
-          description: result.error || "无法保存排序",
+        toast.error(t("orderSaveFailed"), {
+          description: result.error || t("cannotSaveOrder"),
         })
         loadCategories(page)
       }
     } catch (error) {
-      toast.error("排序保存失败", {
-        description: "网络错误，请稍后重试",
+      toast.error(t("orderSaveFailed"), {
+        description: t("networkError"),
       })
       loadCategories(page)
     } finally {
@@ -227,18 +230,18 @@ export default function AdminCategoriesPage() {
     try {
       const result = await deleteCategory(deletingCategoryId)
       if (result.success) {
-        toast.success("删除成功", {
-          description: "分类已删除",
+        toast.success(t("deleteSuccess"), {
+          description: t("deleteSuccessDesc"),
         })
         loadCategories()
       } else {
-        toast.error("删除失败", {
-          description: result.error || "删除失败，请稍后重试",
+        toast.error(t("deleteFailed"), {
+          description: result.error || t("deleteFailedDesc"),
         })
       }
     } catch (error) {
-      toast.error("删除失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(t("deleteFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setDeleteDialogOpen(false)
@@ -253,27 +256,27 @@ export default function AdminCategoriesPage() {
         <div className="flex items-center gap-2">
           <Info className="h-4 w-4 text-primary shrink-0" />
           <span>
-            <strong>拖拽排序提示：</strong> 按住分类左侧的「拖拽手柄 ⠿」上下拖拽即可调整分类在首页导航中的显示顺序。
+            <strong>{t("dragHintPre")}</strong> {t("dragHint")}
           </span>
         </div>
         {isSavingOrder && (
           <div className="flex items-center gap-1.5 text-primary font-medium">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            <span>保存排序中...</span>
+            <span>{t("savingOrder")}</span>
           </div>
         )}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>分类，让导航井井有条</CardTitle>
+          <CardTitle>{t("listTitle")}</CardTitle>
           <CardDescription>
-            共 {pagination?.total || 0} 个分类，拖拽调整前台导航展示顺序
+            {t("listDesc", { count: pagination?.total || 0 })}
           </CardDescription>
           <CardAction>
             <Button onClick={handleCreate} className="gap-1.5">
               <Plus className="h-4 w-4" />
-              新增分类
+              {t("addCategory")}
             </Button>
           </CardAction>
         </CardHeader>
@@ -288,14 +291,14 @@ export default function AdminCategoriesPage() {
                 <EmptyMedia variant="icon">
                   <FolderKanban className="size-5" />
                 </EmptyMedia>
-                <EmptyTitle>暂无分类</EmptyTitle>
+                <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
                 <EmptyDescription>
-                  添加第一个分类，开始整理你的导航站点
+                  {t("emptyDesc")}
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
                 <Button variant="outline" onClick={handleCreate}>
-                  <Plus className="h-4 w-4" /> 新增分类
+                  <Plus className="h-4 w-4" /> {t("addCategory")}
                 </Button>
               </EmptyContent>
             </Empty>
@@ -304,12 +307,12 @@ export default function AdminCategoriesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[60px] text-center">排序</TableHead>
-                    <TableHead className="w-[180px]">分类图标 & 名称</TableHead>
-                    <TableHead>标识 (Slug)</TableHead>
-                    <TableHead className="w-[100px] text-center">网站数</TableHead>
-                    <TableHead className="w-[120px] text-center">位置调整</TableHead>
-                    <TableHead className="w-[100px] text-right">操作</TableHead>
+                    <TableHead className="w-[60px] text-center">{t("thOrder")}</TableHead>
+                    <TableHead className="w-[180px]">{t("thIconName")}</TableHead>
+                    <TableHead>{t("thSlug")}</TableHead>
+                    <TableHead className="w-[100px] text-center">{t("thSites")}</TableHead>
+                    <TableHead className="w-[120px] text-center">{t("thAdjust")}</TableHead>
+                    <TableHead className="w-[100px] text-right">{t("thActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -335,7 +338,7 @@ export default function AdminCategoriesPage() {
                           <div className="flex items-center justify-center gap-1.5">
                             <span
                               className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted"
-                              title="按住拖拽调整顺序"
+                              title={t("dragHandleTitle")}
                             >
                               <GripVertical className="h-4 w-4" />
                             </span>
@@ -357,11 +360,11 @@ export default function AdminCategoriesPage() {
                               </div>
                               {category.icon ? (
                                 <span className="text-[10px] text-muted-foreground truncate max-w-[120px] block">
-                                  图标: {category.icon.startsWith("data:") ? "自定义图片" : category.icon}
+                                  {t("iconPrefix")}{category.icon.startsWith("data:") ? t("customImage") : category.icon}
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-muted-foreground/60">
-                                  未设置图标
+                                  {t("noIconSet")}
                                 </span>
                               )}
                             </div>
@@ -398,7 +401,7 @@ export default function AdminCategoriesPage() {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>上移一位</p>
+                                  <p>{t("moveUp")}</p>
                                 </TooltipContent>
                                                           </Tooltip>
 
@@ -415,7 +418,7 @@ export default function AdminCategoriesPage() {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>下移一位</p>
+                                  <p>{t("moveDown")}</p>
                                 </TooltipContent>
                                                           </Tooltip>
                           </div>
@@ -436,7 +439,7 @@ export default function AdminCategoriesPage() {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>编辑分类</p>
+                                  <p>{t("editCategory")}</p>
                                 </TooltipContent>
                                                           </Tooltip>
 
@@ -452,7 +455,7 @@ export default function AdminCategoriesPage() {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>删除分类</p>
+                                  <p>{t("deleteCategory")}</p>
                                 </TooltipContent>
                                                           </Tooltip>
                           </div>
@@ -536,18 +539,18 @@ export default function AdminCategoriesPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除分类</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除这个分类吗？此操作将同时删除该分类下的所有网站，无法撤销。
+              {t("deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              删除
+              {t("deleteConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

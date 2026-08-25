@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -13,6 +14,7 @@ import { toast } from "sonner"
 
 export function CardDensityToggle() {
   const { density, toggleDensity, mounted } = useCardDensity()
+  const t = useTranslations("density")
 
   if (!mounted) {
     return (
@@ -24,8 +26,8 @@ export function CardDensityToggle() {
 
   const handleToggle = () => {
     const nextMode = toggleDensity()
-    toast.success("已切换卡片视图", {
-      description: nextMode === "compact" ? "已切换为「紧凑模式」" : "已切换为「标准模式」",
+    toast.success(t("changedTitle"), {
+      description: nextMode === "compact" ? t("switchedToCompact") : t("switchedToStandard"),
       duration: 2000,
     })
   }
@@ -41,20 +43,20 @@ export function CardDensityToggle() {
             size="icon"
             onClick={handleToggle}
             className="h-9 w-9 transition-transform active:scale-95"
-            aria-label={`切换卡片视图模式，当前为：${isCompact ? "紧凑模式" : "标准模式"}`}
+            aria-label={t("ariaLabel", { mode: isCompact ? t("compact") : t("standard") })}
           >
             {isCompact ? (
               <Grid3X3 className="h-4 w-4 text-primary animate-scale-in" />
             ) : (
               <LayoutGrid className="h-4 w-4 text-muted-foreground hover:text-foreground" />
             )}
-            <span className="sr-only">切换卡片大小与布局</span>
+            <span className="sr-only">{t("srToggle")}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <p className="text-xs">
-            卡片大小：<span className="font-semibold">{isCompact ? "紧凑模式" : "标准模式"}</span>
-            <span className="block text-muted-foreground text-[10px] mt-0.5">点击切换视图布局</span>
+            {t("sizeLabel")}：<span className="font-semibold">{isCompact ? t("compact") : t("standard")}</span>
+            <span className="block text-muted-foreground text-[10px] mt-0.5">{t("clickHint")}</span>
           </p>
         </TooltipContent>
       </Tooltip>

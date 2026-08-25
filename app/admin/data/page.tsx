@@ -11,8 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { FileDown, FileUp, Database, ChevronDown } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 export default function DataManagementPage() {
+  const t = useTranslations("admin.data")
   const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   return (
@@ -25,10 +27,10 @@ export default function DataManagementPage() {
               <div className="p-2 bg-primary/10 rounded">
                 <FileUp className="h-5 w-5 text-primary" />
               </div>
-              导入数据
+              {t("importTitle")}
             </CardTitle>
             <CardDescription>
-              从浏览器导入书签，或导入本系统JSON备份
+              {t("importDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -38,7 +40,7 @@ export default function DataManagementPage() {
               size="lg"
             >
               <FileUp className="mr-2 h-4 w-4" />
-              开始导入
+              {t("startImport")}
             </Button>
           </CardContent>
         </Card>
@@ -50,10 +52,10 @@ export default function DataManagementPage() {
               <div className="p-2 bg-muted rounded">
                 <FileDown className="h-5 w-5" />
               </div>
-              导出数据
+              {t("exportTitle")}
             </CardTitle>
             <CardDescription>
-              导出为完整备份或Chrome书签格式
+              {t("exportDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -65,21 +67,21 @@ export default function DataManagementPage() {
                   size="lg"
                 >
                   <FileDown className="mr-2 h-4 w-4" />
-                  选择导出格式
+                  {t("selectFormat")}
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => window.open('/api/data/export', '_blank')}>
                   <div className="flex flex-col items-start gap-1">
-                    <span className="font-medium">JSON完整备份</span>
-                    <span className="text-xs text-muted-foreground">包含所有字段，用于数据迁移和备份</span>
+                    <span className="font-medium">{t("jsonBackup")}</span>
+                    <span className="text-xs text-muted-foreground">{t("jsonBackupDesc")}</span>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => window.open('/api/bookmarks/export', '_blank')}>
                   <div className="flex flex-col items-start gap-1">
-                    <span className="font-medium">Chrome书签</span>
-                    <span className="text-xs text-muted-foreground">导出到浏览器，在Chrome等浏览器中使用</span>
+                    <span className="font-medium">{t("chromeBookmark")}</span>
+                    <span className="text-xs text-muted-foreground">{t("chromeBookmarkDesc")}</span>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -93,7 +95,7 @@ export default function DataManagementPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            功能说明
+            {t("guideTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 text-sm">
@@ -101,16 +103,16 @@ export default function DataManagementPage() {
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <span className="text-lg">📥</span>
-              导入模式
+              {t("importModeTitle")}
             </h4>
             <div className="grid gap-3 md:grid-cols-2 ml-7">
               <div className="p-3 rounded-lg border bg-muted/30">
-                <p className="font-medium text-foreground mb-1">追加模式</p>
-                <p className="text-muted-foreground text-xs">保留现有数据，将新数据添加到末尾</p>
+                <p className="font-medium text-foreground mb-1">{t("appendMode")}</p>
+                <p className="text-muted-foreground text-xs">{t("appendModeDesc")}</p>
               </div>
               <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5">
-                <p className="font-medium text-destructive mb-1">覆盖模式</p>
-                <p className="text-muted-foreground text-xs">删除所有现有数据，仅保留导入的数据</p>
+                <p className="font-medium text-destructive mb-1">{t("overwriteMode")}</p>
+                <p className="text-muted-foreground text-xs">{t("overwriteModeDesc")}</p>
               </div>
             </div>
           </div>
@@ -119,39 +121,37 @@ export default function DataManagementPage() {
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <span className="text-lg">📄</span>
-              支持的导入格式
+              {t("formatsTitle")}
             </h4>
             <div className="space-y-3 ml-7">
               {/* JSON格式 */}
               <div className="p-3 rounded-lg border border-blue-600/20 bg-blue-500/5">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-blue-600 font-semibold">JSON格式（推荐）</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">完整数据</span>
+                  <span className="text-blue-600 font-semibold">{t("jsonRecommended")}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{t("fullDataBadge")}</span>
                 </div>
-                <p className="text-muted-foreground text-xs">包含描述、排序、发布状态等所有字段，不会丢失任何数据，适合数据迁移和恢复</p>
+                <p className="text-muted-foreground text-xs">{t("jsonFullDesc")}</p>
               </div>
 
               {/* Chrome书签格式 */}
               <div className="p-3 rounded-lg border border-muted bg-muted/30">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold">Chrome书签</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">浏览器格式</span>
+                  <span className="font-semibold">{t("chromeBookmark")}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{t("chromeBadge")}</span>
                 </div>
                 <div className="space-y-2">
                   <p className="text-muted-foreground text-xs">
-                    <span className="font-medium">导出：</span>在Chrome等浏览器中使用，方便用户将导航站的书签同步到浏览器
+                    <span className="font-medium">{t("exportLabel")}</span>{t("exportDescDetail")}
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    <span className="font-medium">导入：</span>从浏览器导入书签到导航站，仅包含名称、URL和图标
+                    <span className="font-medium">{t("importLabel")}</span>{t("importDescDetail")}
                   </p>
                 </div>
 
                 {/* 多层嵌套说明 - 仅导入时 */}
                 <div className="mt-2 p-2 rounded bg-background/50 border-l-2 border-muted-foreground/30">
                   <p className="text-muted-foreground text-xs leading-relaxed">
-                    <span className="font-medium">多层嵌套处理（导入时）：</span>如果浏览器书签包含多层嵌套文件夹（如 <code className="px-1 py-0.5 rounded bg-background font-mono">/云服务/Cloudflare</code>），
-                    系统会自动将每个文件夹拆分为独立分类。例如：<code className="px-1 py-0.5 rounded bg-background font-mono">云服务</code> 和
-                    <code className="px-1 py-0.5 rounded bg-background font-mono">Cloudflare</code> 会成为两个独立的分类。
+                    <span className="font-medium">{t("nestedTitle")}</span>{t("nestedDesc")}
                   </p>
                 </div>
               </div>
@@ -162,12 +162,12 @@ export default function DataManagementPage() {
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <span className="text-lg">⚠️</span>
-              安全提示
+              {t("safetyTitle")}
             </h4>
             <div className="ml-7 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-              <p className="text-destructive text-xs font-medium mb-1">覆盖模式会永久删除所有数据</p>
-              <p className="text-muted-foreground text-xs mb-2">执行覆盖后，原有的所有分类、网站和访问统计记录都会被永久删除。</p>
-              <p className="text-muted-foreground text-xs">💡 <strong>访问统计无法恢复</strong>，因为导出的JSON文件不包含统计数据。如需保留统计数据，请使用数据库备份。</p>
+              <p className="text-destructive text-xs font-medium mb-1">{t("safetyLead")}</p>
+              <p className="text-muted-foreground text-xs mb-2">{t("safetyDesc")}</p>
+              <p className="text-muted-foreground text-xs"><strong>{t("safetyStats")}</strong>{t("safetyStatsDesc")}</p>
             </div>
           </div>
 
@@ -175,40 +175,40 @@ export default function DataManagementPage() {
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <span className="text-lg">📊</span>
-              数据格式对比
+              {t("compareTitle")}
             </h4>
             <div className="ml-7 overflow-x-auto">
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2 font-medium">字段</th>
-                    <th className="text-center p-2 font-medium">JSON</th>
-                    <th className="text-center p-2 font-medium">Chrome书签</th>
+                    <th className="text-left p-2 font-medium">{t("thField")}</th>
+                    <th className="text-center p-2 font-medium">{t("thJson")}</th>
+                    <th className="text-center p-2 font-medium">{t("thChrome")}</th>
                   </tr>
                 </thead>
                 <tbody className="text-muted-foreground">
                   <tr className="border-b">
-                    <td className="p-2">网站名称</td>
+                    <td className="p-2">{t("fieldName")}</td>
                     <td className="text-center p-2">✅</td>
                     <td className="text-center p-2">✅</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="p-2">URL地址</td>
+                    <td className="p-2">{t("fieldUrl")}</td>
                     <td className="text-center p-2">✅</td>
                     <td className="text-center p-2">✅</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="p-2">网站描述</td>
+                    <td className="p-2">{t("fieldDesc")}</td>
                     <td className="text-center p-2 text-blue-600 dark:text-blue-400 font-semibold">✅</td>
                     <td className="text-center p-2">❌</td>
                   </tr>
                   <tr className="border-b">
-                    <td className="p-2">排序</td>
+                    <td className="p-2">{t("fieldOrder")}</td>
                     <td className="text-center p-2 text-blue-600 dark:text-blue-400 font-semibold">✅</td>
                     <td className="text-center p-2">❌</td>
                   </tr>
                   <tr>
-                    <td className="p-2">发布状态</td>
+                    <td className="p-2">{t("fieldPublished")}</td>
                     <td className="text-center p-2 text-blue-600 dark:text-blue-400 font-semibold">✅</td>
                     <td className="text-center p-2">❌</td>
                   </tr>

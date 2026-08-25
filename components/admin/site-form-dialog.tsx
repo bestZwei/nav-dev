@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { createSite, updateSite, getAllCategories } from "@/lib/actions"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
@@ -52,6 +53,8 @@ interface SiteFormDialogProps {
 
 export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: SiteFormDialogProps) {
   const router = useRouter()
+  const t = useTranslations("admin.siteForm")
+  const tc = useTranslations("common")
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
@@ -113,20 +116,22 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
         : await updateSite(site!.id, formData)
 
       if (result.success) {
-        toast.success(mode === "create" ? "创建成功" : "更新成功", {
-          description: `网站"${formData.name}"已${mode === "create" ? "创建" : "更新"}`,
+        toast.success(mode === "create" ? t("createSuccess") : t("updateSuccess"), {
+          description: mode === "create"
+            ? t("createSuccessDesc", { name: formData.name })
+            : t("updateSuccessDesc", { name: formData.name }),
         })
         onOpenChange(false)
         onSuccess?.()
         router.refresh()
       } else {
-        toast.error("操作失败", {
-          description: result.error || "操作失败，请稍后重试",
+        toast.error(tc("operationFailed"), {
+          description: result.error || tc("operationFailed"),
         })
       }
     } catch (error) {
-      toast.error("操作失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(tc("operationFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setLoading(false)
@@ -137,27 +142,27 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "新增网站" : "编辑网站"}</DialogTitle>
+          <DialogTitle>{mode === "create" ? t("createTitle") : t("editTitle")}</DialogTitle>
           <DialogDescription>
-            {mode === "create" ? "添加一个新的网站到导航" : "修改网站信息"}
+            {mode === "create" ? t("createDesc") : t("editDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">网站名称 *</Label>
+              <Label htmlFor="name">{t("nameLabel")}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="例如：Google"
+                placeholder={t("namePlaceholder")}
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="url">网站链接 *</Label>
+              <Label htmlFor="url">{t("urlLabel")}</Label>
               <Input
                 id="url"
                 type="url"
@@ -169,14 +174,14 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="category">分类 *</Label>
+              <Label htmlFor="category">{t("categoryLabel")}</Label>
               <Select
                 value={formData.categoryId}
                 onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
                 required
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择分类" />
+                  <SelectValue placeholder={t("categoryPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -189,18 +194,18 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">描述 *</Label>
+              <Label htmlFor="description">{t("descLabel")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="简短描述这个网站..."
+                placeholder={t("descPlaceholder")}
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="iconUrl">图标 URL</Label>
+              <Label htmlFor="iconUrl">{t("iconLabel")}</Label>
               <Input
                 id="iconUrl"
                 type="url"
@@ -212,9 +217,9 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
 
             <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/20">
               <div className="space-y-0.5">
-                <Label htmlFor="pinned" className="font-medium">置顶展示</Label>
+                <Label htmlFor="pinned" className="font-medium">{t("pinnedLabel")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  将该网站置顶并在前台分类中优先排在最前
+                  {t("pinnedDesc")}
                 </p>
               </div>
               <Switch
@@ -226,9 +231,9 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="published">发布状态</Label>
+                <Label htmlFor="published">{t("publishedLabel")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  是否在前台显示此网站
+                  {t("publishedDesc")}
                 </p>
               </div>
               <Switch
@@ -246,11 +251,11 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              取消
+              {tc("cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "create" ? "创建" : "保存"}
+              {mode === "create" ? t("createBtn") : t("saveBtn")}
             </Button>
           </DialogFooter>
         </form>

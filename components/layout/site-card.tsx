@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useTranslations } from "next-intl"
 import { ExternalLink, Copy, Check, Pin } from "lucide-react"
 import { useFaviconService, getProxiedFaviconUrl, proxyIconUrlIfPossible } from "@/hooks/use-favicon-service"
 import { useCardDensity } from "@/hooks/use-card-density"
@@ -48,6 +49,7 @@ function SiteIcon({
   name: string
   size?: "standard" | "compact"
 }) {
+  const t = useTranslations("siteCard")
   const [loadState, setLoadState] = useState<"loading" | "loaded" | "error">("loading")
   const initial = useMemo(() => getInitial(name), [name])
   const isCompact = size === "compact"
@@ -79,7 +81,7 @@ function SiteIcon({
       {iconSrc && loadState !== "error" && (
         <Image
           src={iconSrc}
-          alt={`${name} 图标`}
+          alt={t("iconAlt", { name })}
           width={pixelSize}
           height={pixelSize}
           sizes={isCompact ? "28px" : "40px"}
@@ -112,6 +114,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
   const [copied, setCopied] = useState(false)
   const { service } = useFaviconService()
   const { density: contextDensity } = useCardDensity()
+  const t = useTranslations("siteCard")
 
   const density = propDensity || contextDensity
   const isCompact = density === "compact"
@@ -153,7 +156,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleClick}
-              aria-label={`访问 ${site.name}`}
+              aria-label={t("visit", { name: site.name })}
               className={`group relative flex h-12 items-center gap-2.5 rounded-lg border px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs select-none ${
                 site.isPinned
                   ? "border-amber-500/30 bg-amber-500/[0.04] hover:border-amber-500/60 hover:bg-amber-500/[0.08]"
@@ -167,7 +170,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
                   {site.name}
                 </span>
                 {site.isPinned && (
-                  <span title="置顶推荐" className="inline-flex shrink-0">
+                  <span title={t("pinned")} className="inline-flex shrink-0">
                     <Pin className="h-3 w-3 text-amber-500 fill-amber-500" />
                   </span>
                 )}
@@ -186,7 +189,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-semibold text-sm text-foreground">{site.name}</span>
               {site.isPinned && (
-                <span title="置顶推荐" className="inline-flex items-center">
+                <span title={t("pinned")} className="inline-flex items-center">
                   <Pin className="h-3 w-3 text-amber-500 fill-amber-500" />
                 </span>
               )}
@@ -201,7 +204,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
                 {site.description}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground italic">暂无描述</p>
+              <p className="text-xs text-muted-foreground italic">{t("noDescription")}</p>
             )}
             <p className="mt-2 text-[10px] text-muted-foreground/80 font-mono truncate border-t border-border/40 pt-1.5">
               {site.url}
@@ -219,7 +222,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleClick}
-      aria-label={`访问 ${site.name}`}
+      aria-label={t("visit", { name: site.name })}
       className="group relative block h-full select-none"
     >
       <div className={`relative flex h-full items-start gap-3.5 rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover ${
@@ -240,7 +243,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               {site.name}
             </h3>
             {site.isPinned && (
-              <span title="置顶推荐" className="inline-flex shrink-0">
+              <span title={t("pinned")} className="inline-flex shrink-0">
                 <Pin className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
               </span>
             )}
@@ -253,7 +256,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               {site.description}
             </p>
           ) : (
-            <p className="mt-1 text-xs text-muted-foreground/60 italic">暂无描述</p>
+            <p className="mt-1 text-xs text-muted-foreground/60 italic">{t("noDescription")}</p>
           )}
         </div>
 
@@ -261,7 +264,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
         <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
           <button
             onClick={handleCopy}
-            title={copied ? "已复制网址" : "复制网址"}
+            title={copied ? t("copied") : t("copy")}
             type="button"
             className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >

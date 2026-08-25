@@ -4,12 +4,9 @@ import { CategoryIconBadge } from "@/components/category-icon"
 import { getAllCategories, getCategoryBySlug, getSystemSettings, getSites } from "@/lib/actions"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import { getTranslations } from "next-intl/server"
 
-// ISR 配置：每 10 秒自动重新生成页面
-// 这样在 seed 后 10 秒内会自动看到新数据
-// 当后台更新数据时，revalidatePath("/") 会触发立即重新生成
-export const revalidate = 10
-
+// 语言解析依赖请求级 Cookie（i18n/request.ts），页面按请求动态渲染
 interface CategoryPageProps {
   params: Promise<{
     slug: string
@@ -22,6 +19,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const { data: allCategories } = await getAllCategories()
   const { data: settings } = await getSystemSettings()
   const { data: allSites } = await getSites()
+  const t = await getTranslations("category")
 
   if (!category) {
     notFound()
@@ -45,7 +43,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground/95">{category.name}</h1>
           {category.sites && category.sites.length > 0 && (
             <Badge variant="secondary" className="px-2 py-0 text-[11px] font-medium h-5 rounded-full">
-              共 {category.sites.length} 个网站
+              {t("siteCount", { count: category.sites.length })}
             </Badge>
           )}
         </div>
@@ -55,9 +53,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <SiteGrid sites={category.sites} />
       ) : (
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-center">
-          <p className="text-sm font-semibold text-foreground">该分类下暂无网站</p>
+          <p className="text-sm font-semibold text-foreground">{t("noSitesTitle")}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            请在后台添加网站到此分类
+            {t("noSitesDesc")}
           </p>
         </div>
       )}

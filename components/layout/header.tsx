@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LocaleToggle } from "@/components/locale-toggle"
 import { PoetryToggle } from "@/components/poetry-toggle"
 import { FaviconServiceToggle } from "@/components/favicon-service-toggle"
 import { CardDensityToggle } from "@/components/card-density-toggle"
@@ -53,6 +55,7 @@ export function Header({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const isDesktop = useMediaQuery("(min-width: 768px)")
+  const t = useTranslations("header")
 
   useEffect(() => {
     setMounted(true)
@@ -165,12 +168,12 @@ export function Header({
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <path d="M9 3v18" />
                   </svg>
-                  <span className="sr-only">分类</span>
+                  <span className="sr-only">{t("categoriesSr")}</span>
                 </button>
               </DrawerTrigger>
               <DrawerContent className="h-full w-[280px] rounded-none border-r">
                 <DrawerHeader className="sr-only">
-                  <DrawerTitle>选择分类</DrawerTitle>
+                  <DrawerTitle>{t("selectCategory")}</DrawerTitle>
                 </DrawerHeader>
                 <div className="grid gap-1 px-4 py-6">
                   {categories.map((category) => (
@@ -200,7 +203,7 @@ export function Header({
               href="/"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-accent hover:text-accent-foreground h-9 w-9"
-              aria-label="返回首页"
+              aria-label={t("backHome")}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -246,12 +249,12 @@ export function Header({
 
           <div className="flex-shrink-0 ml-auto pl-2 sm:pl-4 flex items-center gap-2">
             <div className="relative hidden sm:block group">
-              <Label htmlFor="search" className="sr-only">搜索</Label>
+              <Label htmlFor="search" className="sr-only">{t("searchSr")}</Label>
               <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none select-none transition-colors group-focus-within:text-foreground" />
               <Input
                 id="search"
                 type="text"
-                placeholder="搜索... (快捷键 /)"
+                placeholder={t("searchPlaceholder")}
                 className="h-9 w-40 sm:w-48 lg:w-64 pl-8 pr-8 text-xs bg-muted/40 transition-all focus:bg-background focus:w-56 sm:focus:w-60 lg:focus:w-72 [&::-webkit-search-cancel-button]:hidden [&::-ms-clear]:hidden"
                 value={searchQuery}
                 onChange={(e) => onSearchChange?.(e.target.value)}
@@ -262,7 +265,7 @@ export function Header({
                   onClick={handleClearSearch}
                   className="absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-transform active:scale-90"
                   type="button"
-                  aria-label="清除搜索"
+                  aria-label={t("clearSearch")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -281,6 +284,7 @@ export function Header({
             <CardDensityToggle />
             <FaviconServiceToggle />
             <PoetryToggle />
+            <LocaleToggle />
             <ThemeToggle />
           </div>
         </div>

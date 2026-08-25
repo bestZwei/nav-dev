@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/select"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { useTranslations } from "next-intl"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -75,6 +76,8 @@ interface PaginationInfo {
 }
 
 export default function AdminSitesPage() {
+  const t = useTranslations("admin.sites")
+  const tc = useTranslations("common")
   const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -117,13 +120,13 @@ export default function AdminSitesPage() {
         setPagination(result.pagination || null)
         setPage(result.pagination?.page || 1)
       } else {
-        toast.error("加载失败", {
-          description: result.error || "无法加载网站列表",
+        toast.error(tc("loadFailed"), {
+          description: result.error || t("cannotLoad"),
         })
       }
     } catch (error) {
-      toast.error("加载失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(tc("loadFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setLoading(false)
@@ -212,18 +215,18 @@ export default function AdminSitesPage() {
     try {
       const result = await deleteSite(deletingSiteId)
       if (result.success) {
-        toast.success("删除成功", {
-          description: "网站已删除",
+        toast.success(t("deleteSuccess"), {
+          description: t("deleteSuccessDesc"),
         })
         loadSites()
       } else {
-        toast.error("删除失败", {
-          description: result.error || "删除失败，请稍后重试",
+        toast.error(t("deleteFailed"), {
+          description: result.error || t("deleteFailedDesc"),
         })
       }
     } catch (error) {
-      toast.error("删除失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(t("deleteFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setDeleteDialogOpen(false)
@@ -240,18 +243,18 @@ export default function AdminSitesPage() {
     try {
       const result = await toggleSitePublish(siteId)
       if (result.success) {
-        toast.success("状态已更新", {
-          description: "网站发布状态已切换",
+        toast.success(t("statusUpdated"), {
+          description: t("publishToggledDesc"),
         })
         loadSites()
       } else {
-        toast.error("操作失败", {
-          description: result.error || "操作失败，请稍后重试",
+        toast.error(tc("operationFailed"), {
+          description: result.error || tc("operationFailed"),
         })
       }
     } catch (error) {
-      toast.error("操作失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(tc("operationFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setTogglingPublishId(null)
@@ -267,18 +270,18 @@ export default function AdminSitesPage() {
     try {
       const result = await toggleSitePin(siteId)
       if (result.success) {
-        toast.success(currentPin ? "已取消置顶" : "已设为置顶", {
-          description: currentPin ? "该网站将按常规顺序展示" : "该网站将在前台分类中优先推荐展示",
+        toast.success(currentPin ? t("unpinnedToast") : t("pinnedToast"), {
+          description: currentPin ? t("unpinnedDesc") : t("pinnedDesc"),
         })
         loadSites()
       } else {
-        toast.error("操作失败", {
-          description: result.error || "切换置顶状态失败",
+        toast.error(tc("operationFailed"), {
+          description: result.error || t("pinToggleFailed"),
         })
       }
     } catch (error) {
-      toast.error("操作失败", {
-        description: "发生错误，请稍后重试",
+      toast.error(tc("operationFailed"), {
+        description: tc("retryLater"),
       })
     } finally {
       setTogglingPinId(null)
@@ -291,13 +294,13 @@ export default function AdminSitesPage() {
       <div className="flex flex-wrap items-center gap-4">
           {/* 分类筛选 */}
           <Field orientation="horizontal" className="w-auto">
-            <FieldLabel>分类</FieldLabel>
+            <FieldLabel>{t("filterCategory")}</FieldLabel>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="全部分类" />
+                <SelectValue placeholder={t("filterCategoryAll")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部分类</SelectItem>
+                <SelectItem value="all">{t("filterCategoryAll")}</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -309,45 +312,45 @@ export default function AdminSitesPage() {
 
           {/* 置顶筛选 */}
           <Field orientation="horizontal" className="w-auto">
-            <FieldLabel>置顶</FieldLabel>
+            <FieldLabel>{t("filterPinned")}</FieldLabel>
             <Select value={filterPinned} onValueChange={setFilterPinned}>
               <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="全部置顶" />
+                <SelectValue placeholder={t("filterPinnedPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部</SelectItem>
-                <SelectItem value="true">仅置顶</SelectItem>
-                <SelectItem value="false">未置顶</SelectItem>
+                <SelectItem value="all">{t("filterPinnedAll")}</SelectItem>
+                <SelectItem value="true">{t("filterPinnedOnly")}</SelectItem>
+                <SelectItem value="false">{t("filterPinnedNone")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
 
           {/* 状态筛选 */}
           <Field orientation="horizontal" className="w-auto">
-            <FieldLabel>状态</FieldLabel>
+            <FieldLabel>{t("filterStatus")}</FieldLabel>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="全部状态" />
+                <SelectValue placeholder={t("filterStatusAll")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="true">已发布</SelectItem>
-                <SelectItem value="false">未发布</SelectItem>
+                <SelectItem value="all">{t("filterStatusAll")}</SelectItem>
+                <SelectItem value="true">{t("statusPublished")}</SelectItem>
+                <SelectItem value="false">{t("statusUnpublished")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
 
           {/* 提交者筛选 */}
           <Field orientation="horizontal" className="w-auto">
-            <FieldLabel>来源</FieldLabel>
+            <FieldLabel>{t("filterSource")}</FieldLabel>
             <Select value={filterSubmitter} onValueChange={setFilterSubmitter}>
               <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="全部来源" />
+                <SelectValue placeholder={t("filterSourceAll")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部来源</SelectItem>
-                <SelectItem value="true">用户提交</SelectItem>
-                <SelectItem value="false">管理员创建</SelectItem>
+                <SelectItem value="all">{t("filterSourceAll")}</SelectItem>
+                <SelectItem value="true">{t("sourceUser")}</SelectItem>
+                <SelectItem value="false">{t("sourceAdminCreated")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -362,11 +365,11 @@ export default function AdminSitesPage() {
                     onClick={handleResetFilters}
                   >
                     <RotateCcw className="h-4 w-4" />
-                    <span className="sr-only">重置筛选</span>
+                    <span className="sr-only">{t("resetFilters")}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>重置筛选</p>
+                  <p>{t("resetFilters")}</p>
                 </TooltipContent>
                           </Tooltip>
           )}
@@ -376,7 +379,7 @@ export default function AdminSitesPage() {
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="搜索名称/描述/网址"
+              placeholder={t("searchPlaceholder")}
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               className="w-[220px] pl-8"
@@ -387,12 +390,12 @@ export default function AdminSitesPage() {
       {/* 网站列表卡片 */}
       <Card>
         <CardHeader>
-          <CardTitle>收录你的宝藏网站</CardTitle>
-          <CardDescription>共 {pagination?.total || 0} 个网站</CardDescription>
+          <CardTitle>{t("listTitle")}</CardTitle>
+          <CardDescription>{t("totalSites", { count: pagination?.total || 0 })}</CardDescription>
           <CardAction>
             <Button onClick={handleCreate} className="gap-1.5">
               <Plus className="h-4 w-4" />
-              新增网站
+              {t("addSite")}
             </Button>
           </CardAction>
         </CardHeader>
@@ -407,9 +410,9 @@ export default function AdminSitesPage() {
                 <EmptyMedia variant="icon">
                   <Globe className="size-5" />
                 </EmptyMedia>
-                <EmptyTitle>暂无网站</EmptyTitle>
+                <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
                 <EmptyDescription>
-                  暂无符合条件的网站，可调整筛选条件或新增网站
+                  {t("emptyDesc")}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -418,13 +421,13 @@ export default function AdminSitesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-20 min-w-[72px] text-center whitespace-nowrap">图标</TableHead>
-                    <TableHead className="min-w-[180px] whitespace-nowrap">名称 & 描述</TableHead>
-                    <TableHead className="w-36 whitespace-nowrap">分类</TableHead>
-                    <TableHead className="w-24 text-center whitespace-nowrap">置顶推荐</TableHead>
-                    <TableHead className="w-24 text-center whitespace-nowrap">状态</TableHead>
-                    <TableHead className="w-28 text-center whitespace-nowrap">来源</TableHead>
-                    <TableHead className="text-right w-36 whitespace-nowrap">操作</TableHead>
+                    <TableHead className="w-20 min-w-[72px] text-center whitespace-nowrap">{t("thIcon")}</TableHead>
+                    <TableHead className="min-w-[180px] whitespace-nowrap">{t("thNameDesc")}</TableHead>
+                    <TableHead className="w-36 whitespace-nowrap">{t("thCategory")}</TableHead>
+                    <TableHead className="w-24 text-center whitespace-nowrap">{t("thPinned")}</TableHead>
+                    <TableHead className="w-24 text-center whitespace-nowrap">{t("thStatus")}</TableHead>
+                    <TableHead className="w-28 text-center whitespace-nowrap">{t("thSource")}</TableHead>
+                    <TableHead className="text-right w-36 whitespace-nowrap">{t("thActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -461,12 +464,12 @@ export default function AdminSitesPage() {
                             {site.isPinned && (
                               <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1">
                                 <Pin className="h-2.5 w-2.5 fill-current" />
-                                置顶
+                                {t("pinnedBadge")}
                               </Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-1">
-                            {site.description || "暂无描述"}
+                            {site.description || t("noDescription")}
                           </p>
                           <a
                             href={site.url}
@@ -483,7 +486,7 @@ export default function AdminSitesPage() {
                       {/* 分类 */}
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {site.category?.name || "未分类"}
+                          {site.category?.name || t("uncategorized")}
                         </Badge>
                       </TableCell>
 
@@ -507,11 +510,11 @@ export default function AdminSitesPage() {
                                 ) : (
                                   <Pin className={`h-3.5 w-3.5 ${site.isPinned ? "fill-current" : ""}`} />
                                 )}
-                                <span>{site.isPinned ? "已置顶" : "置顶"}</span>
+                                <span>{site.isPinned ? t("pinnedAction") : t("pinAction")}</span>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{site.isPinned ? "点击取消置顶" : "点击置顶该网站"}</p>
+                              <p>{site.isPinned ? t("unpinHint") : t("pinHint")}</p>
                             </TooltipContent>
                                                   </Tooltip>
                       </TableCell>
@@ -520,11 +523,11 @@ export default function AdminSitesPage() {
                       <TableCell className="text-center">
                         {site.isPublished ? (
                           <Badge variant="default" className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30">
-                            已发布
+                            {t("statusPublished")}
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="text-muted-foreground">
-                            未发布
+                            {t("statusUnpublished")}
                           </Badge>
                         )}
                       </TableCell>
@@ -532,9 +535,9 @@ export default function AdminSitesPage() {
                       {/* 提交来源 */}
                       <TableCell className="text-center text-muted-foreground">
                         {site.submitterIp ? (
-                          <span className="text-xs font-mono text-muted-foreground">用户提交</span>
+                          <span className="text-xs font-mono text-muted-foreground">{t("sourceUser")}</span>
                         ) : (
-                          <span className="text-xs text-muted-foreground/70">管理员</span>
+                          <span className="text-xs text-muted-foreground/70">{t("sourceAdmin")}</span>
                         )}
                       </TableCell>
 
@@ -558,7 +561,7 @@ export default function AdminSitesPage() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{site.isPublished ? "取消发布" : "立即发布"}</p>
+                                <p>{site.isPublished ? t("unpublish") : t("publish")}</p>
                               </TooltipContent>
                                                       </Tooltip>
 
@@ -574,7 +577,7 @@ export default function AdminSitesPage() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>编辑网站</p>
+                                <p>{t("editSite")}</p>
                               </TooltipContent>
                                                       </Tooltip>
 
@@ -590,7 +593,7 @@ export default function AdminSitesPage() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>删除网站</p>
+                                <p>{t("deleteSite")}</p>
                               </TooltipContent>
                                                       </Tooltip>
                         </div>
@@ -661,13 +664,13 @@ export default function AdminSitesPage() {
 
             <PaginationItem>
               <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="每页显示数量">
+                <SelectTrigger className="h-8 w-[110px] text-xs" aria-label={t("pageSizeLabel")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {[10, 20, 50].map((size) => (
                     <SelectItem key={size} value={size.toString()}>
-                      {size} 条/页
+                      {t("perPage", { size })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -688,18 +691,18 @@ export default function AdminSitesPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除网站</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除这个网站吗？此操作无法撤销。
+              {t("deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              删除
+              {t("deleteConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
