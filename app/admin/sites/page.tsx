@@ -277,18 +277,6 @@ export default function AdminSitesPage() {
     <div className="space-y-4">
       {/* 筛选器工具栏 */}
       <div className="flex flex-wrap items-center gap-4">
-          {/* 搜索 */}
-          <div className="relative ml-auto">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="搜索名称/描述/网址"
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              className="w-[220px] pl-8"
-            />
-          </div>
-
           {/* 分类筛选 */}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>分类</FieldLabel>
@@ -370,6 +358,18 @@ export default function AdminSitesPage() {
                 </TooltipContent>
                           </Tooltip>
           )}
+
+          {/* 搜索 */}
+          <div className="relative ml-auto">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="搜索名称/描述/网址"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-[220px] pl-8"
+            />
+          </div>
         </div>
 
       {/* 网站列表卡片 */}
