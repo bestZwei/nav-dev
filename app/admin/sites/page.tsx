@@ -231,8 +231,12 @@ export default function AdminSitesPage() {
     }
   }
 
-  // 切换发布状态
+  // 切换发布状态（防连点）
+  const [togglingPublishId, setTogglingPublishId] = useState<string | null>(null)
+
   const handleTogglePublish = async (siteId: string) => {
+    if (togglingPublishId) return
+    setTogglingPublishId(siteId)
     try {
       const result = await toggleSitePublish(siteId)
       if (result.success) {
@@ -249,11 +253,17 @@ export default function AdminSitesPage() {
       toast.error("操作失败", {
         description: "发生错误，请稍后重试",
       })
+    } finally {
+      setTogglingPublishId(null)
     }
   }
 
-  // 切换置顶状态
+  // 切换置顶状态（防连点）
+  const [togglingPinId, setTogglingPinId] = useState<string | null>(null)
+
   const handleTogglePin = async (siteId: string, currentPin?: boolean) => {
+    if (togglingPinId) return
+    setTogglingPinId(siteId)
     try {
       const result = await toggleSitePin(siteId)
       if (result.success) {
@@ -270,6 +280,8 @@ export default function AdminSitesPage() {
       toast.error("操作失败", {
         description: "发生错误，请稍后重试",
       })
+    } finally {
+      setTogglingPinId(null)
     }
   }
 
@@ -482,6 +494,7 @@ export default function AdminSitesPage() {
                               <Button
                                 variant={site.isPinned ? "default" : "ghost"}
                                 size="sm"
+                                disabled={togglingPinId !== null}
                                 onClick={() => handleTogglePin(site.id, site.isPinned)}
                                 className={`h-7 px-2 text-xs gap-1 transition-all ${
                                   site.isPinned
@@ -489,7 +502,11 @@ export default function AdminSitesPage() {
                                     : "text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10"
                                 }`}
                               >
-                                <Pin className={`h-3.5 w-3.5 ${site.isPinned ? "fill-current" : ""}`} />
+                                {togglingPinId === site.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Pin className={`h-3.5 w-3.5 ${site.isPinned ? "fill-current" : ""}`} />
+                                )}
                                 <span>{site.isPinned ? "已置顶" : "置顶"}</span>
                               </Button>
                             </TooltipTrigger>
@@ -530,9 +547,14 @@ export default function AdminSitesPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
+                                  disabled={togglingPublishId !== null}
                                   onClick={() => handleTogglePublish(site.id)}
                                 >
-                                  <Power className={`h-4 w-4 ${site.isPublished ? "text-emerald-600" : "text-muted-foreground"}`} />
+                                  {togglingPublishId === site.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Power className={`h-4 w-4 ${site.isPublished ? "text-emerald-600" : "text-muted-foreground"}`} />
+                                  )}
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
