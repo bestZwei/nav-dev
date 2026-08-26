@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server"
+import { clearSessionCookies } from "@/lib/auth-cookies"
 
 export async function POST() {
   const response = NextResponse.json({ success: true, message: "登出成功" })
 
-  // 清除 cookies
-  response.cookies.delete("user_id")
-  response.cookies.delete("user_role")
-
-  return response
+  // 清除签名会话 cookie（含旧版明文 cookie）
+  return clearSessionCookies(response)
 }

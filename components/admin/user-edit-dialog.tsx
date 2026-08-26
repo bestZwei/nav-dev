@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Loader2 } from "lucide-react"
-import { updateUser } from "@/lib/actions"
+import { updateUser, changePassword } from "@/lib/actions"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "next-intl"
@@ -48,6 +48,7 @@ export function UserEditDialog({
   const [name, setName] = useState(userName || "")
   const [email, setEmail] = useState(userEmail)
   const [avatar, setAvatar] = useState("")
+  const [currentPassword, setCurrentPassword] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -56,6 +57,7 @@ export function UserEditDialog({
     setName(userName || "")
     setEmail(userEmail)
     setAvatar("")
+    setCurrentPassword("")
     setPassword("")
     setConfirmPassword("")
   }, [userName, userEmail, open])
@@ -100,12 +102,19 @@ export function UserEditDialog({
       return
     }
 
+    // 修改密码必须提供当前密码（服务端会再次校验）
+    if (password && !currentPassword) {
+      toast.error(t("currentPasswordRequired"), {
+        description: t("currentPasswordRequiredDesc"),
+      })
+      return
+    }
+
     setLoading(true)
     try {
       const updateData: {
         email?: string
         name?: string
-        password?: string
         avatar?: string
       } = {}
 
@@ -117,18 +126,33 @@ export function UserEditDialog({
         updateData.name = name || undefined
       }
 
-      if (password) {
-        updateData.password = password
-      }
-
       if (avatar) {
         updateData.avatar = avatar
       }
 
       // 如果没有任何更改，直接关闭
-      if (Object.keys(updateData).length === 0) {
+      if (Object.keys(updateData).length === 0 && !password) {
         onOpenChange(false)
         setLoading(false)
+        return
+      }
+
+      // 密码修改走独立通道：以当前会话身份为准并强制校验旧密码
+      if (password) {
+        const passwordResult = await changePassword(currentPassword, password)
+        if (!passwordResult.success) {
+          toast.error(t("updateFailed"), {
+            description: passwordResult.error || t("updateFailedDesc"),
+          })
+          return
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        toast.success(t("updateSuccess"), {
+          description: t("updateSuccessDesc"),
+        })
+        onOpenChange(false)
         return
       }
 
@@ -213,6 +237,20 @@ export function UserEditDialog({
               />
             </div>
             <Separator />
+            {password && (
+              <div className="space-y-2">
+                <Label htmlFor="current-password">{t("currentPasswordLabel")}</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder={t("currentPasswordPlaceholder")}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="password">{t("passwordLabel")}</Label>
               <Input

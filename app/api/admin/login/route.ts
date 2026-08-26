@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { jsonResponseWithSession } from "@/lib/auth-cookies"
+import { createSessionToken } from "@/lib/session"
 
 // 定义登录验证schema
 const loginSchema = z.object({
@@ -55,12 +56,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 创建 session：双 Set-Cookie 策略（Lax 保底 + None/Secure 覆盖），
+    // 创建 session：签发 HMAC 签名会话 token（双 Set-Cookie 策略：Lax 保底 + None/Secure 覆盖），
     // HTTP 与 HTTPS、直连与反向代理、iframe 预览环境均可用，详见 lib/auth-cookies.ts
+    const sessionToken = await createSessionToken(user.id, user.role)
     return jsonResponseWithSession(
       { success: true, message: "登录成功" },
-      user.id,
-      user.role
+      sessionToken
     )
   } catch (error) {
     console.error("Login error:", error)

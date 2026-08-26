@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getVisitFrequency } from "@/lib/actions"
+import { getAdminSession } from "@/lib/api-auth"
 
 export async function GET(request: NextRequest) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   try {
     const searchParams = request.nextUrl.searchParams
     const days = parseInt(searchParams.get('days') || '30', 10)

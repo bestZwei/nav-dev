@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
+import { getAdminSession } from "@/lib/api-auth"
 
 // 数据库上传截图的读取服务：
 // - 已发布站点的截图对所有访客开放（immutable 缓存）
@@ -30,11 +30,8 @@ export async function GET(
     let cacheControl = "public, max-age=31536000, immutable"
 
     if (!screenshot.site.isPublished) {
-      // 未发布：校验管理员身份
-      const cookieStore = await cookies()
-      const userId = cookieStore.get("user_id")?.value
-      const userRole = cookieStore.get("user_role")?.value
-      if (!userId || userRole !== "ADMIN") {
+      // 未发布：校验管理员身份（签名会话）
+      if (!(await getAdminSession())) {
         return NextResponse.json({ error: "Screenshot not found" }, { status: 404 })
       }
       cacheControl = "private, no-store"

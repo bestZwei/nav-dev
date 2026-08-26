@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getAdminSession } from "@/lib/api-auth"
 
 export async function GET() {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   try {
     // 按分类聚合已发布网站数
     const grouped = await prisma.site.groupBy({

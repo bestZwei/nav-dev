@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
+import { getAdminSession } from "@/lib/api-auth"
+import { clearSessionCookies } from "@/lib/auth-cookies"
 
 export async function GET() {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get("user_id")?.value
-
-    if (!userId) {
+    // 签名会话校验：伪造/过期/非 ADMIN 的 cookie 在此被拒绝
+    const session = await getAdminSession()
+    if (!session) {
       return NextResponse.json({ user: null }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: session.userId },
       select: {
         id: true,
         email: true,
@@ -22,12 +22,10 @@ export async function GET() {
     })
 
     if (!user) {
-      // user_id 指向的用户已不存在（数据库重建/切换部署模式的残留会话）：
-      // 清除无效会话 cookie，使 middleware（仅检查 cookie）与本接口（查库校验）判断恢复一致
+      // 会话指向的用户已不存在（数据库重建/切换部署模式的残留会话）：
+      // 清除无效会话 cookie，使 middleware 与本接口（查库校验）判断恢复一致
       const response = NextResponse.json({ user: null }, { status: 401 })
-      response.cookies.delete("user_id")
-      response.cookies.delete("user_role")
-      return response
+      return clearSessionCookies(response)
     }
 
     return NextResponse.json({ user })

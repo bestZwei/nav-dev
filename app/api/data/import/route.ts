@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { importData } from '@/lib/actions'
+import { getAdminSession } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File

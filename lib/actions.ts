@@ -2,9 +2,33 @@
 
 import { prisma, useRealDatabase } from "./prisma"
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { isLocale, type Locale } from "./i18n"
+import { getAdminSession } from "./api-auth"
+
+// ==================== 安全辅助 ====================
+
+// 管理操作统一鉴权闸门：会话有效返回 null，否则返回统一错误结果。
+// Server Actions 可被客户端直接构造调用，每个写操作/敏感读操作
+// 必须自行校验，不能依赖页面层拦截。
+async function requireAdmin(): Promise<{ success: false; error: string } | null> {
+  const session = await getAdminSession()
+  return session ? null : { success: false, error: "Unauthorized" }
+}
+
+// 站点 URL 协议白名单：仅允许 http/https，
+// 防止导入/提交 javascript: 等协议 URL 造成存储型 XSS
+function isSafeSiteUrl(url: unknown): boolean {
+  if (typeof url !== "string" || url.trim().length === 0) return false
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+  } catch {
+    return false
+  }
+}
 
 // ==================== Categories ====================
 
@@ -64,6 +88,8 @@ export async function getCategoriesWithPagination(params: {
   pageSize?: number
   search?: string
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const page = params.page || 1
     const pageSize = params.pageSize || 10
@@ -110,6 +136,8 @@ export async function getCategoriesWithPagination(params: {
 }
 
 export async function getCategoryById(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const category = await prisma.category.findUnique({
       where: { id },
@@ -130,6 +158,8 @@ export async function createCategory(data: {
   icon?: string | null
   order?: number
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const category = await prisma.category.create({
       data: {
@@ -154,6 +184,8 @@ export async function updateCategory(id: string, data: {
   icon?: string | null
   order?: number
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const category = await prisma.category.update({
       where: { id },
@@ -170,6 +202,8 @@ export async function updateCategory(id: string, data: {
 }
 
 export async function updateCategoriesOrder(items: { id: string; order: number }[]) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     for (const item of items) {
       await prisma.category.update({
@@ -187,6 +221,8 @@ export async function updateCategoriesOrder(items: { id: string; order: number }
 }
 
 export async function deleteCategory(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     await prisma.category.delete({
       where: { id },
@@ -204,7 +240,10 @@ export async function deleteCategory(id: string) {
 
 export async function getSites() {
   try {
+    // 仅返回已发布站点：此 Action 可被客户端直接调用，
+    // 避免未收录审核中的站点元数据外泄
     const sites = await prisma.site.findMany({
+      where: { isPublished: true },
       orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
       include: {
         category: true,
@@ -226,6 +265,8 @@ export async function getSitesWithPagination(params: {
   isPinned?: boolean
   submitterIp?: string
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const page = params.page || 1
     const pageSize = params.pageSize || 10
@@ -294,6 +335,8 @@ export async function getSitesWithPagination(params: {
 }
 
 export async function getCategoriesForFilter() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const categories = await prisma.category.findMany({
       orderBy: [{ order: "asc" }, { name: "asc" }],
@@ -311,6 +354,8 @@ export async function getCategoriesForFilter() {
 }
 
 export async function getSiteById(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const site = await prisma.site.findUnique({
       where: { id },
@@ -429,6 +474,10 @@ export async function getSiteDetail(siteId: string) {
     if (!site) {
       return { success: false, error: "Site not found" }
     }
+    // 未发布站点：仅管理员可见（管理预览），公开访问与前台弹窗口径一致返回不存在
+    if (!site.isPublished && !(await getAdminSession())) {
+      return { success: false, error: "Site not found" }
+    }
     const data = {
       ...site,
       screenshots: site.screenshots.map(shot => ({
@@ -449,6 +498,8 @@ export async function getSiteDetail(siteId: string) {
 let capabilityCache: { supported: boolean; checkedAt: number; reason?: string } | null = null
 
 export async function checkScreenshotUploadCapability() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   // 内存模式下，截图直接写入进程内存储，无需外部依赖
   if (!useRealDatabase) {
     return {
@@ -505,7 +556,13 @@ export async function createSite(data: {
   detailContent?: string | null
   screenshots?: ScreenshotInput[]
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
+    // URL 协议白名单校验，防止 javascript: 等协议入库
+    if (!isSafeSiteUrl(data.url)) {
+      return { success: false, error: "站点 URL 必须使用 http 或 https 协议" }
+    }
     const detailContent = normalizeDetailContent(data.detailContent)
     const screenshots = data.screenshots ?? []
     const validationError = validateScreenshots(screenshots)
@@ -566,7 +623,12 @@ export async function updateSite(id: string, data: {
   detailContent?: string | null
   screenshots?: ScreenshotInput[]
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
+    if (data.url !== undefined && !isSafeSiteUrl(data.url)) {
+      return { success: false, error: "站点 URL 必须使用 http 或 https 协议" }
+    }
     let detailContent: string | null | undefined = undefined
     if (data.detailContent !== undefined) {
       detailContent = normalizeDetailContent(data.detailContent)
@@ -641,6 +703,8 @@ export async function updateSite(id: string, data: {
 }
 
 export async function toggleSitePin(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const existing = await prisma.site.findUnique({ where: { id } })
     if (!existing) return { success: false, error: "Site not found" }
@@ -660,6 +724,8 @@ export async function toggleSitePin(id: string) {
 }
 
 export async function deleteSite(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const site = await prisma.site.delete({
       where: { id },
@@ -678,6 +744,8 @@ export async function deleteSite(id: string) {
 }
 
 export async function toggleSitePublish(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const currentSite = await prisma.site.findUnique({
       where: { id },
@@ -711,6 +779,8 @@ export async function getUsersWithPagination(params: {
   pageSize?: number
   search?: string
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const page = params.page || 1
     const pageSize = params.pageSize || 10
@@ -759,30 +829,30 @@ export async function getUsersWithPagination(params: {
 }
 
 
+// 修改资料（邮箱/姓名/头像）。密码修改不走此通道，
+// 一律经由 changePassword 强制校验旧密码，且身份以会话为准，
+// 不再信任客户端传入的 userId
 export async function updateUser(
   id: string,
   data: {
     email?: string
-    password?: string
     name?: string
     avatar?: string
   }
 ) {
+  const session = await getAdminSession()
+  if (!session) return { success: false, error: "Unauthorized" }
   try {
-    // 定义更新数据类型
     type UserUpdateData = {
       email?: string
-      password?: string
       name?: string | null
       avatar?: string | null
     }
 
     const updateData: UserUpdateData = {
-      ...data,
-    }
-
-    if (data.password) {
-      updateData.password = await bcrypt.hash(data.password, 10)
+      email: data.email,
+      name: data.name,
+      avatar: data.avatar,
     }
 
     const user = await prisma.user.update({
@@ -790,10 +860,57 @@ export async function updateUser(
       data: updateData,
     })
     revalidatePath("/admin/users")
-    return { success: true, data: user }
+    // 只回传安全字段，避免 password 哈希随响应外泄（内存模式下
+    // update 不支持 select，故在应用层投影）
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+      },
+    }
   } catch (error) {
     console.error("Error updating user:", error)
     return { success: false, error: "Failed to update user" }
+  }
+}
+
+// 修改密码：强制校验旧密码，目标用户以会话身份为准，
+// 不接受客户端传入的用户 ID
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+) {
+  const session = await getAdminSession()
+  if (!session) return { success: false, error: "Unauthorized" }
+  try {
+    if (typeof newPassword !== "string" || newPassword.length < 6) {
+      return { success: false, error: "新密码至少需要6个字符" }
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+    })
+    if (!user) {
+      return { success: false, error: "用户不存在，请重新登录" }
+    }
+    const matched = await bcrypt.compare(
+      typeof currentPassword === "string" ? currentPassword : "",
+      user.password
+    )
+    if (!matched) {
+      return { success: false, error: "当前密码不正确" }
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: await bcrypt.hash(newPassword, 10) },
+    })
+    revalidatePath("/admin/users")
+    return { success: true }
+  } catch (error) {
+    console.error("Error changing password:", error)
+    return { success: false, error: "Failed to change password" }
   }
 }
 
@@ -865,6 +982,28 @@ export async function getSystemSettings() {
   }
 }
 
+// 允许写入的设置字段白名单：拒绝任意字段注入（如伪造 footerHtml 等）
+const ALLOWED_SETTINGS_FIELDS = [
+  "siteName",
+  "siteDescription",
+  "siteLogo",
+  "favicon",
+  "pageSize",
+  "showFooter",
+  "footerCopyright",
+  "footerLinks",
+  "showAdminLink",
+  "showIcp",
+  "icpNumber",
+  "icpLink",
+  "enableVisitTracking",
+  "enableSubmission",
+  "enableSiteDetail",
+  "submissionMaxPerDay",
+  "githubUrl",
+  "defaultLanguage",
+] as const
+
 export async function updateSystemSettings(data: {
   siteName?: string
   siteDescription?: string
@@ -875,6 +1014,9 @@ export async function updateSystemSettings(data: {
   footerCopyright?: string
   footerLinks?: Array<{ name: string; url: string }>
   showAdminLink?: boolean
+  showIcp?: boolean
+  icpNumber?: string | null
+  icpLink?: string | null
   enableVisitTracking?: boolean
   enableSubmission?: boolean
   enableSiteDetail?: boolean
@@ -882,9 +1024,18 @@ export async function updateSystemSettings(data: {
   githubUrl?: string
   defaultLanguage?: Locale
 }) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
+    // 白名单过滤：只保留已知字段，丢弃任何额外注入的键
+    const allowed = Object.fromEntries(
+      Object.entries(data).filter(([key]) =>
+        (ALLOWED_SETTINGS_FIELDS as readonly string[]).includes(key)
+      )
+    ) as Partial<typeof data>
+
     // 校验默认语言取值
-    if (data.defaultLanguage && !isLocale(data.defaultLanguage)) {
+    if (allowed.defaultLanguage && !isLocale(allowed.defaultLanguage)) {
       return { success: false, error: "Invalid defaultLanguage" }
     }
 
@@ -895,15 +1046,15 @@ export async function updateSystemSettings(data: {
       // 如果不存在，创建新的
       settings = await prisma.systemSettings.create({
         data: {
-          ...data,
-          footerCopyright: data.footerCopyright || `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
+          ...allowed,
+          footerCopyright: allowed.footerCopyright || `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
         },
       })
     } else {
       // 更新现有记录
       settings = await prisma.systemSettings.update({
         where: { id: settings.id },
-        data,
+        data: allowed,
       })
     }
 
@@ -922,6 +1073,15 @@ export async function updateSystemSettings(data: {
 
 export async function recordVisit(siteId: string, request?: Request) {
   try {
+    // 仅对存在且已发布的站点记录访问，防止伪造 siteId 污染统计
+    const site = await prisma.site.findUnique({
+      where: { id: siteId },
+      select: { id: true, isPublished: true },
+    })
+    if (!site || !site.isPublished) {
+      return { success: false, error: "Site not found" }
+    }
+
     // 获取系统设置，检查是否启用访问统计
     const settingsResult = await getSystemSettings()
     if (!settingsResult.success || !settingsResult.data?.enableVisitTracking) {
@@ -933,7 +1093,8 @@ export async function recordVisit(siteId: string, request?: Request) {
     let referer = null
 
     if (request) {
-      ipAddress = request.headers.get('x-forwarded-for') ||
+      // x-forwarded-for 可能为逗号分隔的 IP 链，取首段作为客户端 IP
+      ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
                   request.headers.get('x-real-ip') ||
                   null
       userAgent = request.headers.get('user-agent') || null
@@ -957,6 +1118,8 @@ export async function recordVisit(siteId: string, request?: Request) {
 }
 
 export async function getVisitStats(days: number = 30, limit: number = 10) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const topSites = await prisma.visit.groupBy({
       by: ['siteId'],
@@ -1016,6 +1179,8 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
 }
 
 export async function getVisitFrequency(days: number = 30) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
 
@@ -1061,6 +1226,8 @@ export async function getVisitFrequency(days: number = 30) {
 
 // 完整数据导出（JSON格式，包含所有字段）
 export async function exportData() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const categories = await prisma.category.findMany({
       orderBy: { order: 'asc' },
@@ -1090,7 +1257,7 @@ export async function exportData() {
         order: site.order,
         isPublished: site.isPublished,
         detailContent: site.detailContent,
-        screenshots: site.screenshots.map(shot => ({
+        screenshots: (site.screenshots || []).map(shot => ({
           source: shot.source,
           url: shot.url,
           data: shot.data,
@@ -1112,6 +1279,8 @@ export async function exportData() {
 
 // Chrome书签导出（HTML格式，仅基本字段，兼容浏览器）
 export async function exportBookmarks() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const categories = await prisma.category.findMany({
       orderBy: { order: 'asc' },
@@ -1148,6 +1317,8 @@ export async function importData(
   jsonData: any,
   mode: 'overwrite' | 'append'
 ) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     // 验证数据格式
     if (!Array.isArray(jsonData)) {
@@ -1172,6 +1343,7 @@ export async function importData(
     }
 
     // 导入分类和网站
+    let skippedSites = 0
     for (const categoryData of jsonData) {
       // 生成分类 slug
       const transliteration = require('transliteration')
@@ -1196,12 +1368,16 @@ export async function importData(
         })
       }
 
-      // 导入网站
+      // 导入网站（跳过非 http/https 的非法 URL，防止存储型 XSS）
       for (const siteData of categoryData.sites) {
+        if (!isSafeSiteUrl(siteData.url)) {
+          skippedSites++
+          continue
+        }
         const detailContent = normalizeDetailContent(siteData.detailContent)
         const screenshots = Array.isArray(siteData.screenshots)
           ? siteData.screenshots.filter((shot: ScreenshotInput) =>
-              shot && (shot.source === 'URL' || shot.source === 'UPLOAD'))
+              shot && (shot.source === 'UPLOAD' || (shot.source === 'URL' && isSafeSiteUrl(shot.url))))
           : []
         const hasDetail = computeHasDetail(detailContent, screenshots.length)
 
@@ -1237,11 +1413,12 @@ export async function importData(
     revalidatePath('/', 'layout')
     revalidatePath('/category/[slug]', 'page')
 
+    const skippedNote = skippedSites > 0 ? `，已跳过 ${skippedSites} 条非法URL记录` : ''
     return {
       success: true,
-      message: mode === 'overwrite'
+      message: (mode === 'overwrite'
         ? `成功导入 ${jsonData.length} 个分类`
-        : `成功追加 ${jsonData.length} 个分类`,
+        : `成功追加 ${jsonData.length} 个分类`) + skippedNote,
       importedCount: jsonData.length,
     }
   } catch (error) {
@@ -1254,6 +1431,8 @@ export async function importBookmarks(
   html: string,
   mode: 'overwrite' | 'append'
 ) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
     const { parseChromeBookmarks } = await import('./bookmarks')
     const parsed = parseChromeBookmarks(html)
@@ -1277,6 +1456,7 @@ export async function importBookmarks(
     }
 
     // 导入分类和网站
+    let skippedSites = 0
     for (const categoryData of parsed.categories) {
       // 生成分类 slug（使用 transliteration 将中文转换为拼音）
       const transliteration = require('transliteration')
@@ -1313,6 +1493,11 @@ export async function importBookmarks(
       }
 
       for (const siteData of categoryData.sites) {
+        // 跳过非 http/https 的非法 URL，防止存储型 XSS
+        if (!isSafeSiteUrl(siteData.url)) {
+          skippedSites++
+          continue
+        }
         currentSiteOrder++
         await prisma.site.create({
           data: {
@@ -1332,11 +1517,12 @@ export async function importBookmarks(
     revalidatePath('/', 'layout')
     revalidatePath('/category/[slug]', 'page')
 
+    const bookmarkSkippedNote = skippedSites > 0 ? `，已跳过 ${skippedSites} 条非法URL记录` : ''
     return {
       success: true,
-      message: mode === 'overwrite'
+      message: (mode === 'overwrite'
         ? `成功导入 ${parsed.categories.length} 个分类`
-        : `成功追加 ${parsed.categories.length} 个分类`,
+        : `成功追加 ${parsed.categories.length} 个分类`) + bookmarkSkippedNote,
       importedCount: parsed.categories.length,
     }
   } catch (error) {
@@ -1362,9 +1548,15 @@ export async function submitSite(data: {
       return { success: false, error: "网站收录功能已关闭" }
     }
 
-    // 获取 IP 地址
-    const ipAddress = data.request?.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-                     data.request?.headers.get('x-real-ip') ||
+    // URL 协议白名单校验：仅允许 http/https，防止 javascript: 等存储型 XSS
+    if (!isSafeSiteUrl(data.url)) {
+      return { success: false, error: "网站URL不合法，仅支持 http/https 链接" }
+    }
+
+    // 获取 IP 地址：Server Action 场景下未传 request 时通过 headers() 读取
+    const requestHeaders = data.request?.headers ?? await headers()
+    const ipAddress = requestHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                     requestHeaders.get('x-real-ip') ||
                      'local'  // Fallback: 标记为本地提交
 
     // IP 频率限制检查（仅对真实 IP 限制）
