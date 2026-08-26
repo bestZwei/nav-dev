@@ -129,7 +129,14 @@
       "settings": "システム設定",
       "menuLabel": "管理メニュー",
       "adminTitle": "管理画面",
-      "visitSite": "サイトのホームへ"
+      "visitSite": "サイトのホームへ",
+      "version": {
+        "current": "バージョン {version}",
+        "latest": "最新です",
+        "updateAvailable": "新バージョン {version}",
+        "unavailable": "更新チェック不可用",
+        "dev": "dev"
+      }
     },
     "login": {
       "subtitle": "サインインしてナビゲーションサイトを管理",

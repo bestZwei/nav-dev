@@ -129,7 +129,14 @@
       "settings": "시스템 설정",
       "menuLabel": "관리 메뉴",
       "adminTitle": "관리자",
-      "visitSite": "사이트 홈으로"
+      "visitSite": "사이트 홈으로",
+      "version": {
+        "current": "버전 {version}",
+        "latest": "최신 버전입니다",
+        "updateAvailable": "신규 {version}",
+        "unavailable": "업데이트 확인 불가",
+        "dev": "dev"
+      }
     },
     "login": {
       "subtitle": "로그인하여 내비게이션 사이트를 관리하세요",

@@ -129,7 +129,14 @@
       "settings": "Settings",
       "menuLabel": "Admin Menu",
       "adminTitle": "Admin Panel",
-      "visitSite": "Visit site home"
+      "visitSite": "Visit site home",
+      "version": {
+        "current": "Version {version}",
+        "latest": "Up to date",
+        "updateAvailable": "New {version}",
+        "unavailable": "Update check unavailable",
+        "dev": "dev"
+      }
     },
     "login": {
       "subtitle": "Sign in to manage your navigation site",

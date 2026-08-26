@@ -129,7 +129,14 @@
       "settings": "Paramètres",
       "menuLabel": "Menu admin",
       "adminTitle": "Administration",
-      "visitSite": "Voir le site"
+      "visitSite": "Voir le site",
+      "version": {
+        "current": "Version {version}",
+        "latest": "À jour",
+        "updateAvailable": "Nouv. {version}",
+        "unavailable": "Vérification de mise à jour indisponible",
+        "dev": "dev"
+      }
     },
     "login": {
       "subtitle": "Connectez-vous pour gérer votre navigation",

@@ -129,7 +129,14 @@
       "settings": "Einstellungen",
       "menuLabel": "Admin-Menü",
       "adminTitle": "Verwaltung",
-      "visitSite": "Zur Startseite"
+      "visitSite": "Zur Startseite",
+      "version": {
+        "current": "Version {version}",
+        "latest": "Auf dem neuesten Stand",
+        "updateAvailable": "Neu {version}",
+        "unavailable": "Update-Prüfung nicht verfügbar",
+        "dev": "dev"
+      }
     },
     "login": {
       "subtitle": "Melden Sie sich an, um Ihre Navigation zu verwalten",

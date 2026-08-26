@@ -3,6 +3,12 @@ FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
+# 版本信息（由 CI 通过 build-arg 注入，本地构建时回退为 dev）
+ARG APP_VERSION=dev
+ARG GIT_SHA=""
+ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
+ENV NEXT_PUBLIC_GIT_SHA=${GIT_SHA}
+
 # 复制 package 文件和 Prisma schema
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
@@ -27,6 +33,12 @@ WORKDIR /app
 ENV NODE_ENV="production"
 ENV PORT="3000"
 ENV HOSTNAME="0.0.0.0"
+
+# 运行时服务端通过 process.env 读取版本（与构建期内联值同源）
+ARG APP_VERSION=dev
+ARG GIT_SHA=""
+ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
+ENV NEXT_PUBLIC_GIT_SHA=${GIT_SHA}
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs && \

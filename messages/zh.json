@@ -129,7 +129,14 @@
       "settings": "系统设置",
       "menuLabel": "管理菜单",
       "adminTitle": "管理后台",
-      "visitSite": "访问网站首页"
+      "visitSite": "访问网站首页",
+      "version": {
+        "current": "当前版本 {version}",
+        "latest": "已是最新版本",
+        "updateAvailable": "新版本 {version}",
+        "unavailable": "版本检查不可用",
+        "dev": "开发版本"
+      }
     },
     "login": {
       "subtitle": "登录以管理您的导航站点",

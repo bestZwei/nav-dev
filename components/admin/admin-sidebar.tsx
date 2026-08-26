@@ -26,6 +26,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { AdminAvatar } from "./admin-avatar"
+import { VersionBadge } from "./version-badge"
 import { fetchPublicSettings } from "@/lib/client-settings"
 
 // 菜单标题使用 admin.sidebar 命名空间的消息 key
@@ -137,6 +138,9 @@ export function AdminSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3 group-data-[collapsible=icon]:!p-2">
+        <div className="mb-2 group-data-[collapsible=icon]:mb-0">
+          <VersionBadge />
+        </div>
         <AdminAvatar />
       </SidebarFooter>
       <SidebarRail />
