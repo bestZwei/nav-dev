@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { exportData } from '@/lib/actions'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
   try {
+    if (!(await requireAdmin()).ok) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const result = await exportData()
 
     if (!result.success || !result.data) {

@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
 import { exportBookmarks } from '@/lib/actions'
 import { generateChromeBookmarks } from '@/lib/bookmarks'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
   try {
+    if (!(await requireAdmin()).ok) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const result = await exportBookmarks()
 
     if (!result.success || !result.data) {

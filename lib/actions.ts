@@ -1,5 +1,7 @@
 "use server"
 
+import { requireAdmin } from "./auth"
+
 import { prisma, useRealDatabase } from "./prisma"
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
@@ -64,6 +66,9 @@ export async function getCategoriesWithPagination(params: {
   pageSize?: number
   search?: string
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const page = params.page || 1
     const pageSize = params.pageSize || 10
@@ -110,6 +115,9 @@ export async function getCategoriesWithPagination(params: {
 }
 
 export async function getCategoryById(id: string) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const category = await prisma.category.findUnique({
       where: { id },
@@ -130,6 +138,9 @@ export async function createCategory(data: {
   icon?: string | null
   order?: number
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const category = await prisma.category.create({
       data: {
@@ -154,6 +165,9 @@ export async function updateCategory(id: string, data: {
   icon?: string | null
   order?: number
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const category = await prisma.category.update({
       where: { id },
@@ -170,6 +184,9 @@ export async function updateCategory(id: string, data: {
 }
 
 export async function updateCategoriesOrder(items: { id: string; order: number }[]) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     for (const item of items) {
       await prisma.category.update({
@@ -187,6 +204,9 @@ export async function updateCategoriesOrder(items: { id: string; order: number }
 }
 
 export async function deleteCategory(id: string) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     await prisma.category.delete({
       where: { id },
@@ -226,6 +246,9 @@ export async function getSitesWithPagination(params: {
   isPinned?: boolean
   submitterIp?: string
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const page = params.page || 1
     const pageSize = params.pageSize || 10
@@ -311,6 +334,9 @@ export async function getCategoriesForFilter() {
 }
 
 export async function getSiteById(id: string) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const site = await prisma.site.findUnique({
       where: { id },
@@ -449,6 +475,9 @@ export async function getSiteDetail(siteId: string) {
 let capabilityCache: { supported: boolean; checkedAt: number; reason?: string } | null = null
 
 export async function checkScreenshotUploadCapability() {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   // 内存模式下，截图直接写入进程内存储，无需外部依赖
   if (!useRealDatabase) {
     return {
@@ -505,6 +534,9 @@ export async function createSite(data: {
   detailContent?: string | null
   screenshots?: ScreenshotInput[]
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const detailContent = normalizeDetailContent(data.detailContent)
     const screenshots = data.screenshots ?? []
@@ -566,6 +598,9 @@ export async function updateSite(id: string, data: {
   detailContent?: string | null
   screenshots?: ScreenshotInput[]
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     let detailContent: string | null | undefined = undefined
     if (data.detailContent !== undefined) {
@@ -641,6 +676,9 @@ export async function updateSite(id: string, data: {
 }
 
 export async function toggleSitePin(id: string) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const existing = await prisma.site.findUnique({ where: { id } })
     if (!existing) return { success: false, error: "Site not found" }
@@ -660,6 +698,9 @@ export async function toggleSitePin(id: string) {
 }
 
 export async function deleteSite(id: string) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const site = await prisma.site.delete({
       where: { id },
@@ -678,6 +719,9 @@ export async function deleteSite(id: string) {
 }
 
 export async function toggleSitePublish(id: string) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const currentSite = await prisma.site.findUnique({
       where: { id },
@@ -711,6 +755,9 @@ export async function getUsersWithPagination(params: {
   pageSize?: number
   search?: string
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const page = params.page || 1
     const pageSize = params.pageSize || 10
@@ -768,6 +815,9 @@ export async function updateUser(
     avatar?: string
   }
 ) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     // 定义更新数据类型
     type UserUpdateData = {
@@ -882,6 +932,9 @@ export async function updateSystemSettings(data: {
   githubUrl?: string
   defaultLanguage?: Locale
 }) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     // 校验默认语言取值
     if (data.defaultLanguage && !isLocale(data.defaultLanguage)) {
@@ -957,6 +1010,9 @@ export async function recordVisit(siteId: string, request?: Request) {
 }
 
 export async function getVisitStats(days: number = 30, limit: number = 10) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const topSites = await prisma.visit.groupBy({
       by: ['siteId'],
@@ -1016,6 +1072,9 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
 }
 
 export async function getVisitFrequency(days: number = 30) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
 
@@ -1061,6 +1120,9 @@ export async function getVisitFrequency(days: number = 30) {
 
 // 完整数据导出（JSON格式，包含所有字段）
 export async function exportData() {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const categories = await prisma.category.findMany({
       orderBy: { order: 'asc' },
@@ -1112,6 +1174,9 @@ export async function exportData() {
 
 // Chrome书签导出（HTML格式，仅基本字段，兼容浏览器）
 export async function exportBookmarks() {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const categories = await prisma.category.findMany({
       orderBy: { order: 'asc' },
@@ -1148,6 +1213,9 @@ export async function importData(
   jsonData: any,
   mode: 'overwrite' | 'append'
 ) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     // 验证数据格式
     if (!Array.isArray(jsonData)) {
@@ -1254,6 +1322,9 @@ export async function importBookmarks(
   html: string,
   mode: 'overwrite' | 'append'
 ) {
+  if (!(await requireAdmin()).ok) {
+    return { success: false, error: "Unauthorized" } as const
+  }
   try {
     const { parseChromeBookmarks } = await import('./bookmarks')
     const parsed = parseChromeBookmarks(html)

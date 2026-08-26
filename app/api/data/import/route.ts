@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { importData } from '@/lib/actions'
+import { requireAdmin } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await requireAdmin()).ok) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
     const mode = (formData.get('mode') as string) === 'overwrite' ? 'overwrite' : 'append'
