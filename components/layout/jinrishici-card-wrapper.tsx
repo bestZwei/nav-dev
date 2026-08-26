@@ -28,7 +28,10 @@ export function JinrishiciCardWrapper() {
   }
 
   return (
-    <div className="fixed top-20 right-4 z-40 hidden lg:block animate-fade-in origin-top-right">
+    <div
+      id="jinrishici-card-anchor"
+      className="fixed top-20 right-4 z-40 hidden lg:block animate-fade-in origin-top-right"
+    >
       <JinrishiciCard onClose={handleClose} />
     </div>
   )

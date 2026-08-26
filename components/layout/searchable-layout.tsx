@@ -6,6 +6,7 @@ import { ScrollHeader } from "./scroll-header"
 import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
 import { JinrishiciCardWrapper } from "./jinrishici-card-wrapper"
+import { BackToTop } from "./back-to-top"
 import { SiteDetailProvider } from "./site-detail-provider"
 import { Badge } from "@/components/ui/badge"
 import { usePoetryToggle } from "@/hooks/use-poetry-toggle"
@@ -137,6 +138,8 @@ export function SearchableLayout({
               children
             )}
           </div>
+
+          <BackToTop />
         </div>
       </main>
 
