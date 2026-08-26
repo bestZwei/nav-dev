@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { jsonResponseWithSession } from "@/lib/auth-cookies"
 
 // 定义登录验证schema
 const loginSchema = z.object({
@@ -54,36 +55,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 创建 session
-    const response = NextResponse.json({ success: true, message: "登录成功" })
-
-    // 按请求协议自适应 Cookie 属性：
-    // - HTTPS：secure + sameSite=none，兼容 iframe / 反向代理预览环境
-    // - HTTP（如内网 IP 直访的 Docker 部署）：浏览器会丢弃 secure cookie，降级为 sameSite=lax
-    const forwardedProto = request.headers.get("x-forwarded-proto")
-    const isHttps =
-      request.nextUrl.protocol === "https:" || forwardedProto === "https"
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isHttps,
-      sameSite: isHttps ? ("none" as const) : ("lax" as const),
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: "/",
-    }
-
-    response.cookies.set("user_id", user.id, cookieOptions)
-    response.cookies.set("user_role", user.role, cookieOptions)
-
-    response.cookies.set("user_role", user.role, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    })
-
-    return response
+    // 创建 session：双 Set-Cookie 策略（Lax 保底 + None/Secure 覆盖），
+    // HTTP 与 HTTPS、直连与反向代理、iframe 预览环境均可用，详见 lib/auth-cookies.ts
+    return jsonResponseWithSession(
+      { success: true, message: "登录成功" },
+      user.id,
+      user.role
+    )
   } catch (error) {
     console.error("Login error:", error)
     return NextResponse.json(
