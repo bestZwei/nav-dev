@@ -735,10 +735,20 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
     },
 
     findUnique: async (args: { where: { id?: string; email?: string }; select?: any; include?: any }): Promise<any> => {
-      return this.users.find(u =>
+      const user = this.users.find(u =>
         (args.where.id && u.id === args.where.id) ||
         (args.where.email && u.email.toLowerCase() === args.where.email.toLowerCase())
       ) || null
+      // 与真实 Prisma 行为一致：指定 select 时仅返回所选字段，
+      // 避免将 password 哈希等敏感字段透出给调用方
+      if (user && args?.select) {
+        const out: any = {}
+        for (const key of Object.keys(args.select)) {
+          if (args.select[key]) out[key] = (user as any)[key]
+        }
+        return out
+      }
+      return user
     },
 
     findFirst: async (args?: any): Promise<any> => {

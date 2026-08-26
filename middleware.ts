@@ -32,9 +32,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // 如果已登录但不是管理员，重定向到首页
+  // 如果已登录但不是管理员，清除残留会话并回到登录页。
+  // 按"未登录"处理而不是跳首页：cookie 指向的用户可能在数据库中已不存在
+  // （数据库重建/切换部署模式留下的脏会话），跳登录页让用户重新登录自愈
   if (userId && isProtectedRoute && userRole !== "ADMIN") {
-    return NextResponse.redirect(new URL("/", request.url))
+    const loginUrl = new URL("/admin/login", request.url)
+    loginUrl.searchParams.set("redirect", pathname)
+    const response = NextResponse.redirect(loginUrl)
+    response.cookies.delete("user_id")
+    response.cookies.delete("user_role")
+    return response
   }
 
   return NextResponse.next()

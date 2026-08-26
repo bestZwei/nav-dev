@@ -22,7 +22,12 @@ export async function GET() {
     })
 
     if (!user) {
-      return NextResponse.json({ user: null }, { status: 401 })
+      // user_id 指向的用户已不存在（数据库重建/切换部署模式的残留会话）：
+      // 清除无效会话 cookie，使 middleware（仅检查 cookie）与本接口（查库校验）判断恢复一致
+      const response = NextResponse.json({ user: null }, { status: 401 })
+      response.cookies.delete("user_id")
+      response.cookies.delete("user_role")
+      return response
     }
 
     return NextResponse.json({ user })
