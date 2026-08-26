@@ -57,14 +57,23 @@ export async function POST(request: NextRequest) {
     // 创建 session
     const response = NextResponse.json({ success: true, message: "登录成功" })
 
-    // 支持在 AI Studio Preview（iframe / cloud run 代理）环境下正常传输 Cookie
-    response.cookies.set("user_id", user.id, {
+    // 按请求协议自适应 Cookie 属性：
+    // - HTTPS：secure + sameSite=none，兼容 iframe / 反向代理预览环境
+    // - HTTP（如内网 IP 直访的 Docker 部署）：浏览器会丢弃 secure cookie，降级为 sameSite=lax
+    const forwardedProto = request.headers.get("x-forwarded-proto")
+    const isHttps =
+      request.nextUrl.protocol === "https:" || forwardedProto === "https"
+
+    const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: isHttps,
+      sameSite: isHttps ? ("none" as const) : ("lax" as const),
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
-    })
+    }
+
+    response.cookies.set("user_id", user.id, cookieOptions)
+    response.cookies.set("user_role", user.role, cookieOptions)
 
     response.cookies.set("user_role", user.role, {
       httpOnly: true,
