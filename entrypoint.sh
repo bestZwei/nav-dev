@@ -81,6 +81,20 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
     echo "🔄 执行待处理的数据库迁移..."
     npx prisma migrate deploy
   fi
+
+  # 检测 schema 漂移：迁移记录显示"全部已应用"但数据库实际结构缺列/缺表时
+  # （P2022，常见于旧版本数据卷的 baseline 记录与真实结构不符），自动同步
+  echo "🔍 校验数据库结构与 schema 一致性..."
+  if npx prisma migrate diff \
+    --from-schema-datasource prisma/schema.prisma \
+    --to-schema-datamodel prisma/schema.prisma \
+    --exit-code > /dev/null 2>&1; then
+    echo "✅ 数据库结构与 schema 一致"
+  else
+    echo "⚠️  检测到数据库结构与 schema 不一致，自动同步（增量添加，不删除数据）..."
+    npx prisma db push --skip-generate
+    echo "✅ Schema 同步完成"
+  fi
 else
   echo "⚠️  未检测到迁移文件，使用 db push（开发模式）..."
   npx prisma db push --skip-generate
