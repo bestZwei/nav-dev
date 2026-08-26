@@ -119,8 +119,9 @@ if node -e "
 "; then
   echo "✅ 跳过 seed"
 else
-  echo "🌱 执行 seed 脚本..."
-  npx tsx prisma/seed.ts
+  echo "🌱 执行 seed 脚本（完整示例数据）..."
+  # 与无数据库的内存模式保持一致的默认体验：首次部署填充完整种子站点
+  npx tsx prisma/seed.ts full
 fi
 
 echo "🚀 启动应用..."
