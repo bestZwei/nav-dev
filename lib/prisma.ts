@@ -375,7 +375,7 @@ class InMemoryDatabase {
       if (idx === -1) throw new Error('Category not found')
       this.categories[idx] = {
         ...this.categories[idx],
-        ...args.data,
+        ...this.stripUndefined(args.data),
         updatedAt: new Date(),
       }
       return this.categories[idx]
@@ -413,6 +413,23 @@ class InMemoryDatabase {
    * 内存模式专用：按 Prisma select 子句投影标量字段。
    * value 为 true 表示保留该字段，未声明的字段被剔除（与真实 Prisma 行为一致）。
    */
+  /**
+   * 内存模式专用：按 Prisma 语义剔除 update data 中值为 undefined 的键。
+   *
+   * JS 展开语义下 { ...src, ...{ k: undefined } } 会用 undefined 覆盖原值，
+   * 而真实 Prisma 对 undefined 字段直接跳过（不写入）。调用方（如 updateUser）
+   * 常构造"键恒存在、值可能为 undefined"的 data，内存实现若不剔除会把
+   * email/password 等字段污染成 undefined，进而导致登录查询抛错（500）、
+   * 前台渲染崩溃等连锁故障。
+   */
+  private stripUndefined<T extends object>(data: T): Partial<T> {
+    const out: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) out[key] = value
+    }
+    return out as Partial<T>
+  }
+
   private selectScalars<T extends object>(
     src: T,
     select: Record<string, unknown>
@@ -654,7 +671,7 @@ class InMemoryDatabase {
     update: async (args: { where: { id: string }; data: Partial<SiteItem>; include?: any; select?: any }): Promise<SiteItem> => {
       const idx = this.sites.findIndex(s => s.id === args.where.id)
       if (idx === -1) throw new Error('Site not found')
-      const data: any = { ...args.data }
+      const data: any = { ...this.stripUndefined(args.data) }
       // Prisma 关系语法：category: { connect: { id } } → 转换为 categoryId，
       // 避免嵌套对象直接展开到记录上造成字段漂移
       if (data.category && typeof data.category === 'object') {
@@ -810,9 +827,10 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
     },
 
     findUnique: async (args: { where: { id?: string; email?: string }; select?: any; include?: any }): Promise<any> => {
+      // null 安全：历史数据若被污染（email 为 undefined）跳过该记录而不是抛错
       const user = this.users.find(u =>
         (args.where.id && u.id === args.where.id) ||
-        (args.where.email && u.email.toLowerCase() === args.where.email.toLowerCase())
+        (args.where.email && typeof u.email === 'string' && u.email.toLowerCase() === args.where.email.toLowerCase())
       ) || null
       // 与真实 Prisma 行为一致：指定 select 时仅返回所选字段，
       // 避免将 password 哈希等敏感字段透出给调用方
@@ -851,7 +869,7 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       if (idx === -1) throw new Error('User not found')
       this.users[idx] = {
         ...this.users[idx],
-        ...args.data,
+        ...this.stripUndefined(args.data),
         updatedAt: new Date(),
       }
       return this.users[idx]
@@ -886,7 +904,7 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
     update: async (args: { where?: { id: string }; data: Partial<SystemSettingsItem> }): Promise<SystemSettingsItem> => {
       this.systemSettingsItem = {
         ...this.systemSettingsItem,
-        ...args.data,
+        ...this.stripUndefined(args.data),
         updatedAt: new Date(),
       }
       return { ...this.systemSettingsItem }
