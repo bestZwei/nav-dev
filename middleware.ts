@@ -5,9 +5,36 @@ import type { NextRequest } from "next/server"
 const protectedRoutes = ["/admin"]
 const authRoutes = ["/admin/login"]
 
+// 管理 API：统一在 middleware 层鉴权。
+// 此前 matcher 只覆盖 /admin 页面，/api/admin/* 完全裸奔，
+// 未登录即可篡改系统设置、读取数据库连接信息（越权漏洞）
+const protectedApiRoutes = ["/api/admin"]
+// 登录接口自身放行
+const apiAuthExempt = ["/api/admin/login"]
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // 获取用户 session
+  const userId = request.cookies.get("user_id")?.value
+  const userRole = request.cookies.get("user_role")?.value
+
+  // ---- 管理 API 鉴权：未认证返回 401 JSON（不重定向） ----
+  const isProtectedApi = protectedApiRoutes.some((route) =>
+    pathname.startsWith(route)
+  )
+  if (isProtectedApi) {
+    const isExempt = apiAuthExempt.some((route) => pathname.startsWith(route))
+    if (isExempt) {
+      return NextResponse.next()
+    }
+    if (!userId || userRole !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
+
+  // ---- 页面路由：原有逻辑 ----
   // 检查是否是受保护的路由
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
@@ -15,10 +42,6 @@ export function middleware(request: NextRequest) {
 
   // 检查是否是认证路由（登录页）
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
-
-  // 获取用户 session
-  const userId = request.cookies.get("user_id")?.value
-  const userRole = request.cookies.get("user_role")?.value
 
   // 如果已登录且访问登录页，重定向到 dashboard
   if (userId && isAuthRoute) {
@@ -48,5 +71,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 }
