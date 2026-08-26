@@ -11,12 +11,13 @@ import { ImageOff } from "lucide-react"
 // - 不启用 rehype-raw，原始 HTML 按纯文本处理，天然防 XSS
 // - 链接强制新窗口 + noopener noreferrer
 // - 图片懒加载，加载失败显示占位样式
-// - 长 URL / 长单词 / 宽表格不会撑爆容器（溢出走横向滚动）
+// - 长 URL / 长单词 / 宽表格不会撑爆容器（anywhere 参与 min-content 计算，
+//   即使父级是 grid/flex 布局也能正确收缩；宽表格/代码块走横向滚动）
 export function MarkdownContent({ content }: { content: string }) {
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({})
 
   return (
-    <div className="markdown-content min-w-0 text-sm leading-relaxed text-foreground/90 break-words overflow-wrap-anywhere">
+    <div className="markdown-content min-w-0 max-w-full text-sm leading-relaxed text-foreground/90 break-words [overflow-wrap:anywhere]">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -30,7 +31,7 @@ export function MarkdownContent({ content }: { content: string }) {
               {children}
             </Link>
           ),
-          p: ({ children }) => <p className="my-2 break-words overflow-wrap-anywhere">{children}</p>,
+          p: ({ children }) => <p className="my-2 min-w-0 break-words [overflow-wrap:anywhere]">{children}</p>,
           h1: ({ children }) => <h1 className="mt-4 mb-2 text-lg font-semibold break-words">{children}</h1>,
           h2: ({ children }) => <h2 className="mt-4 mb-2 text-base font-semibold break-words">{children}</h2>,
           h3: ({ children }) => <h3 className="mt-3 mb-1.5 text-sm font-semibold break-words">{children}</h3>,

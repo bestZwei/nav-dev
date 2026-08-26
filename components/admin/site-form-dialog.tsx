@@ -599,9 +599,9 @@ function DetailContentFields({
 }) {
   const t = useTranslations("admin.siteForm")
   return (
-    <div className="grid gap-5">
+    <div className="grid min-w-0 gap-5">
       {/* Markdown 编辑/预览 */}
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="detail-content">{t("detailContentLabel")}</Label>
           <div className="flex items-center rounded-md border p-0.5">
@@ -637,7 +637,7 @@ function DetailContentFields({
             className="font-mono text-xs"
           />
         ) : (
-          <div className="min-h-[200px] rounded-md border bg-muted/10 p-4">
+          <div className="min-h-[200px] min-w-0 max-w-full overflow-x-hidden rounded-md border bg-muted/10 p-4">
             {formData.detailContent.trim() ? (
               <MarkdownContent content={formData.detailContent} />
             ) : (
@@ -651,7 +651,7 @@ function DetailContentFields({
       </div>
 
       {/* 截图管理 */}
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2">
         <div className="flex items-center justify-between">
           <Label>{t("screenshotsLabel")}</Label>
           <span className="text-xs text-muted-foreground">
