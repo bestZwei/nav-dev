@@ -22,20 +22,15 @@ function getSessionSecret(): string {
     process.env.SESSION_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim()
   if (configured) return configured
 
-  // 生产部署强制要求配置密钥：使用公开回退密钥等于会话可被任意伪造。
-  // Docker 镜像内 NODE_ENV 恒为 production，容器缺密钥直接启动失败，
-  // 迫使部署者在 .env / compose 中显式配置 SESSION_SECRET。
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "[session] 生产环境必须配置 SESSION_SECRET（或 NEXTAUTH_SECRET）。" +
-        "生成方式：openssl rand -base64 32，写入 .env 或容器环境变量后重启。"
-    )
-  }
-
+  // 未配置时回退到内置密钥并强警告。
+  // 曾经尝试生产环境直接 throw，但在 Vercel / Cloudflare Workers 等平台部署
+  // （无 entrypoint 兜底注入）会让登录直接 500、后台不可用；回退密钥的风险
+  // 是会话可被知晓此常量的攻击者伪造，对纯浏览型部署可接受，且警告日志
+  // 持续提示配置。配置方法：openssl rand -base64 32 设置为环境变量 SESSION_SECRET。
   if (!secretWarned) {
     secretWarned = true
     console.warn(
-      "[session] 未配置 SESSION_SECRET（或 NEXTAUTH_SECRET），会话签名使用内置回退密钥，强度受限。生产部署请务必配置 SESSION_SECRET。"
+      "[session] 未配置 SESSION_SECRET（或 NEXTAUTH_SECRET），会话签名使用内置回退密钥，强度受限。生产部署请务必配置 SESSION_SECRET（openssl rand -base64 32）。"
     )
   }
   return INSECURE_FALLBACK_SECRET

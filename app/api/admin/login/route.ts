@@ -88,21 +88,7 @@ export async function POST(request: NextRequest) {
 
     // 创建 session：签发 HMAC 签名会话 token（双 Set-Cookie 策略：Lax 保底 + None/Secure 覆盖），
     // HTTP 与 HTTPS、直连与反向代理、iframe 预览环境均可用，详见 lib/auth-cookies.ts
-    let sessionToken: string
-    try {
-      sessionToken = await createSessionToken(user.id, user.role)
-    } catch (e) {
-      // 生产缺 SESSION_SECRET 是配置问题：返回明确指引而不是笼统的"稍后重试"，
-      // 否则部署者完全无法定位（不存在的用户走不到这里，所以症状是"能注册的账号全部 500"）
-      console.error("Session token creation failed:", e)
-      return NextResponse.json(
-        {
-          error:
-            "服务器未配置会话密钥（SESSION_SECRET），登录暂不可用。请管理员执行 openssl rand -base64 32 生成并配置到环境变量后重启服务。",
-        },
-        { status: 500 }
-      )
-    }
+    const sessionToken = await createSessionToken(user.id, user.role)
     return jsonResponseWithSession(
       { success: true, message: "登录成功" },
       sessionToken
