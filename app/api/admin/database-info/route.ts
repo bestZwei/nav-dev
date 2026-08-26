@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getAdminSession } from "@/lib/api-auth"
 
 interface DatabaseInfo {
   type: string
@@ -11,6 +12,9 @@ interface DatabaseInfo {
 }
 
 export async function GET() {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   try {
     // 测试数据库连接
     await prisma.$queryRaw`SELECT 1`

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { checkScreenshotUploadCapability } from "@/lib/actions"
+import { getAdminSession } from "@/lib/api-auth"
 
 const MAX_SCREENSHOT_BYTES = 2 * 1024 * 1024
 
@@ -8,10 +8,7 @@ const MAX_SCREENSHOT_BYTES = 2 * 1024 * 1024
 // 结果：supported=false 时管理界面禁用本地上传，仅保留 URL 方式
 export async function GET() {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get("user_id")?.value
-    const userRole = cookieStore.get("user_role")?.value
-    if (!userId || userRole !== "ADMIN") {
+    if (!(await getAdminSession())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

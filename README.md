@@ -125,7 +125,7 @@ cd nav
 
 # 2. 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件，配置 NEXTAUTH_SECRET
+# 编辑 .env 文件，配置 SESSION_SECRET（或 NEXTAUTH_SECRET）
 # Docker 部署时 DATABASE_URL 会自动生成
 
 # 3. 启动服务（使用 GitHub Actions 构建的镜像）
@@ -144,6 +144,7 @@ docker compose logs -f nav
 
 ```bash
 # 核心配置（必填）
+SESSION_SECRET=your-session-secret-here # 会话签名密钥，未设置时回退 NEXTAUTH_SECRET
 NEXTAUTH_SECRET=your-nextauth-secret-here
 NEXTAUTH_URL=http://localhost:3000 # 生产环境填写实际域名
 
@@ -224,10 +225,11 @@ pm2 save
 | 变量名 | 说明 | 示例 | 必填 |
 |--------|------|------|------|
 | `DATABASE_URL` | PostgreSQL 连接字符串（**Docker 部署时自动生成**） | `postgresql://user:pass@localhost:5432/nav` | ❌（Docker）/ ✅（本地） |
-| `NEXTAUTH_SECRET` | 加密密钥 | 随机字符串（`openssl rand -base64 32`） | ✅ |
+| `SESSION_SECRET` | 后台会话签名密钥（HMAC），未设置时回退 `NEXTAUTH_SECRET` | 随机字符串（`openssl rand -base64 32`） | ✅（二选一） |
+| `NEXTAUTH_SECRET` | 加密密钥（兼作会话签名回退密钥） | 随机字符串（`openssl rand -base64 32`） | ✅ |
 | `NEXTAUTH_URL` | 应用完整 URL | `http://localhost:3000` 或 `https://your-domain.com` | ✅ |
 
-**Docker 部署**：只需配置 `NEXTAUTH_SECRET`，其他环境变量有默认值或自动生成。
+**Docker 部署**：只需配置 `SESSION_SECRET`（或 `NEXTAUTH_SECRET`），其他环境变量有默认值或自动生成。
 
 **本地开发**：需要手动配置完整的 `DATABASE_URL`。
 

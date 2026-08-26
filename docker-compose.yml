@@ -29,6 +29,8 @@ services:
       - ${PORT:-3000}:3000
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-nav}:${POSTGRES_PASSWORD:-FkyM5NhrsYHtmmKc}@postgresql:5432/${POSTGRES_DB:-nav}
+      # 会话签名密钥，未设置时回退 NEXTAUTH_SECRET
+      SESSION_SECRET: ${SESSION_SECRET:-${NEXTAUTH_SECRET}}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NODE_ENV: production

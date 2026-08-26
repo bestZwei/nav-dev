@@ -325,18 +325,7 @@ class InMemoryDatabase {
       return result.map(cat => {
         const item: any = { ...cat, sites: [] }
         if (args?.include?.sites) {
-          let sites = this.sites.filter(s => s.categoryId === cat.id)
-          if (args.include.sites.where?.isPublished !== undefined) {
-            sites = sites.filter(s => s.isPublished === args.include.sites.where.isPublished)
-          }
-          // Prioritize pinned sites, then by order
-          sites.sort((a, b) => {
-            const aPinned = a.isPinned ? 1 : 0
-            const bPinned = b.isPinned ? 1 : 0
-            if (aPinned !== bPinned) return bPinned - aPinned
-            return a.order - b.order
-          })
-          item.sites = sites
+          item.sites = this.assembleCategorySites(cat.id, args.include.sites)
         }
         if (args?.include?._count?.select?.sites) {
           item._count = { sites: this.sites.filter(s => s.categoryId === cat.id).length }
@@ -353,17 +342,7 @@ class InMemoryDatabase {
       if (!cat) return null
       const item: any = { ...cat, sites: [] }
       if (args.include?.sites) {
-        let sites = this.sites.filter(s => s.categoryId === cat.id)
-        if (args.include.sites.where?.isPublished !== undefined) {
-          sites = sites.filter(s => s.isPublished === args.include.sites.where.isPublished)
-        }
-        sites.sort((a, b) => {
-          const aPinned = a.isPinned ? 1 : 0
-          const bPinned = b.isPinned ? 1 : 0
-          if (aPinned !== bPinned) return bPinned - aPinned
-          return a.order - b.order
-        })
-        item.sites = sites
+        item.sites = this.assembleCategorySites(cat.id, args.include.sites)
       }
       if (args?.include?._count?.select?.sites) {
         item._count = { sites: this.sites.filter(s => s.categoryId === cat.id).length }
@@ -406,8 +385,11 @@ class InMemoryDatabase {
       const idx = this.categories.findIndex(c => c.id === args.where.id)
       if (idx === -1) throw new Error('Category not found')
       const deleted = this.categories.splice(idx, 1)[0]
-      // Cascade delete sites
+      // Cascade delete sites（及其关联截图/访问记录，与 schema onDelete: Cascade 一致）
+      const orphanSiteIds = new Set(this.sites.filter(s => s.categoryId === deleted.id).map(s => s.id))
       this.sites = this.sites.filter(s => s.categoryId !== deleted.id)
+      this.screenshots = this.screenshots.filter(s => !orphanSiteIds.has(s.siteId))
+      this.visits = this.visits.filter(v => !orphanSiteIds.has(v.siteId))
       return deleted
     },
 
@@ -415,6 +397,8 @@ class InMemoryDatabase {
       const count = this.categories.length
       this.categories = []
       this.sites = []
+      this.screenshots = []
+      this.visits = []
       return { count }
     },
 
@@ -496,6 +480,33 @@ class InMemoryDatabase {
     }
 
     return out
+  }
+
+  /**
+   * 内存模式专用：组装分类下的 sites 列表。
+   * 支持 Prisma 嵌套 include 语义：where.isPublished 过滤、orderBy.order 排序、
+   * include.screenshots 等嵌套关系（未显式 orderBy 时置顶优先、再按 order）。
+   */
+  private assembleCategorySites(categoryId: string, sitesInclude?: any): Record<string, unknown>[] {
+    let sites = this.sites.filter(s => s.categoryId === categoryId)
+    if (sitesInclude?.where?.isPublished !== undefined) {
+      sites = sites.filter(s => s.isPublished === sitesInclude.where.isPublished)
+    }
+    if (sitesInclude?.orderBy?.order) {
+      const dir = sitesInclude.orderBy.order
+      sites = sites.slice().sort((a, b) => (dir === 'desc' ? b.order - a.order : a.order - b.order))
+    } else {
+      // Prioritize pinned sites, then by order
+      sites = sites.slice().sort((a, b) => {
+        const aPinned = a.isPinned ? 1 : 0
+        const bPinned = b.isPinned ? 1 : 0
+        if (aPinned !== bPinned) return bPinned - aPinned
+        return a.order - b.order
+      })
+    }
+    return sites.map(site =>
+      this.projectSiteResult(site, { include: sitesInclude?.include })
+    )
   }
 
   site = {
@@ -643,9 +654,18 @@ class InMemoryDatabase {
     update: async (args: { where: { id: string }; data: Partial<SiteItem>; include?: any; select?: any }): Promise<SiteItem> => {
       const idx = this.sites.findIndex(s => s.id === args.where.id)
       if (idx === -1) throw new Error('Site not found')
+      const data: any = { ...args.data }
+      // Prisma 关系语法：category: { connect: { id } } → 转换为 categoryId，
+      // 避免嵌套对象直接展开到记录上造成字段漂移
+      if (data.category && typeof data.category === 'object') {
+        if (data.category.connect?.id) {
+          data.categoryId = data.category.connect.id
+        }
+        delete data.category
+      }
       this.sites[idx] = {
         ...this.sites[idx],
-        ...args.data,
+        ...data,
         updatedAt: new Date(),
       }
       const item: any = { ...this.sites[idx] }
@@ -659,6 +679,9 @@ class InMemoryDatabase {
       const idx = this.sites.findIndex(s => s.id === args.where.id)
       if (idx === -1) throw new Error('Site not found')
       const deleted = this.sites.splice(idx, 1)[0]
+      // 与真实库一致：级联删除关联截图与访问记录（schema 中 onDelete: Cascade）
+      this.screenshots = this.screenshots.filter(s => s.siteId !== deleted.id)
+      this.visits = this.visits.filter(v => v.siteId !== deleted.id)
       const item: any = { ...deleted }
       if (args.include?.category) {
         item.category = this.categories.find(c => c.id === item.categoryId) || null
@@ -670,6 +693,7 @@ class InMemoryDatabase {
       const count = this.sites.length
       this.sites = []
       this.visits = []
+      this.screenshots = []
       return { count }
     },
 

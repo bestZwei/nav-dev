@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Loader2 } from "lucide-react"
-import { updateUser } from "@/lib/actions"
+import { changePassword } from "@/lib/actions"
 import { toast } from "sonner"
 import { useTranslations } from "next-intl"
 
@@ -27,11 +27,11 @@ interface PasswordChangeDialogProps {
 export function PasswordChangeDialog({
   open,
   onOpenChange,
-  userId,
   userEmail,
 }: PasswordChangeDialogProps) {
   const t = useTranslations("admin.profile")
   const tc = useTranslations("common")
+  const [currentPassword, setCurrentPassword] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -53,14 +53,23 @@ export function PasswordChangeDialog({
       return
     }
 
+    if (!currentPassword) {
+      toast.error(t("currentPasswordRequired"), {
+        description: t("currentPasswordRequiredDesc"),
+      })
+      return
+    }
+
     setLoading(true)
     try {
-      const result = await updateUser(userId, { password })
+      // 以当前会话身份为准，服务端强制校验旧密码
+      const result = await changePassword(currentPassword, password)
       if (result.success) {
         toast.success(t("passwordChanged"), {
           description: t("passwordChangedDesc"),
         })
         onOpenChange(false)
+        setCurrentPassword("")
         setPassword("")
         setConfirmPassword("")
       } else {
@@ -88,6 +97,18 @@ export function PasswordChangeDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">{t("currentPasswordLabel")}</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder={t("currentPasswordPlaceholder")}
+                autoComplete="current-password"
+                required
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password">{t("newPasswordLabel")}</Label>
               <Input

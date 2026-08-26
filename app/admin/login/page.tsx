@@ -20,7 +20,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations("admin.login")
-  const redirectUrl = searchParams.get("redirect") || "/admin/dashboard"
+  const redirectParam = searchParams.get("redirect")
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -78,6 +78,19 @@ function LoginForm() {
       const data = await response.json()
 
       if (response.ok) {
+        // 同源校验 redirect 参数，防止开放重定向钓鱼；
+        // 仅保留路径部分，丢弃外域 origin，非法值回退后台首页
+        let redirectUrl = "/admin/dashboard"
+        if (redirectParam) {
+          try {
+            const parsed = new URL(redirectParam, window.location.origin)
+            if (parsed.origin === window.location.origin) {
+              redirectUrl = parsed.pathname + parsed.search + parsed.hash
+            }
+          } catch {
+            // 解析失败保持默认后台首页
+          }
+        }
         // 使用 window.location.href 进行硬重定向，确保浏览器环境完整同步 Cookie 状态
         window.location.href = redirectUrl
       } else {

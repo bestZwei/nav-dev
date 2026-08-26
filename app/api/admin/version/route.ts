@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { getAdminSession } from "@/lib/api-auth"
 import {
   RELEASES_PAGE_URL,
   RELEASE_API_URL,
@@ -106,11 +106,7 @@ async function getCachedLatestVersion(): Promise<LatestVersionInfo | null> {
 }
 
 export async function GET(_request: NextRequest) {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get("user_id")?.value
-  const userRole = cookieStore.get("user_role")?.value
-
-  if (!userId || userRole !== "ADMIN") {
+  if (!(await getAdminSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

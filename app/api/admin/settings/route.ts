@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { updateSystemSettings, getSystemSettings } from "@/lib/actions"
-import { requireAdmin } from "@/lib/auth"
+import { getAdminSession } from "@/lib/api-auth"
 
 export async function GET() {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   try {
     const result = await getSystemSettings()
     if (!result.success) {
@@ -16,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   try {
     // 纵深防御：middleware 校验可被伪造 cookie 绕过，写操作必须查库验证
     if (!(await requireAdmin()).ok) {

@@ -1,6 +1,21 @@
 #!/bin/sh
 set -e
 
+# 会话签名密钥兜底：未显式配置时生成并持久化到挂载卷之外的 /app/.session-secret，
+# 保证容器重启后会话不全部失效（镜像重建时会重新生成，届时需重新登录）
+if [ -z "$SESSION_SECRET" ] && [ -z "$NEXTAUTH_SECRET" ]; then
+  SECRET_FILE="/app/.session-secret"
+  if [ -f "$SECRET_FILE" ]; then
+    export SESSION_SECRET="$(cat "$SECRET_FILE")"
+    echo "⚠️  使用容器内持久化的会话密钥（建议在环境变量中显式配置 SESSION_SECRET）"
+  else
+    export SESSION_SECRET="$(head -c 32 /dev/urandom | base64)"
+    echo "$SESSION_SECRET" > "$SECRET_FILE" 2>/dev/null || true
+    chmod 600 "$SECRET_FILE" 2>/dev/null || true
+    echo "⚠️  未配置 SESSION_SECRET，已自动生成会话密钥（建议在环境变量中显式配置并持久化）"
+  fi
+fi
+
 # 未配置 DATABASE_URL 时使用内置内存数据，跳过数据库初始化
 if [ -z "$DATABASE_URL" ]; then
   echo "⚠️  未配置 DATABASE_URL，使用内置内存数据（重启后修改不会保留）"

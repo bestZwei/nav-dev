@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { importData } from '@/lib/actions'
-import { requireAdmin } from '@/lib/auth'
+import { getAdminSession } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     if (!(await requireAdmin()).ok) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
