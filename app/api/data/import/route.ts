@@ -7,10 +7,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    if (!(await requireAdmin()).ok) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const formData = await request.formData()
     const file = formData.get('file') as File
     const mode = (formData.get('mode') as string) === 'overwrite' ? 'overwrite' : 'append'

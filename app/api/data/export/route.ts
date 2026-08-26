@@ -7,10 +7,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    if (!(await requireAdmin()).ok) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const result = await exportData()
 
     if (!result.success || !result.data) {

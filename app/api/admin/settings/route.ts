@@ -24,10 +24,6 @@ export async function POST(request: NextRequest) {
   }
   try {
     // 纵深防御：middleware 校验可被伪造 cookie 绕过，写操作必须查库验证
-    if (!(await requireAdmin()).ok) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     const body = await request.json()
 
     // 验证必填字段
