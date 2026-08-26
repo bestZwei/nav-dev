@@ -127,7 +127,11 @@ export default function AdminDashboardPage() {
   }
 
   // 解析响应 body，失败时返回 null（用于网络层 HTML 错误页等异常情况）
+  // 非 2xx（如统计接口 500）一律返回 null，交由调用方回退默认值。
+  // 仅解析失败还不够：错误响应体 {error} 是合法 JSON，直接透传会让
+  // 后续对缺失字段（如 topSites.length）的访问抛出客户端异常
   async function safeJson(res: Response): Promise<unknown> {
+    if (!res.ok) return null
     const ctype = res.headers.get("content-type") || ""
     if (!ctype.includes("application/json")) return null
     return res.json().catch(() => null)
@@ -157,14 +161,26 @@ export default function AdminDashboardPage() {
           fetch("/api/admin/stats/category-distribution"),
         ])
 
+        // 规范化各响应：字段缺失或类型不符时回退默认值，保证渲染层拿到的结构完整
         const sitesData = ((await safeJson(sitesRes)) ?? {}) as { total?: number }
         const categoriesData = ((await safeJson(categoriesRes)) ?? {}) as { total?: number }
         const usersData = ((await safeJson(usersRes)) ?? {}) as { total?: number }
-        const visitsData = ((await safeJson(visitsRes)) ?? {}) as { totalVisits?: number; topSites?: unknown[] }
-        const frequencyData = ((await safeJson(frequencyRes)) ?? { frequency: [] }) as { frequency: Array<{ date: string; count: number }> }
+        const visitsRaw = (await safeJson(visitsRes)) as { totalVisits?: number; topSites?: unknown[] } | null
+        const visitsData = {
+          totalVisits: visitsRaw?.totalVisits ?? 0,
+          topSites: Array.isArray(visitsRaw?.topSites) ? visitsRaw.topSites : [],
+        }
+        const frequencyRaw = (await safeJson(frequencyRes)) as { frequency?: Array<{ date: string; count: number }> } | null
+        const frequencyData = {
+          frequency: Array.isArray(frequencyRaw?.frequency) ? frequencyRaw.frequency : [],
+        }
         const todayData = ((await safeJson(todayRes)) ?? { today: 0, growthRate: null }) as { today: number; growthRate: number | null }
         const contentData = ((await safeJson(contentRes)) ?? { pendingSubmissions: 0, weekNewSites: 0, missingIcons: 0 }) as { pendingSubmissions: number; weekNewSites: number; missingIcons: number }
-        const distributionData = ((await safeJson(distributionRes)) ?? { data: [], total: 0 }) as { data: Array<{ category: string; count: number; share: number }>; total: number }
+        const distributionRaw = (await safeJson(distributionRes)) as { data?: Array<{ category: string; count: number; share: number }>; total?: number } | null
+        const distributionData = {
+          data: Array.isArray(distributionRaw?.data) ? distributionRaw.data : [],
+          total: distributionRaw?.total ?? 0,
+        }
 
         setSiteStats([
           { titleKey: "statSites", value: sitesData.total || 0, loading: false, icon: Globe },
@@ -298,7 +314,7 @@ export default function AdminDashboardPage() {
             </CardAction>
           </CardHeader>
           <CardContent>
-            {visitStats && visitStats.topSites.length > 0 ? (
+            {visitStats && Array.isArray(visitStats.topSites) && visitStats.topSites.length > 0 ? (
               <div className="max-h-[318px] overflow-auto rounded-lg border">
                 <Table>
                   <TableHeader>
