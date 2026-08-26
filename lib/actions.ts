@@ -1,6 +1,6 @@
 "use server"
 
-import { prisma } from "./prisma"
+import { prisma, useRealDatabase } from "./prisma"
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
@@ -449,6 +449,13 @@ export async function getSiteDetail(siteId: string) {
 let capabilityCache: { supported: boolean; checkedAt: number; reason?: string } | null = null
 
 export async function checkScreenshotUploadCapability() {
+  // 内存模式下，截图直接写入进程内存储，无需外部依赖
+  if (!useRealDatabase) {
+    return {
+      success: true,
+      data: { supported: true, checkedAt: Date.now() },
+    }
+  }
   const now = Date.now()
   if (capabilityCache && now - capabilityCache.checkedAt < 60_000) {
     return { success: true, data: capabilityCache }

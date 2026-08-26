@@ -6,6 +6,8 @@ const useRealDatabase =
   typeof process.env.DATABASE_URL === 'string' &&
   process.env.DATABASE_URL.trim() !== ''
 
+export { useRealDatabase }
+
 // In-memory types
 export interface CategoryItem {
   id: string
@@ -33,6 +35,8 @@ export interface SiteItem {
   isPublished: boolean
   isPinned?: boolean
   order: number
+  detailContent: string | null
+  hasDetail: boolean
   createdAt: Date
   updatedAt: Date
   category?: CategoryItem | null
@@ -65,11 +69,23 @@ export interface SystemSettingsItem {
   icpLink: string | null
   enableVisitTracking: boolean
   enableSubmission: boolean
+  enableSiteDetail: boolean
   submissionMaxPerDay: number
   githubUrl: string | null
   defaultLanguage: string
   createdAt: Date
   updatedAt: Date
+}
+
+export interface ScreenshotItem {
+  id: string
+  siteId: string
+  source: 'URL' | 'UPLOAD'
+  url: string | null
+  data: string | null
+  mimeType: string | null
+  order: number
+  createdAt: Date
 }
 
 export interface VisitItem {
@@ -178,6 +194,8 @@ const initialSites: SiteItem[] = seedSitesData.map((s, idx) => {
     isPublished: true,
     isPinned: Boolean(s.isPinned),
     order: idx + 1,
+    detailContent: null,
+    hasDetail: false,
     createdAt: new Date(Date.now() - (idx * 3600 * 1000)),
     updatedAt: new Date(Date.now() - (idx * 3600 * 1000)),
   }
@@ -217,6 +235,7 @@ const initialSystemSettings: SystemSettingsItem = {
   icpLink: null,
   enableVisitTracking: true,
   enableSubmission: true,
+  enableSiteDetail: false,
   submissionMaxPerDay: 3,
   githubUrl: 'https://github.com/kenanlabs/nav',
   defaultLanguage: 'zh',
@@ -245,6 +264,7 @@ class InMemoryDatabase {
   users: UserItem[] = [...initialUsers]
   systemSettingsItem: SystemSettingsItem = { ...initialSystemSettings }
   visits: VisitItem[] = [...initialVisits]
+  screenshots: ScreenshotItem[] = []
 
   // Category methods
   category = {
@@ -500,6 +520,12 @@ class InMemoryDatabase {
         if (args?.include?.category) {
           item.category = this.categories.find(c => c.id === site.categoryId) || null
         }
+        if (args?.include?.screenshots) {
+          item.screenshots = this.screenshots
+            .filter(s => s.siteId === site.id)
+            .sort((a, b) => a.order - b.order)
+            .map(s => ({ id: s.id, source: s.source, url: s.url, mimeType: s.mimeType, order: s.order }))
+        }
         return item
       })
     },
@@ -513,6 +539,12 @@ class InMemoryDatabase {
       const item: any = { ...site }
       if (args.include?.category) {
         item.category = this.categories.find(c => c.id === site.categoryId) || null
+      }
+      if (args.include?.screenshots) {
+        item.screenshots = this.screenshots
+          .filter(s => s.siteId === site.id)
+          .sort((a, b) => a.order - b.order)
+          .map(s => ({ id: s.id, source: s.source, url: s.url, mimeType: s.mimeType, order: s.order }))
       }
       return item as SiteItem
     },
@@ -544,6 +576,8 @@ class InMemoryDatabase {
         isPublished: args.data.isPublished ?? true,
         isPinned: args.data.isPinned ?? false,
         order: args.data.order ?? this.sites.length + 1,
+        detailContent: args.data.detailContent ?? null,
+        hasDetail: args.data.hasDetail ?? false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -616,10 +650,69 @@ class InMemoryDatabase {
 
       if (args.orderBy?._count?.id) {
         const dir = args.orderBy._count.id
-        groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id - b._count.id)
+groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id - b._count.id)
       }
 
       return groups
+    },
+  }
+
+  // Screenshot methods (内存模式下的截图存储)
+  screenshot = {
+    createMany: async (args: { data: Array<Partial<ScreenshotItem>> }) => {
+      const created: ScreenshotItem[] = []
+      for (const shot of args.data) {
+        const newShot: ScreenshotItem = {
+          id: shot.id || generateId(),
+          siteId: shot.siteId || '',
+          source: shot.source || 'URL',
+          url: shot.url ?? null,
+          data: shot.data ?? null,
+          mimeType: shot.mimeType ?? null,
+          order: shot.order ?? created.length,
+          createdAt: new Date(),
+        }
+        this.screenshots.push(newShot)
+        created.push(newShot)
+      }
+      return { count: created.length }
+    },
+
+    deleteMany: async (args?: { where?: { siteId?: string } }) => {
+      let count = 0
+      if (!args?.where?.siteId) {
+        count = this.screenshots.length
+        this.screenshots = []
+      } else {
+        const before = this.screenshots.length
+        this.screenshots = this.screenshots.filter(s => s.siteId !== args.where!.siteId)
+        count = before - this.screenshots.length
+      }
+      return { count }
+    },
+
+    findMany: async (args?: { where?: { siteId?: string; id?: string }; orderBy?: { order?: 'asc' | 'desc' } }): Promise<ScreenshotItem[]> => {
+      let result = [...this.screenshots]
+      if (args?.where?.siteId) result = result.filter(s => s.siteId === args.where!.siteId)
+      if (args?.where?.id) result = result.filter(s => s.id === args.where!.id)
+      if (args?.orderBy?.order) {
+        const dir = args.orderBy.order
+        result.sort((a, b) => dir === 'desc' ? b.order - a.order : a.order - b.order)
+      }
+      return result
+    },
+
+    findUnique: async (args: { where: { id: string }; select?: any }) => {
+      const shot = this.screenshots.find(s => s.id === args.where.id)
+      if (!shot) return null
+      if (args?.select) {
+        const out: any = {}
+        for (const k of Object.keys(args.select)) {
+          if (args.select[k]) out[k] = (shot as any)[k]
+        }
+        return out
+      }
+      return { ...shot }
     },
   }
 
