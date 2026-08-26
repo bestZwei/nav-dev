@@ -834,6 +834,13 @@ export async function searchSites(query: string) {
 
 // ==================== System Settings ====================
 
+// 当前是否运行在内存模式（未配置 DATABASE_URL）。
+// 内存模式下数据仅存在于单个实例内存中，Serverless 多实例（如 Vercel）
+// 之间不共享且实例回收后重置，站点详情等功能无法持久生效
+export async function isMemoryMode() {
+  return { success: true, data: !useRealDatabase }
+}
+
 export async function getSystemSettings() {
   try {
     // 系统设置只有一条记录，使用第一条

@@ -8,7 +8,8 @@
     "close": "Schließen",
     "operationFailed": "Vorgang fehlgeschlagen",
     "loadFailed": "Laden fehlgeschlagen",
-    "retryLater": "Bitte später erneut versuchen"
+    "retryLater": "Bitte später erneut versuchen",
+    "backToTop": "Nach oben"
   },
   "locale": {
     "switch": "Sprache wechseln",
@@ -547,7 +548,10 @@
       "linkNamePlaceholder": "Linkname",
       "linkUrlPlaceholder": "Link-URL",
       "siteDetailLabel": "Website-Detaildialog",
-      "siteDetailHint": "Wenn aktiviert, zeigen Websites mit Detailinhalt einen Vorstellungsdialog (Text, Screenshots, Nutzung) vor der Weiterleitung"
+      "siteDetailHint": "Wenn aktiviert, zeigen Websites mit Detailinhalt einen Vorstellungsdialog (Text, Screenshots, Nutzung) vor der Weiterleitung",
+      "siteDetailMemoryWarning": "Der Speichermodus ist aktiv: Dieser Schalter wird beim Neustart oder Recycling der Instanz zurückgesetzt. Die Site-Details-Funktion erfordert eine Datenbank (DATABASE_URL).",
+      "memoryModeToastTitle": "Hinweis zum Speichermodus",
+      "memoryModeToastDesc": "Keine Datenbank verbunden. Einstellungen werden nach Neustart oder Recycling zurückgesetzt. Funktionen wie Site-Details benötigen eine Datenbank."
     },
     "profile": {
       "admin": "Admin",

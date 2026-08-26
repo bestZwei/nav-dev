@@ -8,7 +8,8 @@
     "close": "关闭",
     "operationFailed": "操作失败",
     "loadFailed": "加载失败",
-    "retryLater": "请稍后重试"
+    "retryLater": "请稍后重试",
+    "backToTop": "回到顶部"
   },
   "locale": {
     "switch": "切换语言",
@@ -547,7 +548,10 @@
       "linkNamePlaceholder": "链接名称",
       "linkUrlPlaceholder": "链接地址",
       "siteDetailLabel": "站点详情弹窗",
-      "siteDetailHint": "开启后，填写了详情内容的站点点击卡片先弹出图文介绍（介绍、截图、使用方法），再跳转目标网站"
+      "siteDetailHint": "开启后，填写了详情内容的站点点击卡片先弹出图文介绍（介绍、截图、使用方法），再跳转目标网站",
+      "siteDetailMemoryWarning": "当前为内存模式，此开关保存后会因实例重启或回收被重置。站点详情功能需要连接数据库（配置 DATABASE_URL）才能正常使用。",
+      "memoryModeToastTitle": "内存模式提醒",
+      "memoryModeToastDesc": "未连接数据库，设置会在实例重启或回收后重置。站点详情等功能需要连接数据库才能持久生效。"
     },
     "profile": {
       "admin": "管理员",

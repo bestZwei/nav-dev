@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Plus, Trash2, Info, Zap, Link2, PanelBottom } from "lucide-react"
-import { getSystemSettings, updateSystemSettings } from "@/lib/actions"
+import { Loader2, Plus, Trash2, Info, Zap, Link2, PanelBottom, TriangleAlert } from "lucide-react"
+import { getSystemSettings, updateSystemSettings, isMemoryMode } from "@/lib/actions"
 import { useTranslations } from "next-intl"
 import { locales, localeNames, isLocale, type Locale } from "@/lib/i18n"
 import {
@@ -78,10 +78,14 @@ export default function AdminSettingsPage() {
   })
   const [savingSettings, setSavingSettings] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
+  const [memoryMode, setMemoryMode] = useState(false)
 
   // 加载数据
   useEffect(() => {
     loadSettings()
+    isMemoryMode().then((result) => {
+      if (result.success) setMemoryMode(result.data)
+    })
   }, [])
 
   const loadSettings = async () => {
@@ -112,6 +116,11 @@ export default function AdminSettingsPage() {
         toast.success(t("saveSuccess"), {
           description: t("saveSuccessDesc"),
         })
+        if (memoryMode) {
+          toast.warning(t("memoryModeToastTitle"), {
+            description: t("memoryModeToastDesc"),
+          })
+        }
         setTimeout(() => window.location.reload(), 500)
       } else {
         toast.error(t("saveFailed"), {
@@ -305,6 +314,12 @@ export default function AdminSettingsPage() {
                     <p className="text-sm text-muted-foreground">
                       {t("siteDetailHint")}
                     </p>
+                    {memoryMode && (
+                      <p className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                        <TriangleAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <span>{t("siteDetailMemoryWarning")}</span>
+                      </p>
+                    )}
                   </div>
                   <Switch
                     id="enable-site-detail"

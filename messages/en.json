@@ -8,7 +8,8 @@
     "close": "Close",
     "operationFailed": "Operation failed",
     "loadFailed": "Failed to load",
-    "retryLater": "Please try again later"
+    "retryLater": "Please try again later",
+    "backToTop": "Back to top"
   },
   "locale": {
     "switch": "Switch language",
@@ -547,7 +548,10 @@
       "linkNamePlaceholder": "Link name",
       "linkUrlPlaceholder": "Link URL",
       "siteDetailLabel": "Site Detail Dialog",
-      "siteDetailHint": "When enabled, sites with detail content show an introduction dialog (text, screenshots, usage) before redirecting"
+      "siteDetailHint": "When enabled, sites with detail content show an introduction dialog (text, screenshots, usage) before redirecting",
+      "siteDetailMemoryWarning": "Memory mode is active: this toggle will be reset when the instance restarts or is recycled. Site detail requires a database (DATABASE_URL) to work properly.",
+      "memoryModeToastTitle": "Memory mode notice",
+      "memoryModeToastDesc": "No database connected. Settings will be reset after the instance restarts or is recycled. Features like site detail need a database to persist."
     },
     "profile": {
       "admin": "Admin",

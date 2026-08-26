@@ -8,7 +8,8 @@
     "close": "閉じる",
     "operationFailed": "操作に失敗しました",
     "loadFailed": "読み込みに失敗しました",
-    "retryLater": "しばらくしてからもう一度お試しください"
+    "retryLater": "しばらくしてからもう一度お試しください",
+    "backToTop": "トップに戻る"
   },
   "locale": {
     "switch": "言語を切り替える",
@@ -547,7 +548,10 @@
       "linkNamePlaceholder": "リンク名",
       "linkUrlPlaceholder": "リンク URL",
       "siteDetailLabel": "サイト詳細ダイアログ",
-      "siteDetailHint": "有効にすると、詳細コンテンツがあるサイトはカードクリック時に紹介ダイアログ（紹介・スクリーンショット・使い方）を表示してから移動します"
+      "siteDetailHint": "有効にすると、詳細コンテンツがあるサイトはカードクリック時に紹介ダイアログ（紹介・スクリーンショット・使い方）を表示してから移動します",
+      "siteDetailMemoryWarning": "メモリモードが有効です。このスイッチはインスタンスの再起動・リサイクル時にリセットされます。サイト詳細機能を利用するにはデータベース（DATABASE_URL）が必要です。",
+      "memoryModeToastTitle": "メモリモードの注意",
+      "memoryModeToastDesc": "データベースに接続されていないため、設定はインスタンスの再起動・リサイクル後にリセットされます。サイト詳細などの機能にはデータベース接続が必要です。"
     },
     "profile": {
       "admin": "管理者",

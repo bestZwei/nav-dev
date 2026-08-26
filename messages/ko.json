@@ -8,7 +8,8 @@
     "close": "닫기",
     "operationFailed": "작업 실패",
     "loadFailed": "불러오기 실패",
-    "retryLater": "잠시 후 다시 시도해 주세요"
+    "retryLater": "잠시 후 다시 시도해 주세요",
+    "backToTop": "맨 위로"
   },
   "locale": {
     "switch": "언어 전환",
@@ -547,7 +548,10 @@
       "linkNamePlaceholder": "링크 이름",
       "linkUrlPlaceholder": "링크 URL",
       "siteDetailLabel": "사이트 상세 팝업",
-      "siteDetailHint": "켜면 상세 콘텐츠가 있는 사이트는 카드 클릭 시 소개 팝업(소개·스크린샷·사용법)을 표시한 후 이동합니다"
+      "siteDetailHint": "켜면 상세 콘텐츠가 있는 사이트는 카드 클릭 시 소개 팝업(소개·스크린샷·사용법)을 표시한 후 이동합니다",
+      "siteDetailMemoryWarning": "메모리 모드가 활성화되어 있습니다. 이 스위치는 인스턴스 재시작 또는 재활용 시 초기화됩니다. 사이트 상세 기능은 데이터베이스(DATABASE_URL)가 필요합니다.",
+      "memoryModeToastTitle": "메모리 모드 알림",
+      "memoryModeToastDesc": "데이터베이스에 연결되지 않아 설정은 인스턴스 재시작 또는 재활용 후 초기화됩니다. 사이트 상세 등의 기능은 데이터베이스 연결이 필요합니다."
     },
     "profile": {
       "admin": "관리자",

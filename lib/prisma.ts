@@ -922,9 +922,9 @@ function createPrisma(): PrismaClient {
   }
 
   const db = globalForPrisma.inMemoryDb ?? new InMemoryDatabase()
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.inMemoryDb = db
-  }
+  // 内存模式必须无条件复用全局单例：若只在非生产环境缓存，生产（如 Vercel）
+  // 下每次请求都会 new 一个全新空库，保存的设置/站点数据在下一个请求即丢失
+  globalForPrisma.inMemoryDb = db
   return db as unknown as PrismaClient
 }
 

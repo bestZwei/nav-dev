@@ -8,7 +8,8 @@
     "close": "Fermer",
     "operationFailed": "Échec de l'opération",
     "loadFailed": "Échec du chargement",
-    "retryLater": "Veuillez réessayer plus tard"
+    "retryLater": "Veuillez réessayer plus tard",
+    "backToTop": "Retour en haut"
   },
   "locale": {
     "switch": "Changer de langue",
@@ -547,7 +548,10 @@
       "linkNamePlaceholder": "Nom du lien",
       "linkUrlPlaceholder": "URL du lien",
       "siteDetailLabel": "Dialogue de détail du site",
-      "siteDetailHint": "Si activé, les sites avec contenu détaillé affichent un dialogue de présentation (texte, captures, usage) avant la redirection"
+      "siteDetailHint": "Si activé, les sites avec contenu détaillé affichent un dialogue de présentation (texte, captures, usage) avant la redirection",
+      "siteDetailMemoryWarning": "Le mode mémoire est actif : ce commutateur sera réinitialisé au redémarrage ou au recyclage de l'instance. La fonction de détails du site nécessite une base de données (DATABASE_URL).",
+      "memoryModeToastTitle": "Avis mode mémoire",
+      "memoryModeToastDesc": "Aucune base de données connectée. Les paramètres seront réinitialisés après redémarrage ou recyclage. Les fonctions comme les détails du site nécessitent une base de données."
     },
     "profile": {
       "admin": "Admin",
