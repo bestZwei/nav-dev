@@ -425,6 +425,79 @@ class InMemoryDatabase {
   }
 
   // Site methods
+  /**
+   * 内存模式专用：按 Prisma select 子句投影标量字段。
+   * value 为 true 表示保留该字段，未声明的字段被剔除（与真实 Prisma 行为一致）。
+   */
+  private selectScalars<T extends object>(
+    src: T,
+    select: Record<string, unknown>
+  ): Record<string, unknown> {
+    const out: Record<string, unknown> = {}
+    for (const key of Object.keys(select)) {
+      const v = select[key]
+      if (v === true) out[key] = (src as Record<string, unknown>)[key]
+    }
+    return out
+  }
+
+  /** 内存模式专用：按 siteId 取关联 screenshots，支持嵌套 select + orderBy */
+  private getScreenshotsForSite(
+    siteId: string,
+    opts?: { select?: Record<string, unknown>; orderBy?: { order?: 'asc' | 'desc' } }
+  ): Record<string, unknown>[] {
+    let shots = this.screenshots.filter(s => s.siteId === siteId)
+    if (opts?.orderBy?.order) {
+      const dir = opts.orderBy.order
+      shots = shots
+        .slice()
+        .sort((a, b) => (dir === 'desc' ? b.order - a.order : a.order - b.order))
+    } else {
+      shots = shots.slice().sort((a, b) => a.order - b.order)
+    }
+    if (opts?.select) return shots.map(s => this.selectScalars(s, opts.select!))
+    return shots.map(s => ({ ...s }))
+  }
+
+  /** 内存模式专用：组装 site 返回对象，兼容 select（嵌套）+ include（关系） */
+  private projectSiteResult(
+    site: SiteItem,
+    args?: { select?: Record<string, unknown>; include?: Record<string, unknown> }
+  ): Record<string, unknown> {
+    const out: Record<string, unknown> = {}
+    const sel = args?.select
+    const inc = args?.include
+
+    if (sel) {
+      // select 模式：按 select 投影顶层标量字段；关系字段（值为对象）单独处理
+      for (const [key, val] of Object.entries(sel)) {
+        if (val === true) {
+          out[key] = (site as any)[key]
+        } else if (val && typeof val === 'object') {
+          if (key === 'category') {
+            const cat = this.categories.find(c => c.id === site.categoryId)
+            const nested = cat ? (val as any).select ? this.selectScalars(cat, (val as any).select) : { ...cat } : null
+            out.category = nested
+          } else if (key === 'screenshots') {
+            out.screenshots = this.getScreenshotsForSite(site.id, val as any)
+          }
+        }
+      }
+    } else {
+      // 无 select：返回全字段 + apply include
+      Object.assign(out, site)
+    }
+
+    if (inc?.category) {
+      out.category = this.categories.find(c => c.id === site.categoryId) || null
+    }
+    if (inc?.screenshots) {
+      out.screenshots = this.getScreenshotsForSite(site.id, inc.screenshots as any)
+    }
+
+    return out
+  }
+
   site = {
     findMany: async (args?: any): Promise<SiteItem[]> => {
       let result = [...this.sites]
@@ -515,19 +588,7 @@ class InMemoryDatabase {
         result = result.slice(0, args.take)
       }
 
-      return result.map(site => {
-        const item: any = { ...site }
-        if (args?.include?.category) {
-          item.category = this.categories.find(c => c.id === site.categoryId) || null
-        }
-        if (args?.include?.screenshots) {
-          item.screenshots = this.screenshots
-            .filter(s => s.siteId === site.id)
-            .sort((a, b) => a.order - b.order)
-            .map(s => ({ id: s.id, source: s.source, url: s.url, mimeType: s.mimeType, order: s.order }))
-        }
-        return item
-      })
+      return result.map(site => this.projectSiteResult(site, { select: args?.select, include: args?.include })) as unknown as SiteItem[]
     },
 
     findUnique: async (args: { where: { id?: string; url?: string }; include?: any; select?: any }): Promise<SiteItem | null> => {
@@ -536,17 +597,7 @@ class InMemoryDatabase {
         (args.where.url && s.url === args.where.url)
       )
       if (!site) return null
-      const item: any = { ...site }
-      if (args.include?.category) {
-        item.category = this.categories.find(c => c.id === site.categoryId) || null
-      }
-      if (args.include?.screenshots) {
-        item.screenshots = this.screenshots
-          .filter(s => s.siteId === site.id)
-          .sort((a, b) => a.order - b.order)
-          .map(s => ({ id: s.id, source: s.source, url: s.url, mimeType: s.mimeType, order: s.order }))
-      }
-      return item as SiteItem
+      return this.projectSiteResult(site, { select: args.select, include: args.include }) as unknown as SiteItem
     },
 
     findFirst: async (args?: any): Promise<SiteItem | null> => {
