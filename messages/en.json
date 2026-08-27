@@ -547,6 +547,8 @@
       "defaultLanguageHint": "Used for visitors without a language preference",
       "trackingLabel": "Enable visit tracking",
       "trackingHint": "Record site visits for analytics",
+      "poetryLabel": "Enable daily poetry",
+      "poetryHint": "When on, a daily poetry card appears at the top right; visitors can still hide it individually",
       "submissionLabel": "Enable site submission",
       "submissionHint": "Allow visitors to submit sites; published after admin review",
       "submissionLimitLabel": "Daily submission limit",

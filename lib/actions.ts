@@ -1180,6 +1180,7 @@ const ALLOWED_SETTINGS_FIELDS = [
   "enableVisitTracking",
   "enableSubmission",
   "enableSiteDetail",
+  "enablePoetry",
   "submissionMaxPerDay",
   "githubUrl",
   "defaultLanguage",
@@ -1201,6 +1202,7 @@ export async function updateSystemSettings(data: {
   enableVisitTracking?: boolean
   enableSubmission?: boolean
   enableSiteDetail?: boolean
+  enablePoetry?: boolean
   submissionMaxPerDay?: number
   githubUrl?: string
   defaultLanguage?: Locale

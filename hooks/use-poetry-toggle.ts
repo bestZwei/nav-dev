@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { fetchPublicSettings } from "@/lib/client-settings"
 
 const POETRY_VISIBLE_KEY = "poetry-visible"
 const STORAGE_EVENT = "poetry-visible-change"
@@ -6,6 +7,8 @@ const STORAGE_EVENT = "poetry-visible-change"
 export function usePoetryToggle() {
   const [isVisible, setIsVisible] = useState(true)
   const [mounted, setMounted] = useState(false)
+  // 管理后台诗词功能总开关（默认开启，拉取公开设置后校正）
+  const [isEnabled, setIsEnabled] = useState(true)
 
   // 初始化：从 localStorage 读取设置
   useEffect(() => {
@@ -17,6 +20,19 @@ export function usePoetryToggle() {
       setIsVisible(true)
     }
     setMounted(true)
+  }, [])
+
+  // 拉取后台总开关状态；fetchPublicSettings 自带 5 分钟客户端缓存
+  useEffect(() => {
+    let cancelled = false
+    fetchPublicSettings().then((settings) => {
+      if (!cancelled) {
+        setIsEnabled(settings.enablePoetry)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // 监听自定义存储事件，实现跨组件同步
@@ -48,5 +64,5 @@ export function usePoetryToggle() {
     window.dispatchEvent(new CustomEvent(STORAGE_EVENT))
   }
 
-  return { isVisible, toggle, setVisible, mounted }
+  return { isVisible, toggle, setVisible, mounted, isEnabled }
 }

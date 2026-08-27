@@ -547,6 +547,8 @@
       "defaultLanguageHint": "언어 기본 설정이 없는 방문자에게 사용되는 언어입니다",
       "trackingLabel": "방문 통계 사용",
       "trackingHint": "사이트 방문 횟수를 기록하여 통계에 사용합니다",
+      "poetryLabel": "오늘의 시 사용",
+      "poetryHint": "활성화하면 오른쪽 상단에 오늘의 시 카드가 표시되며, 방문자가 개별적으로 숨길 수 있습니다",
       "submissionLabel": "사이트 제출 사용",
       "submissionHint": "방문자가 사이트를 제출할 수 있으며 관리자 검토 후 게시됩니다",
       "submissionLimitLabel": "일일 제출 제한",

@@ -5,7 +5,7 @@ import { usePoetryToggle } from "@/hooks/use-poetry-toggle"
 import { JinrishiciCard } from "@/components/layout/jinrishici-card"
 
 export function JinrishiciCardWrapper() {
-  const { isVisible, mounted, setVisible } = usePoetryToggle()
+  const { isVisible, mounted, setVisible, isEnabled } = usePoetryToggle()
   const [showCard, setShowCard] = useState(true)
 
   useEffect(() => {
@@ -18,8 +18,8 @@ export function JinrishiciCardWrapper() {
     setVisible(false)
   }
 
-  // 避免服务端水合不一致
-  if (!mounted) {
+  // 避免服务端水合不一致；后台总开关关闭时不渲染
+  if (!mounted || !isEnabled) {
     return null
   }
 

@@ -547,6 +547,8 @@
       "defaultLanguageHint": "Gilt für Besucher ohne Sprachpräferenz",
       "trackingLabel": "Besuchsstatistik aktivieren",
       "trackingHint": "Seitenbesuche für Statistiken aufzeichnen",
+      "poetryLabel": "Tägliche Poesie aktivieren",
+      "poetryHint": "Wenn aktiviert, wird oben rechts eine Poesiekarte angezeigt; Besucher können sie individuell ausblenden",
       "submissionLabel": "Seiten-Einreichung aktivieren",
       "submissionHint": "Besucher können Seiten vorschlagen, die nach Prüfung veröffentlicht werden",
       "submissionLimitLabel": "Tägliches Einreichungslimit",

@@ -547,6 +547,8 @@
       "defaultLanguageHint": "言語設定のない訪問者に使用される言語です",
       "trackingLabel": "アクセス統計を有効化",
       "trackingHint": "サイトのアクセス回数を記録し、統計に使用します",
+      "poetryLabel": "今日の詩を有効化",
+      "poetryHint": "オンにすると、画面右上に今日の詩カードを表示します。訪問者は個別に非表示にできます",
       "submissionLabel": "サイト投稿を有効化",
       "submissionHint": "訪問者によるサイト投稿を許可し、管理者の審査を経て公開します",
       "submissionLimitLabel": "1日の投稿制限",

@@ -35,6 +35,7 @@ interface SystemSettingsData {
   enableVisitTracking: boolean
   enableSubmission: boolean
   enableSiteDetail: boolean
+  enablePoetry: boolean
   submissionMaxPerDay: number
   githubUrl: string | undefined
   showIcp: boolean
@@ -69,6 +70,7 @@ export default function AdminSettingsPage() {
     enableVisitTracking: true,
     enableSubmission: true,
     enableSiteDetail: false,
+    enablePoetry: true,
     submissionMaxPerDay: 3,
     githubUrl: undefined,
     showIcp: false,
@@ -102,6 +104,7 @@ export default function AdminSettingsPage() {
         icpLink: result.data.icpLink || undefined,
         enableSubmission: result.data.enableSubmission ?? true,
         enableSiteDetail: result.data.enableSiteDetail ?? false,
+        enablePoetry: result.data.enablePoetry ?? true,
         submissionMaxPerDay: result.data.submissionMaxPerDay ?? 3,
         defaultLanguage: isLocale(result.data.defaultLanguage) ? result.data.defaultLanguage : "zh",
       })
@@ -325,6 +328,19 @@ export default function AdminSettingsPage() {
                     id="enable-site-detail"
                     checked={settings.enableSiteDetail}
                     onCheckedChange={(checked) => setSettings({ ...settings, enableSiteDetail: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="enable-poetry">{t("poetryLabel")}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t("poetryHint")}
+                    </p>
+                  </div>
+                  <Switch
+                    id="enable-poetry"
+                    checked={settings.enablePoetry}
+                    onCheckedChange={(checked) => setSettings({ ...settings, enablePoetry: checked })}
                   />
                 </div>
                 <div className="space-y-4">

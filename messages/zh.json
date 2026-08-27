@@ -547,6 +547,8 @@
       "defaultLanguageHint": "未设置语言偏好的访客将使用此语言",
       "trackingLabel": "启用访问统计",
       "trackingHint": "记录网站访问次数，用于数据统计",
+      "poetryLabel": "启用今日诗词",
+      "poetryHint": "开启后前台右上角展示今日诗词卡片，访客仍可自行隐藏",
       "submissionLabel": "启用网站收录",
       "submissionHint": "允许访客提交网站收录申请，管理员审核后发布",
       "submissionLimitLabel": "每日提交限制",

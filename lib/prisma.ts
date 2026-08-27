@@ -74,6 +74,7 @@ export interface SystemSettingsItem {
   enableVisitTracking: boolean
   enableSubmission: boolean
   enableSiteDetail: boolean
+  enablePoetry: boolean
   submissionMaxPerDay: number
   githubUrl: string | null
   defaultLanguage: string
@@ -244,6 +245,7 @@ const initialSystemSettings: SystemSettingsItem = {
   enableVisitTracking: true,
   enableSubmission: true,
   enableSiteDetail: false,
+  enablePoetry: true,
   submissionMaxPerDay: 3,
   githubUrl: 'https://github.com/kenanlabs/nav',
   defaultLanguage: 'zh',

@@ -547,6 +547,8 @@
       "defaultLanguageHint": "Utilisée pour les visiteurs sans préférence de langue",
       "trackingLabel": "Activer les statistiques de visites",
       "trackingHint": "Enregistrer les visites pour les statistiques",
+      "poetryLabel": "Activer la poésie du jour",
+      "poetryHint": "Une fois activée, une carte de poésie s'affiche en haut à droite ; les visiteurs peuvent la masquer individuellement",
       "submissionLabel": "Activer la soumission de sites",
       "submissionHint": "Permettre aux visiteurs de proposer des sites, publiés après validation",
       "submissionLimitLabel": "Limite quotidienne de soumissions",
