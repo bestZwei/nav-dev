@@ -6,8 +6,14 @@ import { ArrowUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-// 滚动超过一个视口高度时视为已到达页面下部分，显示回到顶部按钮
-const SHOW_THRESHOLD_RATIO = 1
+// 显示阈值：滚动超过 min(半视口高度, 420px) 时显示按钮。
+// 旧值为整个视口高度，大屏（1000px+）要滚过 1000px 才出现，体感"滚很深才出现"
+const SHOW_THRESHOLD_MAX_PX = 420
+
+function getShowThreshold(): number {
+  if (typeof window === "undefined") return SHOW_THRESHOLD_MAX_PX
+  return Math.min(window.innerHeight * 0.5, SHOW_THRESHOLD_MAX_PX)
+}
 
 // 按钮宽度 w-11 = 44px，半宽用于中心对齐计算
 const BUTTON_HALF_WIDTH = 22
@@ -25,7 +31,7 @@ export function BackToTop() {
     if (typeof window === "undefined") return
 
     const updateVisibility = () => {
-      setVisible(window.scrollY > window.innerHeight * SHOW_THRESHOLD_RATIO)
+      setVisible(window.scrollY > getShowThreshold())
     }
 
     let ticking = false
