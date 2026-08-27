@@ -158,6 +158,10 @@ curl -H "Host: zh.example.com" http://localhost:3000/
 
 Preview environments can enable the query parameter with `ENABLE_WORKSPACE_PREVIEW=true` (ignored in production, which matches by domain only).
 
+### Data Persistence
+
+Workspaces, categories, and sites all rely on a database for persistence. Without `DATABASE_URL` configured, the app runs in memory mode: data lives only in a single instance's memory — **on Serverless platforms (Vercel / Cloudflare Workers) instances do not share state and reset on cold start**, so newly created data disappears after a refresh or redeploy. Always configure PostgreSQL (e.g. Neon / Supabase / RDS) in production and run `npm run db:migrate:deploy`.
+
 ## 📦 Production Deployment
 
 ### Option 1: Docker (Recommended)

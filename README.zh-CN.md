@@ -159,6 +159,10 @@ curl -H "Host: zh.example.com" http://localhost:3000/
 
 预览环境可通过环境变量 `ENABLE_WORKSPACE_PREVIEW=true` 开启查询参数模拟（生产环境默认忽略，仅按域名匹配）。
 
+### 数据持久化说明
+
+工作区、分类、网址等全部数据依赖数据库持久化。未配置 `DATABASE_URL` 时系统以内存模式运行：数据仅存在于单个实例内存中，**Serverless 平台（Vercel / Cloudflare Workers）多实例间不共享、冷启动即重置**，新建的数据刷新或重新部署后会丢失。生产部署请务必配置 PostgreSQL（如 Neon / Supabase / RDS）并执行 `npm run db:migrate:deploy`。
+
 ## 📦 生产部署
 
 ### 方式一：使用 Docker（推荐）

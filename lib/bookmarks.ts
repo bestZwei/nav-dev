@@ -1,5 +1,3 @@
-import { JSDOM } from 'jsdom'
-
 // Chrome书签解析的扁平化结果
 export interface ParsedBookmark {
   categories: Array<{
@@ -15,69 +13,93 @@ export interface ParsedBookmark {
 /**
  * 解析Chrome书签HTML文件
  * 支持多层嵌套文件夹，自动扁平化为独立分类
+ *
+ * 实现为轻量正则解析器（Netscape Bookmark File 格式规整，
+ * 无需引入 jsdom 这类重量级 DOM 实现，显著缩减 Serverless 打包体积）
  */
 export function parseChromeBookmarks(html: string): ParsedBookmark {
-  const dom = new JSDOM(html)
-  const document = dom.window.document
   const result: ParsedBookmark = { categories: [] }
+  // 文件夹路径栈：栈顶即书签归属的分类
+  const folderStack: string[] = []
+  // 最近一个未遇到 <DL> 的 H3 文件夹名（Chrome 格式中 H3 紧跟其子 DL）
+  let pendingFolder: string | null = null
 
-  const rootDl = document.querySelector('dl')
+  const tokenRe = /<DT>\s*<H3[^>]*>([\s\S]*?)<\/H3>|<DT>\s*<A\s([^>]*)>([\s\S]*?)<\/A>|<DL[^>]*>|<\/DL/gi
 
-  // 递归解析书签文件夹
-  function parseFolder(dlElement: HTMLElement, parentPath: string[] = []) {
-    // 获取所有 DT 子元素（忽略 p 标签）
-    const items = Array.from(dlElement.children).filter(
-      child => child.tagName === 'DT'
-    ) as HTMLElement[]
+  const pushSite = (name: string, url: string, icon?: string) => {
+    if (folderStack.length === 0) return
+    const categoryName = folderStack[folderStack.length - 1]
+    let category = result.categories.find(c => c.name === categoryName)
+    if (!category) {
+      category = { name: categoryName, sites: [] }
+      result.categories.push(category)
+    }
+    category.sites.push({ name, url, icon })
+  }
 
-    for (const item of items) {
-      // 处理文件夹 (H3标签)
-      const h3 = item.querySelector('h3')
-      if (h3) {
-        const folderName = h3.textContent?.trim() || '未命名分类'
-
-        // JSDOM自动修复HTML后，结构变成: <DT><H3>名称</H3><DL>...</DL></DT>
-        // 所以DL是DT的直接子元素
-        const childDl = item.querySelector('dl')
-
-        if (childDl) {
-          // 递归处理子文件夹（扁平化：每个子文件夹都成为独立分类）
-          parseFolder(childDl as HTMLElement, [...parentPath, folderName])
-        }
-
-        // 处理完文件夹后，继续处理下一个 DT
-        continue
+  let match: RegExpExecArray | null
+  while ((match = tokenRe.exec(html)) !== null) {
+    if (match[1] !== undefined) {
+      // 文件夹标题 <DT><H3>名称</H3>
+      pendingFolder = decodeHtmlEntities(match[1]).trim() || '未命名分类'
+    } else if (match[3] !== undefined) {
+      // 书签链接 <DT><A HREF="..." ICON="...">名称</A>
+      const attrs = match[2] || ''
+      const href = extractAttribute(attrs, 'href')
+      // textContent 语义：剥离内部杂散标签（容错畸形 HTML）
+      const siteName = decodeHtmlEntities(match[3].replace(/<[^>]*>/g, '')).trim() || '未命名网站'
+      if (href) {
+        const icon = extractAttribute(attrs, 'icon')
+        pushSite(siteName, decodeHtmlEntities(href), icon ? decodeHtmlEntities(icon) : undefined)
       }
-
-      // 处理书签链接 (A标签)
-      const link = item.querySelector('a')
-      if (link) {
-        const siteName = link.textContent?.trim() || '未命名网站'
-        const siteUrl = link.getAttribute('href') || ''
-        const icon = link.getAttribute('icon') || undefined
-
-        // 使用路径中的最后一个文件夹名称作为分类
-        if (parentPath.length > 0) {
-          const categoryName = parentPath[parentPath.length - 1]
-
-          let category = result.categories.find(c => c.name === categoryName)
-          if (!category) {
-            category = { name: categoryName, sites: [] }
-            result.categories.push(category)
-          }
-
-          category.sites.push({ name: siteName, url: siteUrl, icon })
-        }
+    } else if (/^<DL/i.test(match[0])) {
+      // 进入子文件夹层级
+      if (pendingFolder !== null) {
+        folderStack.push(pendingFolder)
+        pendingFolder = null
       }
+    } else {
+      // 离开文件夹层级
+      folderStack.pop()
     }
   }
 
-  // 从根DL开始解析
-  if (rootDl) {
-    parseFolder(rootDl as HTMLElement)
-  }
-
   return result
+}
+
+// 从属性串中提取指定属性值（双引号/单引号/未加引号三种形式）
+function extractAttribute(attrs: string, name: string): string | undefined {
+  const re = new RegExp(`${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i')
+  const m = attrs.match(re)
+  if (!m) return undefined
+  return m[1] ?? m[2] ?? m[3]
+}
+
+// 常用命名实体 + 数字实体解码（与 Chrome 导出格式覆盖面一致）
+function decodeHtmlEntities(text: string): string {
+  const named: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    nbsp: ' ',
+  }
+  return text
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => safeFromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => safeFromCodePoint(parseInt(dec, 10)))
+    .replace(/&([a-z]+);/gi, (whole, name: string) => {
+      const mapped = named[name.toLowerCase()]
+      return mapped ?? whole
+    })
+}
+
+function safeFromCodePoint(code: number): string {
+  try {
+    return String.fromCodePoint(code)
+  } catch {
+    return ''
+  }
 }
 
 /**
@@ -110,7 +132,7 @@ export function generateChromeBookmarks(
     <DL><p>
 `
     category.sites.forEach((site) => {
-      const iconAttr = site.icon ? ` ICON="${site.icon}"` : ''
+      const iconAttr = site.icon ? ` ICON="${escapeHtml(site.icon)}"` : ''
       html += `        <DT><A HREF="${escapeHtml(site.url)}" ADD_DATE="${timestamp}"${iconAttr}>${escapeHtml(site.name)}</A>\n`
     })
 

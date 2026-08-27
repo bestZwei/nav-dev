@@ -127,6 +127,15 @@ export async function getCurrentWorkspace(): Promise<WorkspaceItem> {
 
     return FALLBACK_WORKSPACE
   } catch (error) {
+    // 构建期静态渲染尝试（headers() 不可用）时必须把该错误抛还给 Next，
+    // 由框架将路由标记为动态渲染；吞掉会导致页面被静态化并固化默认工作区
+    if (
+      error &&
+      typeof error === "object" &&
+      (error as { digest?: string }).digest === "DYNAMIC_SERVER_USAGE"
+    ) {
+      throw error
+    }
     console.warn("Workspace resolution failed, falling back to default:", error)
     return FALLBACK_WORKSPACE
   }
@@ -155,6 +164,13 @@ export async function getAdminWorkspace(): Promise<WorkspaceItem> {
 
     return FALLBACK_WORKSPACE
   } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      (error as { digest?: string }).digest === "DYNAMIC_SERVER_USAGE"
+    ) {
+      throw error
+    }
     console.warn("Admin workspace resolution failed:", error)
     return FALLBACK_WORKSPACE
   }
