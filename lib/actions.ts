@@ -782,6 +782,164 @@ export async function toggleSitePublish(id: string) {
   }
 }
 
+// ==================== 站点测活（健康检测） ====================
+
+// 探测超时（毫秒）：兼顾死链判定准确性与单次 Action 执行时长（兼容 Serverless 超时）
+const HEALTH_CHECK_TIMEOUT_MS = 10_000
+
+// 三态取值：unknown 未检测 / up 在线 / suspicious 疑似受限（防护拦截）/ down 失效
+
+// 多数站点拒绝默认 Node fetch UA，伪装成浏览器访问以降低误判
+const HEALTH_CHECK_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+
+interface ProbeResult {
+  status: number | null
+  latencyMs: number
+  server: string | null
+}
+
+// 探测被拦时常见的响应状态码：认证拦截/防护拦截/限流/JS 挑战页。
+// 这些响应本身证明站点存活，不应判为失效。
+const SUSPICIOUS_STATUS_CODES = [401, 403, 429, 503]
+
+// 常见 CDN/WAF 的 Server 响应头特征（参考 OneNav 的判定）：
+// 命中时即使状态码异常也判为“疑似受限”而非失效。
+const PROTECTED_SERVER_SIGNATURES = [
+  "cloudflare",
+  "waf",
+  "akamaighost",
+  "jdcloudstarshield",
+  "aliyunoss",
+  "yunjiasu",
+]
+
+// 特殊哨兵值：响应头超过 undici 默认 16KB 上限（UND_ERR_HEADERS_OVERFLOW）。
+// Google 等服务的 Set-Cookie 数量巨大导致 fetch 抛错，但收到响应头本身证明站点存活。
+const HEADERS_OVERFLOW_STATUS = -1
+
+// 三态取值：unknown 未检测 / up 在线 / suspicious 疑似受限（防护拦截）/ down 失效。
+// down 仅限：网络层失败（DNS/超时/拒连）或未被防护特征解释的 4xx/5xx。
+function classifyProbe(probe: ProbeResult): "up" | "suspicious" | "down" {
+  if (probe.status === HEADERS_OVERFLOW_STATUS) return "suspicious"
+  if (probe.status === null) return "down"
+  if (probe.status < 400) return "up"
+  const server = probe.server?.toLowerCase() ?? ""
+  if (PROTECTED_SERVER_SIGNATURES.some((sig) => server.includes(sig))) {
+    return "suspicious"
+  }
+  if (SUSPICIOUS_STATUS_CODES.includes(probe.status)) return "suspicious"
+  return "down"
+}
+
+// 对单个 URL 发起探测：优先 HEAD，被拒（403/405/501，部分站点不接受 HEAD）时回退 GET。
+// 仅允许 http/https 协议（复用 isSafeSiteUrl 白名单），网络错误/超时视为无响应。
+async function probeUrl(url: string): Promise<ProbeResult> {
+  if (!isSafeSiteUrl(url)) {
+    return { status: null, latencyMs: 0, server: null }
+  }
+
+  const startedAt = Date.now()
+
+  const doFetch = async (method: "HEAD" | "GET") => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS)
+    try {
+      const res = await fetch(url, {
+        method,
+        redirect: "follow",
+        signal: controller.signal,
+        headers: { "User-Agent": HEALTH_CHECK_USER_AGENT },
+      })
+      return {
+        status: res.status,
+        latencyMs: Date.now() - startedAt,
+        server: res.headers.get("server"),
+      }
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  try {
+    const head = await doFetch("HEAD")
+    // 403：部分站点拒绝 HEAD（真正的防护拦截会在 GET 时再次命中，多一次请求无副作用）；
+    // 405/501：不支持 HEAD，回退 GET 再判定
+    if (head.status === 403 || head.status === 405 || head.status === 501) {
+      return await doFetch("GET")
+    }
+    return head
+  } catch (error) {
+    // undici 默认响应头上限 16KB，Google 等服务 Set-Cookie 数量巨大会触发
+    // UND_ERR_HEADERS_OVERFLOW；能收到响应头说明站点活着，判疑似受限而非失效。
+    // （部署层可通过 --max-http-header-size 根治，见 package.json/entrypoint.sh）
+    const cause =
+      error instanceof Error
+        ? (error.cause as { code?: string; message?: string } | undefined)
+        : undefined
+    if (
+      cause?.code === "UND_ERR_HEADERS_OVERFLOW" ||
+      /headers overflow/i.test(cause?.message ?? "")
+    ) {
+      return {
+        status: HEADERS_OVERFLOW_STATUS,
+        latencyMs: Date.now() - startedAt,
+        server: null,
+      }
+    }
+    return { status: null, latencyMs: Date.now() - startedAt, server: null }
+  }
+}
+
+// 单站测活：探测后把结果持久化到 Site 表。
+// 单站粒度、请求短（≤ 超时时长），“全部测活”由前端并发编排逐个调用。
+export async function checkSiteHealth(siteId: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const site = await prisma.site.findUnique({
+      where: { id: siteId },
+      select: { id: true, url: true },
+    })
+    if (!site) {
+      return { success: false, error: "Site not found" }
+    }
+
+    const probe = await probeUrl(site.url)
+    const updated = await prisma.site.update({
+      where: { id: siteId },
+      data: {
+        healthStatus: classifyProbe(probe),
+        // 哨兵值（响应头超限）不入库，避免展示 HTTP -1
+        lastHttpStatus:
+          probe.status !== null && probe.status > 0 ? probe.status : null,
+        latencyMs: probe.latencyMs,
+        lastCheckedAt: new Date(),
+      },
+    })
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error("Error checking site health:", error)
+    return { success: false, error: "Failed to check site health" }
+  }
+}
+
+// 获取全部站点的 id/url，供前端“全部测活”编排使用（不分页）
+export async function getSiteIdsForHealthCheck() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const sites = await prisma.site.findMany({
+      select: { id: true, name: true, url: true },
+      orderBy: [{ isPinned: "desc" }, { order: "asc" }],
+    })
+    return { success: true, data: sites }
+  } catch (error) {
+    console.error("Error fetching sites for health check:", error)
+    return { success: false, error: "Failed to fetch sites" }
+  }
+}
+
 // ==================== Users ====================
 
 export async function getUsersWithPagination(params: {
