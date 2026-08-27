@@ -31,15 +31,20 @@ export function LocaleToggle() {
   const t = useTranslations("locale")
   const router = useRouter()
 
-  const switchLocale = (next: Locale) => {
+  const switchLocale = async (next: Locale) => {
     if (next === locale) return
 
     // 写入语言偏好 Cookie（有效期一年），随后触发服务端按新语言重新渲染
     document.cookie = `${LOCALE_COOKIE}=${next};path=/;max-age=${LOCALE_COOKIE_MAX_AGE};samesite=lax`
 
-    // toast 以目标语言展示切换结果
-    toast.success(t("switch"), {
-      description: t("switchedTo", { language: localeNames[next] }),
+    // toast 以目标语言展示切换结果：动态加载目标语言包取文案，
+    // 避免使用仍绑定旧语言的 t 函数
+    const messages = (await import(`@/messages/${next}.json`)).default
+    toast.success(messages.locale.switch, {
+      description: messages.locale.switchedTo.replace(
+        "{language}",
+        localeNames[next]
+      ),
     })
 
     router.refresh()
