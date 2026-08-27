@@ -274,6 +274,8 @@ export async function getSitesWithPagination(params: {
   isPublished?: boolean
   isPinned?: boolean
   submitterIp?: string
+  sortBy?: "default" | "health" | "createdAt"
+  sortDir?: "asc" | "desc"
 }) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
@@ -310,12 +312,28 @@ export async function getSitesWithPagination(params: {
       where.submitterIp = null
     }
 
+    // 排序规则：默认置顶优先 + 手动 order；
+    // health 利用字符串序 down < suspicious < unknown < up，asc 即「测活异常优先」；
+    // createdAt 用于快速定位新收录条目；非默认排序为纯排序，不再叠加置顶优先
+    const sortDir = params.sortDir === "asc" || params.sortDir === "desc" ? params.sortDir : undefined
+    let orderBy: Prisma.SiteOrderByWithRelationInput[]
+    switch (params.sortBy) {
+      case "health":
+        orderBy = [{ healthStatus: sortDir || "asc" }, { order: "asc" }]
+        break
+      case "createdAt":
+        orderBy = [{ createdAt: sortDir || "desc" }, { name: "asc" }]
+        break
+      default:
+        orderBy = [{ isPinned: 'desc' }, { order: 'asc' }]
+    }
+
     const [sites, total] = await Promise.all([
       prisma.site.findMany({
         where,
         skip,
         take: pageSize,
-        orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
+        orderBy,
         include: {
           category: true,
           // 编辑回填用：仅元数据，不含 base64 data 字段

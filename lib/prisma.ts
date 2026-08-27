@@ -605,14 +605,22 @@ class InMemoryDatabase {
       }
 
       if (args?.orderBy) {
-        const orderKey = Object.keys(args.orderBy)[0] as keyof SiteItem
-        const orderDir = args.orderBy[orderKey]
+        // 支持数组形式的多键排序，空值（null/undefined）统一沉底
+        const orderSpecs = Array.isArray(args.orderBy) ? args.orderBy : [args.orderBy]
         result.sort((a: any, b: any) => {
-          const valA = a[orderKey]
-          const valB = b[orderKey]
-          if (valA === undefined || valB === undefined) return 0
-          if (valA < valB) return orderDir === 'desc' ? 1 : -1
-          if (valA > valB) return orderDir === 'desc' ? -1 : 1
+          for (const spec of orderSpecs) {
+            const orderKey = Object.keys(spec)[0] as keyof SiteItem
+            const orderDir = spec[orderKey]
+            const valA = a[orderKey]
+            const valB = b[orderKey]
+            const aNull = valA === null || valA === undefined
+            const bNull = valB === null || valB === undefined
+            if (aNull && bNull) continue
+            if (aNull) return 1
+            if (bNull) return -1
+            if (valA < valB) return orderDir === 'desc' ? 1 : -1
+            if (valA > valB) return orderDir === 'desc' ? -1 : 1
+          }
           return 0
         })
       }

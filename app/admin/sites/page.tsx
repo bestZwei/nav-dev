@@ -42,7 +42,7 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useTranslations } from "next-intl"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square } from "lucide-react"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square, ArrowUp, ArrowDown } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
 import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter, checkSiteHealth, getSiteIdsForHealthCheck } from "@/lib/actions"
@@ -98,6 +98,10 @@ export default function AdminSitesPage() {
   const [filterPinned, setFilterPinned] = useState<string>("all")
   const [filterSubmitter, setFilterSubmitter] = useState<string>("all")
 
+  // 排序状态：默认=置顶优先+手动 order；health=测活异常优先；createdAt=添加时间
+  const [sortBy, setSortBy] = useState<"default" | "health" | "createdAt">("default")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState("")
   const isFirstSearch = useRef(true)
@@ -120,6 +124,8 @@ export default function AdminSitesPage() {
         isPublished: filterStatus !== "all" ? (filterStatus === "true") : undefined,
         isPinned: filterPinned !== "all" ? (filterPinned === "true") : undefined,
         submitterIp: filterSubmitter !== "all" ? filterSubmitter : undefined,
+        sortBy,
+        sortDir,
       })
       if (result.success && result.data) {
         setSites(result.data)
@@ -171,14 +177,26 @@ export default function AdminSitesPage() {
     setFilterStatus("all")
     setFilterPinned("all")
     setFilterSubmitter("all")
+    setSortBy("default")
     setSearchKeyword("")
     setPage(1)
+  }
+
+  // 切换排序方式时重置为该方式的合理默认方向：测活异常优先（asc）、最近添加优先（desc）
+  const handleSortByChange = (value: string) => {
+    const next = value as "default" | "health" | "createdAt"
+    setSortBy(next)
+    if (next === "createdAt") {
+      setSortDir("desc")
+    } else if (next === "health") {
+      setSortDir("asc")
+    }
   }
 
   // 筛选条件改变时重新加载
   useEffect(() => {
     loadSitesRef.current(1)
-  }, [filterCategory, filterStatus, filterPinned, filterSubmitter])
+  }, [filterCategory, filterStatus, filterPinned, filterSubmitter, sortBy, sortDir])
 
   // 搜索防抖，300ms 后重新加载
   useEffect(() => {
@@ -478,8 +496,42 @@ export default function AdminSitesPage() {
             </Select>
           </Field>
 
+          {/* 排序 */}
+          <Field orientation="horizontal" className="w-auto">
+            <FieldLabel>{t("sortBy")}</FieldLabel>
+            <div className="flex items-center gap-1">
+              <Select value={sortBy} onValueChange={handleSortByChange}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder={t("sortByDefault")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">{t("sortByDefault")}</SelectItem>
+                  <SelectItem value="health">{t("sortByHealth")}</SelectItem>
+                  <SelectItem value="createdAt">{t("sortByCreatedAt")}</SelectItem>
+                </SelectContent>
+              </Select>
+              {sortBy !== "default" && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
+                    >
+                      {sortDir === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                      <span className="sr-only">{sortDir === "asc" ? t("sortDirDesc") : t("sortDirAsc")}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{sortDir === "asc" ? t("sortDirDesc") : t("sortDirAsc")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </Field>
+
           {/* 重置按钮 */}
-          {(filterCategory !== "all" || filterStatus !== "all" || filterPinned !== "all" || filterSubmitter !== "all") && (
+          {(filterCategory !== "all" || filterStatus !== "all" || filterPinned !== "all" || filterSubmitter !== "all" || sortBy !== "default") && (
                           <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
