@@ -272,7 +272,6 @@ export async function getSitesWithPagination(params: {
   categoryId?: string
   search?: string
   isPublished?: boolean
-  isPinned?: boolean
   submitterIp?: string
   sortBy?: "default" | "health" | "createdAt"
   sortDir?: "asc" | "desc"
@@ -300,10 +299,6 @@ export async function getSitesWithPagination(params: {
 
     if (params.isPublished !== undefined) {
       where.isPublished = params.isPublished
-    }
-
-    if (params.isPinned !== undefined) {
-      where.isPinned = params.isPinned
     }
 
     if (params.submitterIp === "true") {

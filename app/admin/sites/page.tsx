@@ -95,7 +95,6 @@ export default function AdminSitesPage() {
   // 筛选状态
   const [filterCategory, setFilterCategory] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [filterPinned, setFilterPinned] = useState<string>("all")
   const [filterSubmitter, setFilterSubmitter] = useState<string>("all")
 
   // 排序状态：默认=置顶优先+手动 order；health=测活异常优先；createdAt=添加时间
@@ -122,7 +121,6 @@ export default function AdminSitesPage() {
         search: searchKeyword.trim() || undefined,
         categoryId: filterCategory !== "all" ? filterCategory : undefined,
         isPublished: filterStatus !== "all" ? (filterStatus === "true") : undefined,
-        isPinned: filterPinned !== "all" ? (filterPinned === "true") : undefined,
         submitterIp: filterSubmitter !== "all" ? filterSubmitter : undefined,
         sortBy,
         sortDir,
@@ -175,7 +173,6 @@ export default function AdminSitesPage() {
   const handleResetFilters = () => {
     setFilterCategory("all")
     setFilterStatus("all")
-    setFilterPinned("all")
     setFilterSubmitter("all")
     setSortBy("default")
     setSearchKeyword("")
@@ -196,7 +193,7 @@ export default function AdminSitesPage() {
   // 筛选条件改变时重新加载
   useEffect(() => {
     loadSitesRef.current(1)
-  }, [filterCategory, filterStatus, filterPinned, filterSubmitter, sortBy, sortDir])
+  }, [filterCategory, filterStatus, filterSubmitter, sortBy, sortDir])
 
   // 搜索防抖，300ms 后重新加载
   useEffect(() => {
@@ -451,21 +448,6 @@ export default function AdminSitesPage() {
             </Select>
           </Field>
 
-          {/* 置顶筛选 */}
-          <Field orientation="horizontal" className="w-auto">
-            <FieldLabel>{t("filterPinned")}</FieldLabel>
-            <Select value={filterPinned} onValueChange={setFilterPinned}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder={t("filterPinnedPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("filterPinnedAll")}</SelectItem>
-                <SelectItem value="true">{t("filterPinnedOnly")}</SelectItem>
-                <SelectItem value="false">{t("filterPinnedNone")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-
           {/* 状态筛选 */}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>{t("filterStatus")}</FieldLabel>
@@ -531,7 +513,7 @@ export default function AdminSitesPage() {
           </Field>
 
           {/* 重置按钮 */}
-          {(filterCategory !== "all" || filterStatus !== "all" || filterPinned !== "all" || filterSubmitter !== "all" || sortBy !== "default") && (
+          {(filterCategory !== "all" || filterStatus !== "all" || filterSubmitter !== "all" || sortBy !== "default") && (
                           <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
