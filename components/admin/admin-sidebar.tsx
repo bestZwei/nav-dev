@@ -11,6 +11,7 @@ import {
   FolderKanban,
   Users,
   Database,
+  Layers,
 } from "lucide-react"
 import {
   Sidebar,
@@ -50,6 +51,11 @@ const navItems = [
     titleKey: "data",
     href: "/admin/data",
     icon: Database,
+  },
+  {
+    titleKey: "workspaces",
+    href: "/admin/workspaces",
+    icon: Layers,
   },
   {
     titleKey: "settings",

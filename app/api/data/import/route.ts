@@ -32,20 +32,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 导入数据
+    // 导入数据（联合返回类型：失败分支带 error，成功分支带 message/count）
     const result = await importData(jsonData, mode)
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error },
+        { error: (result as { error?: string }).error || '导入失败' },
         { status: 500 }
       )
     }
 
+    const ok = result as { message?: string; importedCount?: number }
     return NextResponse.json({
       success: true,
-      message: result.message,
-      importedCount: result.importedCount,
+      message: ok.message,
+      importedCount: ok.importedCount,
     })
   } catch (error) {
     console.error('Error importing data:', error)

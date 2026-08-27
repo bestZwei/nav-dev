@@ -9,12 +9,38 @@ const useRealDatabase =
 export { useRealDatabase }
 
 // In-memory types
+export interface WorkspaceItem {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  siteName: string | null
+  siteDescription: string | null
+  siteLogo: string | null
+  favicon: string | null
+  isDefault: boolean
+  isPublished: boolean
+  order: number
+  domains?: DomainItem[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface DomainItem {
+  id: string
+  host: string
+  isPrimary: boolean
+  workspaceId: string
+  createdAt: Date
+}
+
 export interface CategoryItem {
   id: string
   name: string
   slug: string
   icon?: string | null
   order: number
+  workspaceId: string
   createdAt: Date
   updatedAt: Date
   sites?: SiteItem[]
@@ -106,18 +132,42 @@ function generateId(): string {
   return 'c' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36)
 }
 
+// 内存模式默认工作区：与真实库迁移（ws-default）保持一致
+export const DEFAULT_WORKSPACE_ID = 'ws-default'
+
+const initialWorkspaces: WorkspaceItem[] = [
+  {
+    id: DEFAULT_WORKSPACE_ID,
+    slug: 'default',
+    name: '默认工作区',
+    description: null,
+    siteName: null,
+    siteDescription: null,
+    siteLogo: null,
+    favicon: null,
+    isDefault: true,
+    isPublished: true,
+    order: 0,
+    domains: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+]
+
+const initialDomains: DomainItem[] = []
+
 // Initial seed categories
 const initialCategories: CategoryItem[] = [
-  { id: 'cat-1', name: '常用工具', slug: 'tools', icon: null, order: 1, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-2', name: '开发工具', slug: 'dev', icon: null, order: 2, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-3', name: '设计资源', slug: 'design', icon: null, order: 3, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-4', name: '学习资源', slug: 'learning', icon: null, order: 4, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-5', name: 'AI 工具', slug: 'ai', icon: null, order: 5, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-6', name: '云服务', slug: 'cloud', icon: null, order: 6, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-7', name: '社区论坛', slug: 'community', icon: null, order: 7, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-8', name: '文档参考', slug: 'docs', icon: null, order: 8, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-9', name: '生产力', slug: 'productivity', icon: null, order: 9, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'cat-10', name: '娱乐休闲', slug: 'entertainment', icon: null, order: 10, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-1', name: '常用工具', slug: 'tools', icon: null, order: 1, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-2', name: '开发工具', slug: 'dev', icon: null, order: 2, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-3', name: '设计资源', slug: 'design', icon: null, order: 3, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-4', name: '学习资源', slug: 'learning', icon: null, order: 4, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-5', name: 'AI 工具', slug: 'ai', icon: null, order: 5, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-6', name: '云服务', slug: 'cloud', icon: null, order: 6, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-7', name: '社区论坛', slug: 'community', icon: null, order: 7, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-8', name: '文档参考', slug: 'docs', icon: null, order: 8, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-9', name: '生产力', slug: 'productivity', icon: null, order: 9, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'cat-10', name: '娱乐休闲', slug: 'entertainment', icon: null, order: 10, workspaceId: DEFAULT_WORKSPACE_ID, createdAt: new Date(), updatedAt: new Date() },
 ]
 
 // Initial seed sites
@@ -269,12 +319,148 @@ for (let i = 0; i < 60; i++) {
 
 // In-Memory Database Store (Global singleton across requests)
 class InMemoryDatabase {
+  workspaces: WorkspaceItem[] = [...initialWorkspaces]
+  domains: DomainItem[] = [...initialDomains]
   categories: CategoryItem[] = [...initialCategories]
   sites: SiteItem[] = [...initialSites]
   users: UserItem[] = [...initialUsers]
   systemSettingsItem: SystemSettingsItem = { ...initialSystemSettings }
   visits: VisitItem[] = [...initialVisits]
   screenshots: ScreenshotItem[] = []
+
+  // Workspace methods（内存模式下的工作区存储）
+  workspace = {
+    findMany: async (args?: any): Promise<WorkspaceItem[]> => {
+      let result = [...this.workspaces]
+      if (args?.where?.isDefault !== undefined) {
+        result = result.filter(w => w.isDefault === args.where.isDefault)
+      }
+      if (args?.orderBy?.order) {
+        const dir = args.orderBy.order
+        result.sort((a, b) => (dir === 'desc' ? b.order - a.order : a.order - b.order))
+      }
+      return result.map(w => {
+        const item: any = { ...w }
+        if (args?.include?.domains) {
+          item.domains = this.domains.filter(d => d.workspaceId === w.id)
+        }
+        return item
+      })
+    },
+
+    findUnique: async (args: { where: { id?: string; slug?: string } }): Promise<WorkspaceItem | null> => {
+      const ws = this.workspaces.find(w =>
+        (args.where.id && w.id === args.where.id) ||
+        (args.where.slug && w.slug === args.where.slug)
+      )
+      return ws ? { ...ws } : null
+    },
+
+    findFirst: async (args?: any): Promise<WorkspaceItem | null> => {
+      const list = await this.workspace.findMany(args)
+      return list[0] || null
+    },
+
+    create: async (args: { data: Partial<WorkspaceItem> }): Promise<WorkspaceItem> => {
+      const ws: WorkspaceItem = {
+        id: generateId(),
+        slug: args.data.slug || '',
+        name: args.data.name || '',
+        description: args.data.description ?? null,
+        siteName: args.data.siteName ?? null,
+        siteDescription: args.data.siteDescription ?? null,
+        siteLogo: args.data.siteLogo ?? null,
+        favicon: args.data.favicon ?? null,
+        isDefault: args.data.isDefault ?? false,
+        isPublished: args.data.isPublished ?? false,
+        order: args.data.order ?? this.workspaces.length + 1,
+        domains: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      this.workspaces.push(ws)
+      return { ...ws }
+    },
+
+    update: async (args: { where: { id?: string; slug?: string }; data: Partial<WorkspaceItem> }): Promise<WorkspaceItem> => {
+      const idx = this.workspaces.findIndex(w =>
+        (args.where.id && w.id === args.where.id) ||
+        (args.where.slug && w.slug === args.where.slug)
+      )
+      if (idx === -1) throw new Error('Workspace not found')
+      this.workspaces[idx] = {
+        ...this.workspaces[idx],
+        ...this.stripUndefined(args.data),
+        updatedAt: new Date(),
+      }
+      return { ...this.workspaces[idx] }
+    },
+
+    delete: async (args: { where: { id: string } }): Promise<WorkspaceItem> => {
+      const idx = this.workspaces.findIndex(w => w.id === args.where.id)
+      if (idx === -1) throw new Error('Workspace not found')
+      const deleted = this.workspaces.splice(idx, 1)[0]
+      this.domains = this.domains.filter(d => d.workspaceId !== deleted.id)
+      return deleted
+    },
+
+    count: async (args?: any): Promise<number> => {
+      const list = await this.workspace.findMany(args)
+      return list.length
+    },
+  }
+
+  // Domain methods（内存模式下的域名绑定存储）
+  domain = {
+    findUnique: async (args: { where: { host?: string; id?: string } }): Promise<DomainItem | null> => {
+      const d = this.domains.find(x =>
+        (args.where.host && x.host === args.where.host) ||
+        (args.where.id && x.id === args.where.id)
+      )
+      return d ? { ...d } : null
+    },
+
+    findMany: async (args?: { where?: { workspaceId?: string } }): Promise<DomainItem[]> => {
+      let result = [...this.domains]
+      if (args?.where?.workspaceId) {
+        result = result.filter(d => d.workspaceId === args.where!.workspaceId)
+      }
+      return result.map(d => ({ ...d }))
+    },
+
+    create: async (args: { data: Partial<DomainItem> }): Promise<DomainItem> => {
+      const d: DomainItem = {
+        id: generateId(),
+        host: args.data.host || '',
+        isPrimary: args.data.isPrimary ?? false,
+        workspaceId: args.data.workspaceId || '',
+        createdAt: new Date(),
+      }
+      this.domains.push(d)
+      return { ...d }
+    },
+
+    delete: async (args: { where: { id: string } }): Promise<DomainItem> => {
+      const idx = this.domains.findIndex(d => d.id === args.where.id)
+      if (idx === -1) throw new Error('Domain not found')
+      return this.domains.splice(idx, 1)[0]
+    },
+
+    deleteMany: async (args?: { where?: { workspaceId?: string } }): Promise<{ count: number }> => {
+      const before = this.domains.length
+      if (args?.where?.workspaceId) {
+        this.domains = this.domains.filter(d => d.workspaceId !== args.where!.workspaceId)
+      } else {
+        this.domains = []
+      }
+      return { count: before - this.domains.length }
+    },
+
+    count: async (args?: any): Promise<number> => {
+      if (!args?.where) return this.domains.length
+      return (await this.domain.findMany(args)).length
+    },
+  }
 
   // Category methods
   category = {
@@ -287,6 +473,9 @@ class InMemoryDatabase {
         }
         if (args.where.slug) {
           result = result.filter(c => c.slug === args.where.slug)
+        }
+        if (args.where.workspaceId) {
+          result = result.filter(c => c.workspaceId === args.where.workspaceId)
         }
         if (args.where.sites?.some) {
           result = result.filter(cat => {
@@ -372,6 +561,7 @@ class InMemoryDatabase {
         slug: args.data.slug || '',
         icon: args.data.icon || null,
         order: args.data.order ?? this.categories.length + 1,
+        workspaceId: args.data.workspaceId || DEFAULT_WORKSPACE_ID,
         sites: [],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -403,8 +593,25 @@ class InMemoryDatabase {
       return deleted
     },
 
-    deleteMany: async (_args?: any) => {
-      const count = this.categories.length
+    deleteMany: async (args?: any) => {
+      // 支持 workspaceId 过滤（多工作区覆盖导入时仅清当前工作区）
+      let count = this.categories.length
+      if (args?.where?.workspaceId) {
+        const targetIds = new Set(
+          this.categories
+            .filter(c => c.workspaceId === args.where.workspaceId)
+            .map(c => c.id)
+        )
+        count = targetIds.size
+        this.categories = this.categories.filter(c => !targetIds.has(c.id))
+        const orphanSiteIds = new Set(
+          this.sites.filter(s => targetIds.has(s.categoryId)).map(s => s.id)
+        )
+        this.sites = this.sites.filter(s => !targetIds.has(s.categoryId))
+        this.screenshots = this.screenshots.filter(s => !orphanSiteIds.has(s.siteId))
+        this.visits = this.visits.filter(v => !orphanSiteIds.has(v.siteId))
+        return { count }
+      }
       this.categories = []
       this.sites = []
       this.screenshots = []
@@ -542,7 +749,12 @@ class InMemoryDatabase {
 
       if (args?.where) {
         if (args.where.categoryId) {
-          result = result.filter(s => s.categoryId === args.where.categoryId)
+          if (typeof args.where.categoryId === 'object' && 'in' in args.where.categoryId) {
+            const ids: string[] = args.where.categoryId.in || []
+            result = result.filter(s => ids.includes(s.categoryId))
+          } else {
+            result = result.filter(s => s.categoryId === args.where.categoryId)
+          }
         }
         if (args.where.isPublished !== undefined) {
           result = result.filter(s => s.isPublished === args.where.isPublished)
@@ -585,6 +797,10 @@ class InMemoryDatabase {
           for (const clause of args.where.AND) {
             if (clause.isPublished !== undefined) {
               result = result.filter(s => s.isPublished === clause.isPublished)
+            }
+            if (clause.categoryId && typeof clause.categoryId === 'object' && 'in' in clause.categoryId) {
+              const ids: string[] = clause.categoryId.in || []
+              result = result.filter(s => ids.includes(s.categoryId))
             }
             if (clause.OR) {
               result = result.filter(site =>
@@ -728,7 +944,24 @@ class InMemoryDatabase {
       return item as SiteItem
     },
 
-    deleteMany: async (_args?: any) => {
+    deleteMany: async (args?: any) => {
+      // 支持 categoryId（含 in 语法）过滤，配合真实库多工作区覆盖导入
+      if (args?.where?.categoryId) {
+        let targetCategoryIds: Set<string>
+        if (typeof args.where.categoryId === 'object' && 'in' in args.where.categoryId) {
+          targetCategoryIds = new Set(args.where.categoryId.in || [])
+        } else {
+          targetCategoryIds = new Set([args.where.categoryId])
+        }
+        const before = this.sites.length
+        const orphanSiteIds = new Set(
+          this.sites.filter(s => targetCategoryIds.has(s.categoryId)).map(s => s.id)
+        )
+        this.sites = this.sites.filter(s => !targetCategoryIds.has(s.categoryId))
+        this.screenshots = this.screenshots.filter(s => !orphanSiteIds.has(s.siteId))
+        this.visits = this.visits.filter(v => !orphanSiteIds.has(v.siteId))
+        return { count: before - this.sites.length }
+      }
       const count = this.sites.length
       this.sites = []
       this.visits = []

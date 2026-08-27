@@ -158,7 +158,22 @@ async function main() {
     console.log('✅ 管理员用户已存在，跳过\n')
   }
 
-  // 2. 创建系统设置
+  // 2. 创建默认工作区（幂等：迁移或重复 seed 均安全）
+  const defaultWorkspace = await prisma.workspace.upsert({
+    where: { slug: 'default' },
+    update: {},
+    create: {
+      id: 'ws-default',
+      slug: 'default',
+      name: '默认工作区',
+      isDefault: true,
+      isPublished: true,
+      order: 0,
+    },
+  })
+  console.log('✅ 默认工作区已就绪\n')
+
+  // 3. 创建系统设置
   if (settingsExists === 0) {
     console.log('⚙️  创建系统设置...')
     await prisma.systemSettings.create({
@@ -183,22 +198,22 @@ async function main() {
     console.log('✅ 系统设置已存在，跳过\n')
   }
 
-  // 3. 根据模式选择数据
+  // 4. 根据模式选择数据
   const categories = mode === 'full' ? fullCategories : basicCategories
   const sites = mode === 'full' ? fullSites : basicSites
 
-  // 4. 创建分类
+  // 5. 创建分类
   console.log(`📁 创建分类 (${mode === 'full' ? '完整模式' : '基础模式'})...`)
   const createdCategories = []
 
   for (const category of categories) {
-    const existing = await prisma.category.findUnique({
-      where: { slug: category.slug },
+    const existing = await prisma.category.findFirst({
+      where: { slug: category.slug, workspaceId: defaultWorkspace.id },
     })
 
     if (!existing) {
       const created = await prisma.category.create({
-        data: category,
+        data: { ...category, workspaceId: defaultWorkspace.id },
       })
       createdCategories.push(created)
       console.log(`  ✓ 创建分类: ${created.name}`)
@@ -210,7 +225,7 @@ async function main() {
 
   console.log(`\n📂 分类总数: ${createdCategories.length}\n`)
 
-  // 5. 创建网站
+  // 6. 创建网站
   console.log('🔗 创建网站...')
   let createdCount = 0
   let skippedCount = 0

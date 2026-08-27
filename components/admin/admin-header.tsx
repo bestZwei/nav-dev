@@ -8,15 +8,17 @@ import Link from "next/link"
 import { Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { WorkspaceSwitcher } from "./workspace-switcher"
 import { cn } from "@/lib/utils"
 
 // 路径到标题 key 的映射（文案位于 admin.sidebar 命名空间）
-type PageTitleKey = "dashboard" | "sites" | "categories" | "data" | "settings"
+type PageTitleKey = "dashboard" | "sites" | "categories" | "workspaces" | "data" | "settings"
 
 const pageTitleKeyMap: Record<string, PageTitleKey> = {
   "/admin/dashboard": "dashboard",
   "/admin/sites": "sites",
   "/admin/categories": "categories",
+  "/admin/workspaces": "workspaces",
   "/admin/data": "data",
   "/admin/users": "settings",
 }
@@ -58,6 +60,7 @@ export function AdminHeader() {
       >
         <SidebarTrigger variant="outline" className="-ml-1 max-md:scale-125" />
         <div className="ml-auto flex items-center gap-2">
+          <WorkspaceSwitcher />
           <Button variant="ghost" size="icon" asChild>
             <Link href="/">
               <Home className="h-5 w-5" />

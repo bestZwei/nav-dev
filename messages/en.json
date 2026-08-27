@@ -9,7 +9,8 @@
     "operationFailed": "Operation failed",
     "loadFailed": "Failed to load",
     "retryLater": "Please try again later",
-    "backToTop": "Back to top"
+    "backToTop": "Back to top",
+    "edit": "Edit"
   },
   "locale": {
     "switch": "Switch language",
@@ -136,7 +137,8 @@
         "updateAvailable": "New {version}",
         "unavailable": "Update check unavailable",
         "dev": "dev"
-      }
+      },
+      "workspaces": "Workspaces"
     },
     "login": {
       "subtitle": "Sign in to manage your navigation site",
@@ -514,7 +516,9 @@
       "fieldUrl": "URL",
       "fieldDesc": "Description",
       "fieldOrder": "Order",
-      "fieldPublished": "Publish status"
+      "fieldPublished": "Publish status",
+      "fullBackup": "Full Backup (workspaces)",
+      "fullBackupDesc": "Includes workspace structures and domain bindings for site migration"
     },
     "settings": {
       "saveSuccess": "Saved",
@@ -578,7 +582,10 @@
       "siteDetailHint": "When enabled, sites with detail content show an introduction dialog (text, screenshots, usage) before redirecting",
       "siteDetailMemoryWarning": "Memory mode is active: this toggle will be reset when the instance restarts or is recycled. Site detail requires a database (DATABASE_URL) to work properly.",
       "memoryModeToastTitle": "Memory mode notice",
-      "memoryModeToastDesc": "No database connected. Settings will be reset after the instance restarts or is recycled. Features like site detail need a database to persist."
+      "memoryModeToastDesc": "No database connected. Settings will be reset after the instance restarts or is recycled. Features like site detail need a database to persist.",
+      "workspaceContext": "Current workspace: {name}",
+      "workspaceIsDefault": " (global config)",
+      "workspaceOverrideHint": "These display fields apply to this workspace only; empty values fall back to global settings"
     },
     "profile": {
       "admin": "Admin",
@@ -620,6 +627,57 @@
       "changeFailed": "Change failed",
       "changeFailedDesc": "Unable to change the password, please try again later",
       "confirmChange": "Confirm"
+    },
+    "workspaces": {
+      "title": "Workspaces",
+      "desc": "A workspace is an independent content space (title, description, categories, sites). Bind a domain to a workspace and the matching subdomain will render it; unmatched domains fall back to the default workspace.",
+      "create": "New Workspace",
+      "cannotLoad": "Failed to load workspaces",
+      "emptyTitle": "No workspaces yet",
+      "emptyDesc": "Click \"New Workspace\" to create your first workspace",
+      "default": "Default",
+      "published": "Published",
+      "unpublished": "Unpublished",
+      "setPrimary": "Set Default",
+      "setPrimaryTip": "Requests without a matching domain render the default workspace",
+      "primarySet": "\"{name}\" is now the default workspace",
+      "deleteSuccess": "Workspace deleted",
+      "deleteTitle": "Delete Workspace",
+      "deleteDesc": "Delete workspace \"{name}\"? Only workspaces without categories and non-default ones can be deleted.",
+      "actionFailed": "Action failed",
+      "domains": "Domain Bindings",
+      "noDomains": "No domains (default matching)",
+      "addDomain": "Bind",
+      "domainAdded": "Domain {host} bound",
+      "domainRemoved": "Domain unbound",
+      "removeDomain": "Unbind domain"
+    },
+    "workspaceForm": {
+      "createTitle": "New Workspace",
+      "editTitle": "Edit Workspace",
+      "formDesc": "Configure workspace basics; display fields (title, description, etc.) are edited per workspace in System Settings.",
+      "name": "Name",
+      "namePlaceholder": "e.g. English Site",
+      "nameRequired": "Workspace name is required",
+      "slug": "Slug",
+      "slugRequired": "Slug is required",
+      "description": "Description",
+      "descriptionPlaceholder": "Internal note (admin only)",
+      "published": "Published",
+      "publishedDesc": "Unpublished workspaces fall back to the default workspace even with bound domains",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "updateSuccess": "Workspace updated",
+      "createSuccess": "Workspace created",
+      "saveFailed": "Failed to save"
+    },
+    "workspaceSwitcher": {
+      "label": "Switch workspace",
+      "defaultSuffix": "default",
+      "switchedTo": "Switched to \"{name}\"",
+      "globalLabel": "Global",
+      "globalTooltip": "This page shows site-wide data and does not change with the workspace switcher"
     }
   },
   "siteDetail": {

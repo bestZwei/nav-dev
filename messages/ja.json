@@ -9,7 +9,8 @@
     "operationFailed": "操作に失敗しました",
     "loadFailed": "読み込みに失敗しました",
     "retryLater": "しばらくしてからもう一度お試しください",
-    "backToTop": "トップに戻る"
+    "backToTop": "トップに戻る",
+    "edit": "編集"
   },
   "locale": {
     "switch": "言語を切り替える",
@@ -136,7 +137,8 @@
         "updateAvailable": "新バージョン {version}",
         "unavailable": "更新チェック不可用",
         "dev": "dev"
-      }
+      },
+      "workspaces": "ワークスペース管理"
     },
     "login": {
       "subtitle": "サインインしてナビゲーションサイトを管理",
@@ -514,7 +516,9 @@
       "fieldUrl": "URL",
       "fieldDesc": "説明",
       "fieldOrder": "順序",
-      "fieldPublished": "公開状態"
+      "fieldPublished": "公開状態",
+      "fullBackup": "フルバックアップ（ワークスペース含む）",
+      "fullBackupDesc": "ワークスペース構造とドメイン設定を含むサイト移行用バックアップ"
     },
     "settings": {
       "saveSuccess": "保存しました",
@@ -578,7 +582,10 @@
       "siteDetailHint": "有効にすると、詳細コンテンツがあるサイトはカードクリック時に紹介ダイアログ（紹介・スクリーンショット・使い方）を表示してから移動します",
       "siteDetailMemoryWarning": "メモリモードが有効です。このスイッチはインスタンスの再起動・リサイクル時にリセットされます。サイト詳細機能を利用するにはデータベース（DATABASE_URL）が必要です。",
       "memoryModeToastTitle": "メモリモードの注意",
-      "memoryModeToastDesc": "データベースに接続されていないため、設定はインスタンスの再起動・リサイクル後にリセットされます。サイト詳細などの機能にはデータベース接続が必要です。"
+      "memoryModeToastDesc": "データベースに接続されていないため、設定はインスタンスの再起動・リサイクル後にリセットされます。サイト詳細などの機能にはデータベース接続が必要です。",
+      "workspaceContext": "現在のワークスペース：{name}",
+      "workspaceIsDefault": "（グローバル設定）",
+      "workspaceOverrideHint": "ここの表示項目は現在のワークスペースのみに適用され、空欄はグローバル設定にフォールバックします"
     },
     "profile": {
       "admin": "管理者",
@@ -620,6 +627,57 @@
       "changeFailed": "変更に失敗しました",
       "changeFailedDesc": "パスワードを変更できません。しばらくしてからもう一度お試しください",
       "confirmChange": "変更する"
+    },
+    "workspaces": {
+      "title": "ワークスペース管理",
+      "desc": "ワークスペースは独立したコンテンツ空間（タイトル・説明・カテゴリ・サイト）です。ドメインをバインドすると、該当サブドメインでその内容が表示され、未一致のドメインはデフォルトワークスペースにフォールバックします。",
+      "create": "新規ワークスペース",
+      "cannotLoad": "ワークスペース一覧の読み込みに失敗しました",
+      "emptyTitle": "ワークスペースがありません",
+      "emptyDesc": "右上の「新規ワークスペース」から作成してください",
+      "default": "デフォルト",
+      "published": "公開中",
+      "unpublished": "未公開",
+      "setPrimary": "デフォルトに設定",
+      "setPrimaryTip": "ドメイン未一致のリクエストはデフォルトワークスペースを表示します",
+      "primarySet": "「{name}」をデフォルトワークスペースに設定しました",
+      "deleteSuccess": "ワークスペースを削除しました",
+      "deleteTitle": "ワークスペースを削除",
+      "deleteDesc": "ワークスペース「{name}」を削除しますか？カテゴリを持たない非デフォルトのワークスペースのみ削除できます。",
+      "actionFailed": "操作に失敗しました",
+      "domains": "ドメインバインド",
+      "noDomains": "未バインド（デフォルト照合）",
+      "addDomain": "バインド",
+      "domainAdded": "ドメイン {host} をバインドしました",
+      "domainRemoved": "ドメインのバインドを解除しました",
+      "removeDomain": "ドメインのバインド解除"
+    },
+    "workspaceForm": {
+      "createTitle": "新規ワークスペース",
+      "editTitle": "ワークスペース編集",
+      "formDesc": "ワークスペースの基本情報を設定します。タイトルなどの表示項目は「システム設定」でワークスペースごとに編集します。",
+      "name": "名称",
+      "namePlaceholder": "例：日本語サイト",
+      "nameRequired": "名称を入力してください",
+      "slug": "slug",
+      "slugRequired": "slug を入力してください",
+      "description": "説明",
+      "descriptionPlaceholder": "内部メモ（管理画面のみ）",
+      "published": "公開状態",
+      "publishedDesc": "未公開のワークスペースはドメインをバインドしていてもデフォルトにフォールバックします",
+      "cancel": "キャンセル",
+      "save": "保存",
+      "create": "作成",
+      "updateSuccess": "ワークスペースを更新しました",
+      "createSuccess": "ワークスペースを作成しました",
+      "saveFailed": "保存に失敗しました"
+    },
+    "workspaceSwitcher": {
+      "label": "ワークスペース切替",
+      "defaultSuffix": "デフォルト",
+      "switchedTo": "「{name}」に切り替えました",
+      "globalLabel": "グローバル",
+      "globalTooltip": "このページはサイト全体データであり、ワークスペース切替では変化しません"
     }
   },
   "siteDetail": {

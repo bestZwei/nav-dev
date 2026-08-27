@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster as SonnerToaster } from "sonner"
 import { ThemeProvider } from "@/components/theme-provider/theme-provider"
-import { getSystemSettings } from "@/lib/actions"
+import { getDisplaySettings } from "@/lib/actions"
 import { NextIntlClientProvider } from "next-intl"
 import { getLocale, getTranslations } from "next-intl/server"
 import { htmlLang } from "@/lib/i18n"
@@ -11,8 +11,8 @@ import { htmlLang } from "@/lib/i18n"
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const result = await getSystemSettings()
-  const settings = result.success && result.data ? result.data : null
+  // 展示配置按当前请求的工作区覆盖（域名绑定 → 默认工作区）
+  const settings = await getDisplaySettings()
   const t = await getTranslations("metadata")
 
   return {

@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* 统计卡片 */}
+      {/* 统计卡片：全站口径由顶栏切换器的「全局」禁用态示意 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {siteStats.map((stat) => (
           <Card key={stat.titleKey} className="@container/card">

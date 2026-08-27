@@ -9,7 +9,8 @@
     "operationFailed": "操作失败",
     "loadFailed": "加载失败",
     "retryLater": "请稍后重试",
-    "backToTop": "回到顶部"
+    "backToTop": "回到顶部",
+    "edit": "编辑"
   },
   "locale": {
     "switch": "切换语言",
@@ -136,7 +137,8 @@
         "updateAvailable": "新版本 {version}",
         "unavailable": "版本检查不可用",
         "dev": "开发版本"
-      }
+      },
+      "workspaces": "工作区管理"
     },
     "login": {
       "subtitle": "登录以管理您的导航站点",
@@ -514,7 +516,9 @@
       "fieldUrl": "URL地址",
       "fieldDesc": "网站描述",
       "fieldOrder": "排序",
-      "fieldPublished": "发布状态"
+      "fieldPublished": "发布状态",
+      "fullBackup": "全量备份（含工作区）",
+      "fullBackupDesc": "包含工作区结构与域名绑定，用于整站迁移"
     },
     "settings": {
       "saveSuccess": "保存成功",
@@ -578,7 +582,10 @@
       "siteDetailHint": "开启后，填写了详情内容的站点点击卡片先弹出图文介绍（介绍、截图、使用方法），再跳转目标网站",
       "siteDetailMemoryWarning": "当前为内存模式，此开关保存后会因实例重启或回收被重置。站点详情功能需要连接数据库（配置 DATABASE_URL）才能正常使用。",
       "memoryModeToastTitle": "内存模式提醒",
-      "memoryModeToastDesc": "未连接数据库，设置会在实例重启或回收后重置。站点详情等功能需要连接数据库才能持久生效。"
+      "memoryModeToastDesc": "未连接数据库，设置会在实例重启或回收后重置。站点详情等功能需要连接数据库才能持久生效。",
+      "workspaceContext": "当前工作区：{name}",
+      "workspaceIsDefault": "（全局配置）",
+      "workspaceOverrideHint": "此处展示项仅对当前工作区生效，留空回退全局设置"
     },
     "profile": {
       "admin": "管理员",
@@ -620,6 +627,57 @@
       "changeFailed": "修改失败",
       "changeFailedDesc": "无法修改密码，请稍后重试",
       "confirmChange": "确认修改"
+    },
+    "workspaces": {
+      "title": "工作区管理",
+      "desc": "工作区是独立的内容空间（标题、描述、分类、网址）。为工作区绑定域名后，访问对应子域名即展示该工作区内容；未匹配域名时展示默认工作区。",
+      "create": "新建工作区",
+      "cannotLoad": "无法加载工作区列表",
+      "emptyTitle": "暂无工作区",
+      "emptyDesc": "点击右上角「新建工作区」创建第一个工作区",
+      "default": "默认",
+      "published": "已发布",
+      "unpublished": "未发布",
+      "setPrimary": "设为默认",
+      "setPrimaryTip": "未匹配域名的请求将展示默认工作区",
+      "primarySet": "已将「{name}」设为默认工作区",
+      "deleteSuccess": "工作区已删除",
+      "deleteTitle": "删除工作区",
+      "deleteDesc": "确定要删除工作区「{name}」吗？仅可删除不含分类且非默认的工作区。",
+      "actionFailed": "操作失败",
+      "domains": "域名绑定",
+      "noDomains": "未绑定域名（走默认匹配）",
+      "addDomain": "绑定",
+      "domainAdded": "已绑定域名 {host}",
+      "domainRemoved": "已解绑域名",
+      "removeDomain": "解绑域名"
+    },
+    "workspaceForm": {
+      "createTitle": "新建工作区",
+      "editTitle": "编辑工作区",
+      "formDesc": "配置工作区基本信息；标题、描述等展示项在「系统设置」中按当前工作区编辑。",
+      "name": "名称",
+      "namePlaceholder": "如：中文站",
+      "nameRequired": "请输入工作区名称",
+      "slug": "slug",
+      "slugRequired": "请输入 slug",
+      "description": "描述",
+      "descriptionPlaceholder": "工作区备注说明（仅后台展示）",
+      "published": "发布状态",
+      "publishedDesc": "未发布的工作区即使绑定了域名，前台也回退默认工作区",
+      "cancel": "取消",
+      "save": "保存",
+      "create": "创建",
+      "updateSuccess": "工作区已更新",
+      "createSuccess": "工作区已创建",
+      "saveFailed": "保存失败"
+    },
+    "workspaceSwitcher": {
+      "label": "切换工作区",
+      "defaultSuffix": "默认",
+      "switchedTo": "已切换到「{name}」",
+      "globalLabel": "全局",
+      "globalTooltip": "此页面为全站数据，不随工作区切换"
     }
   },
   "siteDetail": {

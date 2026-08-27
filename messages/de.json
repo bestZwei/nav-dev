@@ -9,7 +9,8 @@
     "operationFailed": "Vorgang fehlgeschlagen",
     "loadFailed": "Laden fehlgeschlagen",
     "retryLater": "Bitte später erneut versuchen",
-    "backToTop": "Nach oben"
+    "backToTop": "Nach oben",
+    "edit": "Bearbeiten"
   },
   "locale": {
     "switch": "Sprache wechseln",
@@ -136,7 +137,8 @@
         "updateAvailable": "Neu {version}",
         "unavailable": "Update-Prüfung nicht verfügbar",
         "dev": "dev"
-      }
+      },
+      "workspaces": "Workspaces"
     },
     "login": {
       "subtitle": "Melden Sie sich an, um Ihre Navigation zu verwalten",
@@ -514,7 +516,9 @@
       "fieldUrl": "URL",
       "fieldDesc": "Beschreibung",
       "fieldOrder": "Reihenfolge",
-      "fieldPublished": "Veröffentlichungsstatus"
+      "fieldPublished": "Veröffentlichungsstatus",
+      "fullBackup": "Vollbackup (mit Workspaces)",
+      "fullBackupDesc": "Enthält Workspace-Strukturen und Domain-Bindungen für Site-Migration"
     },
     "settings": {
       "saveSuccess": "Gespeichert",
@@ -578,7 +582,10 @@
       "siteDetailHint": "Wenn aktiviert, zeigen Websites mit Detailinhalt einen Vorstellungsdialog (Text, Screenshots, Nutzung) vor der Weiterleitung",
       "siteDetailMemoryWarning": "Der Speichermodus ist aktiv: Dieser Schalter wird beim Neustart oder Recycling der Instanz zurückgesetzt. Die Site-Details-Funktion erfordert eine Datenbank (DATABASE_URL).",
       "memoryModeToastTitle": "Hinweis zum Speichermodus",
-      "memoryModeToastDesc": "Keine Datenbank verbunden. Einstellungen werden nach Neustart oder Recycling zurückgesetzt. Funktionen wie Site-Details benötigen eine Datenbank."
+      "memoryModeToastDesc": "Keine Datenbank verbunden. Einstellungen werden nach Neustart oder Recycling zurückgesetzt. Funktionen wie Site-Details benötigen eine Datenbank.",
+      "workspaceContext": "Aktueller Workspace: {name}",
+      "workspaceIsDefault": " (globale Konfiguration)",
+      "workspaceOverrideHint": "Diese Anzeigefelder gelten nur für diesen Workspace; leere Felder fallen auf die globalen Einstellungen zurück"
     },
     "profile": {
       "admin": "Admin",
@@ -620,6 +627,57 @@
       "changeFailed": "Ändern fehlgeschlagen",
       "changeFailedDesc": "Passwort konnte nicht geändert werden, bitte später erneut versuchen",
       "confirmChange": "Bestätigen"
+    },
+    "workspaces": {
+      "title": "Workspace-Verwaltung",
+      "desc": "Ein Workspace ist ein unabhängiger Inhaltsraum (Titel, Beschreibung, Kategorien, Seiten). Nach dem Binden einer Domain zeigt die passende Subdomain diesen Inhalt an; nicht abgebildete Domains fallen auf den Standard-Workspace zurück.",
+      "create": "Neuer Workspace",
+      "cannotLoad": "Workspaces konnten nicht geladen werden",
+      "emptyTitle": "Noch keine Workspaces",
+      "emptyDesc": "Klicken Sie oben rechts auf „Neuer Workspace“, um den ersten zu erstellen",
+      "default": "Standard",
+      "published": "Veröffentlicht",
+      "unpublished": "Unveröffentlicht",
+      "setPrimary": "Als Standard",
+      "setPrimaryTip": "Anfragen ohne passende Domain zeigen den Standard-Workspace",
+      "primarySet": "„{name}“ ist jetzt der Standard-Workspace",
+      "deleteSuccess": "Workspace gelöscht",
+      "deleteTitle": "Workspace löschen",
+      "deleteDesc": "Workspace „{name}“ löschen? Nur Workspaces ohne Kategorien und nicht-Standard-Workspaces können gelöscht werden.",
+      "actionFailed": "Aktion fehlgeschlagen",
+      "domains": "Domain-Bindungen",
+      "noDomains": "Keine Domains (Standard-Zuordnung)",
+      "addDomain": "Binden",
+      "domainAdded": "Domain {host} gebunden",
+      "domainRemoved": "Domain-Bindung aufgehoben",
+      "removeDomain": "Domain-Bindung aufheben"
+    },
+    "workspaceForm": {
+      "createTitle": "Neuer Workspace",
+      "editTitle": "Workspace bearbeiten",
+      "formDesc": "Grunddaten des Workspaces konfigurieren; Anzeigefelder (Titel, Beschreibung usw.) werden pro Workspace in den Systemeinstellungen bearbeitet.",
+      "name": "Name",
+      "namePlaceholder": "z. B. Deutsche Seite",
+      "nameRequired": "Name ist erforderlich",
+      "slug": "Slug",
+      "slugRequired": "Slug ist erforderlich",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Interne Notiz (nur Admin)",
+      "published": "Veröffentlicht",
+      "publishedDesc": "Unveröffentlichte Workspaces fallen auch mit gebundener Domain auf den Standard-Workspace zurück",
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "create": "Erstellen",
+      "updateSuccess": "Workspace aktualisiert",
+      "createSuccess": "Workspace erstellt",
+      "saveFailed": "Speichern fehlgeschlagen"
+    },
+    "workspaceSwitcher": {
+      "label": "Workspace wechseln",
+      "defaultSuffix": "Standard",
+      "switchedTo": "Zu „{name}“ gewechselt",
+      "globalLabel": "Global",
+      "globalTooltip": "Diese Seite zeigt sitzungsweite Daten und ändert sich nicht beim Workspace-Wechsel"
     }
   },
   "siteDetail": {

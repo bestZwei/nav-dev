@@ -27,8 +27,10 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 - 📊 Statistics - visit frequency charts, site rankings
 - 🌐 Site Management - CRUD, publish status, icon display, **health checks**
 - 📁 Category Management - custom categories and sorting
+- 🗂️ **Multi-Workspace** - bind domains per workspace and route subdomains to dedicated content, falling back to the default workspace
 - 📦 **Data Management** - import/export bookmarks, supports JSON and Chrome bookmark formats
   - JSON format: complete data backup (description, ordering, publish status, and all fields)
+  - Full backup: includes workspace structures and domain bindings for site migration
   - Chrome bookmarks: browser-compatible format (name, URL, and icon only)
 - 👤 Admin System - single-admin design, edit profile from the sidebar avatar
 - ⚙️ System Settings - site name, logo, favicon, GitHub link, ICP filing, etc.
@@ -44,6 +46,7 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 - **Performance** - database index optimization, client-side real-time search (< 10ms response)
 - **Smart icons** - user config > smart favicon > first-letter icon (graceful degradation)
 - **ICP filing support** - optional ICP filing number and link in the frontend footer
+- **Subdomain workspace routing** - exact domain matching with isolated content and per-workspace branding overrides
 - **shadcn/ui best practices** - complete composition patterns (Card + CardHeader + CardTitle + CardAction)
 
 ## 📸 Screenshots
@@ -109,6 +112,51 @@ npm run dev
 - Password: `admin123`
 
 ⚠️ **Important**: change the default password immediately after the first login!
+
+## 🗂️ Multi-Workspace & Subdomain Routing
+
+A workspace is an independent content space: each workspace has its own categories, sites, and display config (title, description, logo, favicon), and can be bound to one or more domains. Visiting different subdomains renders the matching workspace; unmatched domains fall back to the default workspace.
+
+```
+Browser visits zh.example.com ──┐
+Browser visits en.example.com ──┼──> Exact domain matching ──> Render the bound workspace
+Browser visits nav.example.com ─┘   (unmatched/unpublished) ──> Render the default workspace
+```
+
+### Usage
+
+1. Open **Workspaces** in the admin dashboard and create workspaces (e.g. Chinese site `zh`, English site `en`)
+2. Bind a domain to each workspace (e.g. `zh.example.com`) and point its DNS to your server
+3. Switch the workspace context in the top bar to manage categories and sites per workspace
+4. Edit display fields per workspace in **System Settings → Basic Info** (empty values fall back to global)
+5. Turn on the **publish switch** to go live; unpublished workspaces fall back to the default workspace even with bound domains
+
+### Scope Reference
+
+| Content | Scope |
+|---------|-------|
+| Categories, sites, submissions | Isolated per workspace |
+| Title, description, logo, favicon | Per-workspace override, empty falls back to global |
+| Category slug uniqueness | Unique within a workspace, reusable across workspaces |
+| sitemap / robots | Output per visiting domain's workspace |
+| Feature switches, footer, ICP filing, etc. | Globally shared |
+| Visit statistics (dashboard) | Site-wide aggregate |
+
+The workspace switcher in the admin top bar indicates the current page scope: switchable = content follows the workspace; disabled "Global" = site-wide, unaffected by the workspace switcher.
+
+### Local Development
+
+Without subdomains locally, dev mode supports query-parameter simulation:
+
+```bash
+# Preview the workspace with slug "zh"
+# Visit http://localhost:3000/?__workspace=zh
+
+# Or simulate a domain via the Host header
+curl -H "Host: zh.example.com" http://localhost:3000/
+```
+
+Preview environments can enable the query parameter with `ENABLE_WORKSPACE_PREVIEW=true` (ignored in production, which matches by domain only).
 
 ## 📦 Production Deployment
 

@@ -1,7 +1,7 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
 import { CategoryIconBadge } from "@/components/category-icon"
-import { getAllCategories, getCategories, getSystemSettings, getSites } from "@/lib/actions"
+import { getAllCategories, getCategories, getDisplaySettings, getSites } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { getTranslations } from "next-intl/server"
@@ -11,7 +11,7 @@ import { getTranslations } from "next-intl/server"
 export default async function HomePage() {
   const { data: categories } = await getCategories()
   const { data: allCategories } = await getAllCategories()
-  const { data: settings } = await getSystemSettings()
+  const settings = await getDisplaySettings()
   const { data: allSites } = await getSites()
   const t = await getTranslations("home")
 
@@ -23,7 +23,7 @@ export default async function HomePage() {
         allCategories={allCategories || []}
         flatSites={flatSites}
         siteName={settings?.siteName}
-        enableSiteDetail={settings?.enableSiteDetail}
+        enableSiteDetail={(settings as any)?.enableSiteDetail}
       >
       <div className="space-y-8">
         {/* 分类内容 */}

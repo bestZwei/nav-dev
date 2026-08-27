@@ -1,7 +1,7 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
 import { CategoryIconBadge } from "@/components/category-icon"
-import { getAllCategories, getCategoryBySlug, getSystemSettings, getSites } from "@/lib/actions"
+import { getAllCategories, getCategoryBySlug, getDisplaySettings, getSites } from "@/lib/actions"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { getTranslations } from "next-intl/server"
@@ -17,7 +17,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params
   const { data: category } = await getCategoryBySlug(slug)
   const { data: allCategories } = await getAllCategories()
-  const { data: settings } = await getSystemSettings()
+  const settings = await getDisplaySettings()
   const { data: allSites } = await getSites()
   const t = await getTranslations("category")
 
@@ -34,7 +34,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         flatSites={flatSites}
         siteName={settings?.siteName}
         currentCategory={slug}
-        enableSiteDetail={settings?.enableSiteDetail}
+        enableSiteDetail={(settings as any)?.enableSiteDetail}
       >
       <div className="mb-6">
         <div className="flex items-center gap-3">

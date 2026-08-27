@@ -127,6 +127,14 @@ export default function AdminCategoriesPage() {
     loadCategoriesRef.current(1)
   }, [])
 
+  // 顶栏切换工作区后重新加载当前工作区的分类列表
+  useEffect(() => {
+    const onWorkspaceChanged = () => loadCategoriesRef.current(1)
+    window.addEventListener("workspace-context-changed", onWorkspaceChanged)
+    return () =>
+      window.removeEventListener("workspace-context-changed", onWorkspaceChanged)
+  }, [])
+
   // 保存排序到数据库
   const persistOrder = async (updatedList: Category[]) => {
     setIsSavingOrder(true)

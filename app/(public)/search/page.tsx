@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { SiteCard } from "@/components/layout/site-card"
-import { searchSites, getAllCategories, getSystemSettings } from "@/lib/actions"
+import { searchSites, getAllCategories, getDisplaySettings } from "@/lib/actions"
 import { redirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 
@@ -14,7 +14,7 @@ interface SearchPageProps {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q: query } = await searchParams
   const { data: categories } = await getAllCategories()
-  const { data: settings } = await getSystemSettings()
+  const settings = await getDisplaySettings()
   const t = await getTranslations("search")
 
   if (!query) {

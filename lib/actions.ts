@@ -7,6 +7,13 @@ import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { isLocale, type Locale } from "./i18n"
 import { getAdminSession } from "./api-auth"
+import {
+  getCurrentWorkspace,
+  getAdminWorkspace,
+  normalizeHost,
+  isValidWorkspaceSlug,
+} from "./workspace"
+import type { WorkspaceItem } from "./prisma"
 
 // ==================== 安全辅助 ====================
 
@@ -40,11 +47,366 @@ function isSafeSiteUrl(url: unknown): boolean {
   }
 }
 
+// 取当前工作区下的分类 id 集合。Site 经 Category 归属工作区，
+// 用「先取分类 ids 再 categoryId in」策略在真实库与内存模式下行为一致
+async function getWorkspaceCategoryIds(workspaceId: string): Promise<string[]> {
+  const cats = await prisma.category.findMany({
+    where: { workspaceId },
+    select: { id: true },
+  })
+  return cats.map((c: { id: string }) => c.id)
+}
+
+// ==================== Workspaces ====================
+
+export async function getWorkspaces() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    // 按创建顺序展示（工作区无业务排序概念）
+    const workspaces = await prisma.workspace.findMany({
+      orderBy: { createdAt: 'asc' },
+      include: { domains: true },
+    })
+    return { success: true, data: workspaces as WorkspaceItem[] }
+  } catch (error) {
+    console.error("Error fetching workspaces:", error)
+    return { success: false, error: "Failed to fetch workspaces" }
+  }
+}
+
+// 后台顶栏切换器数据源：仅必要字段
+export async function getWorkspaceOptions() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const workspaces = await prisma.workspace.findMany({
+      orderBy: { createdAt: 'asc' },
+    })
+    return {
+      success: true,
+      data: workspaces.map((w: WorkspaceItem) => ({
+        id: w.id,
+        name: w.name,
+        slug: w.slug,
+        isDefault: w.isDefault,
+        isPublished: w.isPublished,
+      })),
+    }
+  } catch (error) {
+    console.error("Error fetching workspace options:", error)
+    return { success: false, error: "Failed to fetch workspace options" }
+  }
+}
+
+// 当前后台选中的工作区（供页面展示上下文）
+export async function getCurrentAdminWorkspace() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  const workspace = await getAdminWorkspace()
+  return { success: true, data: workspace }
+}
+
+// 系统设置页「基本信息」区块数据源：按当前工作区上下文返回展示配置。
+// 默认工作区 → 全局 SystemSettings；非默认 → 工作区覆盖值（null 表示未覆盖，回退全局）
+export async function getWorkspaceDisplaySettings() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const workspace = await getAdminWorkspace()
+    const result = await getSystemSettings()
+    const settings = result.success && result.data ? result.data : null
+
+    if (workspace.isDefault) {
+      return {
+        success: true,
+        data: {
+          workspace: { id: workspace.id, name: workspace.name, isDefault: true },
+          display: {
+            siteName: settings?.siteName ?? "",
+            siteDescription: settings?.siteDescription ?? "",
+            siteLogo: settings?.siteLogo ?? "",
+            favicon: settings?.favicon ?? "",
+          },
+        },
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        workspace: { id: workspace.id, name: workspace.name, isDefault: false },
+        display: {
+          siteName: workspace.siteName ?? "",
+          siteDescription: workspace.siteDescription ?? "",
+          siteLogo: workspace.siteLogo ?? "",
+          favicon: workspace.favicon ?? "",
+        },
+      },
+    }
+  } catch (error) {
+    console.error("Error fetching workspace display settings:", error)
+    return { success: false, error: "Failed to fetch display settings" }
+  }
+}
+
+// 系统设置页「基本信息」保存：默认工作区写 SystemSettings；
+// 非默认工作区写覆盖字段（空串归一为 null，表示回退全局）
+export async function updateWorkspaceDisplaySettings(data: {
+  siteName: string
+  siteDescription: string
+  siteLogo: string
+  favicon: string
+}) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const workspace = await getAdminWorkspace()
+
+    if (workspace.isDefault) {
+      return await updateSystemSettings({
+        siteName: data.siteName,
+        siteDescription: data.siteDescription,
+        siteLogo: data.siteLogo || undefined,
+        favicon: data.favicon || undefined,
+      })
+    }
+
+    const updated = await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: {
+        siteName: data.siteName.trim() || null,
+        siteDescription: data.siteDescription.trim() || null,
+        siteLogo: data.siteLogo.trim() || null,
+        favicon: data.favicon.trim() || null,
+      },
+    })
+    revalidatePath("/", "layout")
+    revalidatePath("/admin/workspaces")
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error("Error updating workspace display settings:", error)
+    return { success: false, error: "Failed to update display settings" }
+  }
+}
+
+export async function createWorkspace(data: {
+  name: string
+  slug: string
+  description?: string | null
+  siteName?: string | null
+  siteDescription?: string | null
+  siteLogo?: string | null
+  favicon?: string | null
+  isPublished?: boolean
+  order?: number
+}) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const name = data.name?.trim()
+    if (!name) return { success: false, error: "工作区名称不能为空" }
+    if (!isValidWorkspaceSlug(data.slug)) {
+      return { success: false, error: "slug 仅支持小写字母、数字与中划线（1-50 位）" }
+    }
+    const existing = await prisma.workspace.findUnique({
+      where: { slug: data.slug },
+    })
+    if (existing) {
+      return { success: false, error: "slug 已被其他工作区使用" }
+    }
+
+    const workspace = await prisma.workspace.create({
+      data: {
+        name,
+        slug: data.slug,
+        description: data.description?.trim() || null,
+        siteName: data.siteName?.trim() || null,
+        siteDescription: data.siteDescription?.trim() || null,
+        siteLogo: data.siteLogo?.trim() || null,
+        favicon: data.favicon?.trim() || null,
+        // 新建工作区默认未发布，由管理员显式发布
+        isPublished: data.isPublished ?? false,
+        order: data.order ?? 0,
+      },
+    })
+    revalidatePath("/", "layout")
+    revalidatePath("/admin/workspaces")
+    return { success: true, data: workspace }
+  } catch (error) {
+    console.error("Error creating workspace:", error)
+    return { success: false, error: "Failed to create workspace" }
+  }
+}
+
+export async function updateWorkspace(id: string, data: {
+  name?: string
+  slug?: string
+  description?: string | null
+  siteName?: string | null
+  siteDescription?: string | null
+  siteLogo?: string | null
+  favicon?: string | null
+  isPublished?: boolean
+  order?: number
+}) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    if (data.name !== undefined && !data.name.trim()) {
+      return { success: false, error: "工作区名称不能为空" }
+    }
+    if (data.slug !== undefined) {
+      if (!isValidWorkspaceSlug(data.slug)) {
+        return { success: false, error: "slug 仅支持小写字母、数字与中划线（1-50 位）" }
+      }
+      const existing = await prisma.workspace.findUnique({
+        where: { slug: data.slug },
+      })
+      if (existing && existing.id !== id) {
+        return { success: false, error: "slug 已被其他工作区使用" }
+      }
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (data.name !== undefined) updateData.name = data.name.trim()
+    if (data.slug !== undefined) updateData.slug = data.slug
+    if (data.description !== undefined) updateData.description = data.description?.trim() || null
+    if (data.siteName !== undefined) updateData.siteName = data.siteName?.trim() || null
+    if (data.siteDescription !== undefined) updateData.siteDescription = data.siteDescription?.trim() || null
+    if (data.siteLogo !== undefined) updateData.siteLogo = data.siteLogo?.trim() || null
+    if (data.favicon !== undefined) updateData.favicon = data.favicon?.trim() || null
+    if (data.isPublished !== undefined) updateData.isPublished = data.isPublished
+    if (data.order !== undefined) updateData.order = data.order
+
+    const workspace = await prisma.workspace.update({
+      where: { id },
+      data: updateData,
+    })
+    revalidatePath("/", "layout")
+    revalidatePath("/admin/workspaces")
+    return { success: true, data: workspace }
+  } catch (error) {
+    console.error("Error updating workspace:", error)
+    return { success: false, error: "Failed to update workspace" }
+  }
+}
+
+export async function deleteWorkspace(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const workspace = await prisma.workspace.findUnique({ where: { id } })
+    if (!workspace) return { success: false, error: "Workspace not found" }
+    if (workspace.isDefault) {
+      return { success: false, error: "默认工作区不可删除" }
+    }
+    const categoryCount = await prisma.category.count({
+      where: { workspaceId: id },
+    })
+    if (categoryCount > 0) {
+      return { success: false, error: "工作区下仍有分类，请先删除或转移其内容" }
+    }
+
+    await prisma.domain.deleteMany({ where: { workspaceId: id } })
+    await prisma.workspace.delete({ where: { id } })
+    revalidatePath("/", "layout")
+    revalidatePath("/admin/workspaces")
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting workspace:", error)
+    return { success: false, error: "Failed to delete workspace" }
+  }
+}
+
+// 设为默认工作区：事务内先清全部默认标记再设置目标，保证唯一默认
+export async function setPrimaryWorkspace(id: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const workspace = await prisma.workspace.findUnique({ where: { id } })
+    if (!workspace) return { success: false, error: "Workspace not found" }
+
+    await prisma.$transaction(async (tx: any) => {
+      const all = await tx.workspace.findMany({ where: { isDefault: true } })
+      for (const ws of all) {
+        if (ws.id !== id) {
+          await tx.workspace.update({
+            where: { id: ws.id },
+            data: { isDefault: false },
+          })
+        }
+      }
+      await tx.workspace.update({
+        where: { id },
+        data: { isDefault: true, isPublished: true },
+      })
+    })
+    revalidatePath("/", "layout")
+    revalidatePath("/admin/workspaces")
+    return { success: true }
+  } catch (error) {
+    console.error("Error setting primary workspace:", error)
+    return { success: false, error: "Failed to set primary workspace" }
+  }
+}
+
+export async function addWorkspaceDomain(workspaceId: string, rawHost: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const host = normalizeHost(rawHost)
+    if (!host) {
+      return { success: false, error: "域名格式不合法" }
+    }
+    const existing = await prisma.domain.findUnique({ where: { host } })
+    if (existing) {
+      if (existing.workspaceId === workspaceId) {
+        return { success: false, error: "该域名已绑定到当前工作区" }
+      }
+      const owner = await prisma.workspace.findUnique({
+        where: { id: existing.workspaceId },
+      })
+      return {
+        success: false,
+        error: `该域名已绑定到工作区「${owner?.name || existing.workspaceId}」`,
+      }
+    }
+
+    const domain = await prisma.domain.create({
+      data: { host, workspaceId },
+    })
+    revalidatePath("/", "layout")
+    revalidatePath("/admin/workspaces")
+    return { success: true, data: domain }
+  } catch (error) {
+    console.error("Error adding workspace domain:", error)
+    return { success: false, error: "Failed to add domain" }
+  }
+}
+
+export async function removeWorkspaceDomain(domainId: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    await prisma.domain.delete({ where: { id: domainId } })
+    revalidatePath("/", "layout")
+    revalidatePath("/admin/workspaces")
+    return { success: true }
+  } catch (error) {
+    console.error("Error removing workspace domain:", error)
+    return { success: false, error: "Failed to remove domain" }
+  }
+}
+
 // ==================== Categories ====================
 
 export async function getCategories() {
   try {
+    // 前台按当前请求的工作区（域名/预览参数解析）过滤
+    const workspace = await getCurrentWorkspace()
     const categories = await prisma.category.findMany({
+      where: { workspaceId: workspace.id },
       orderBy: { order: 'asc' },
       include: {
         sites: {
@@ -62,8 +424,10 @@ export async function getCategories() {
 
 export async function getCategoryBySlug(slug: string) {
   try {
-    const category = await prisma.category.findUnique({
-      where: { slug },
+    // slug 唯一性收敛到工作区内：同一 slug 可在不同工作区各自存在
+    const workspace = await getCurrentWorkspace()
+    const category = await prisma.category.findFirst({
+      where: { slug, workspaceId: workspace.id },
       include: {
         sites: {
           where: { isPublished: true },
@@ -83,12 +447,31 @@ export async function getCategoryBySlug(slug: string) {
 
 export async function getAllCategories() {
   try {
+    const workspace = await getCurrentWorkspace()
     const categories = await prisma.category.findMany({
+      where: { workspaceId: workspace.id },
       orderBy: { order: 'asc' },
     })
     return { success: true, data: categories }
   } catch (error) {
     console.error("Error fetching all categories:", error)
+    return { success: false, error: "Failed to fetch categories" }
+  }
+}
+
+// 后台专用：当前选中工作区的全部分类（网址编辑表单等）
+export async function getAdminCategories() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const workspace = await getAdminWorkspace()
+    const categories = await prisma.category.findMany({
+      where: { workspaceId: workspace.id },
+      orderBy: { order: 'asc' },
+    })
+    return { success: true, data: categories }
+  } catch (error) {
+    console.error("Error fetching admin categories:", error)
     return { success: false, error: "Failed to fetch categories" }
   }
 }
@@ -105,7 +488,9 @@ export async function getCategoriesWithPagination(params: {
     const pageSize = params.pageSize || 10
     const skip = (page - 1) * pageSize
 
-    const where: Prisma.CategoryWhereInput = {}
+    // 后台按当前选中的工作区上下文过滤
+    const workspace = await getAdminWorkspace()
+    const where: Prisma.CategoryWhereInput = { workspaceId: workspace.id }
 
     if (params.search) {
       where.OR = [
@@ -171,12 +556,21 @@ export async function createCategory(data: {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    // slug 唯一性收敛到工作区内（内存模式无数据库约束，显式查重）
+    const workspace = await getAdminWorkspace()
+    const duplicate = await prisma.category.findFirst({
+      where: { slug: data.slug, workspaceId: workspace.id },
+    })
+    if (duplicate) {
+      return { success: false, error: "当前工作区下已存在同名 slug 的分类" }
+    }
     const category = await prisma.category.create({
       data: {
         name: data.name,
         slug: data.slug,
         icon: data.icon || null,
         order: data.order ?? 0,
+        workspaceId: workspace.id,
       },
     })
     revalidatePath("/admin/categories")
@@ -197,6 +591,16 @@ export async function updateCategory(id: string, data: {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    if (data.slug !== undefined) {
+      // 工作区内 slug 查重（排除自身）
+      const workspace = await getAdminWorkspace()
+      const duplicate = await prisma.category.findFirst({
+        where: { slug: data.slug, workspaceId: workspace.id },
+      })
+      if (duplicate && duplicate.id !== id) {
+        return { success: false, error: "当前工作区下已存在同名 slug 的分类" }
+      }
+    }
     const category = await prisma.category.update({
       where: { id },
       data,
@@ -252,8 +656,11 @@ export async function getSites() {
   try {
     // 仅返回已发布站点：此 Action 可被客户端直接调用，
     // 避免未收录审核中的站点元数据外泄
+    // 按当前请求的工作区过滤（Site 经 Category 归属工作区）
+    const workspace = await getCurrentWorkspace()
+    const categoryIds = await getWorkspaceCategoryIds(workspace.id)
     const sites = await prisma.site.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, categoryId: { in: categoryIds } },
       orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
       include: {
         category: true,
@@ -283,9 +690,22 @@ export async function getSitesWithPagination(params: {
     const pageSize = params.pageSize || 10
     const skip = (page - 1) * pageSize
 
-    const where: Prisma.SiteWhereInput = {}
+    // 后台按当前选中工作区过滤；显式传入的分类筛选与工作区取交集，
+    // 防止跨工作区数据操作
+    const workspace = await getAdminWorkspace()
+    const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
+    const where: Prisma.SiteWhereInput = {
+      categoryId: { in: workspaceCategoryIds },
+    }
 
     if (params.categoryId) {
+      if (!workspaceCategoryIds.includes(params.categoryId)) {
+        return {
+          success: true,
+          data: [],
+          pagination: { page, pageSize, total: 0, totalPages: 0 },
+        }
+      }
       where.categoryId = params.categoryId
     }
 
@@ -361,7 +781,9 @@ export async function getCategoriesForFilter() {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    const workspace = await getAdminWorkspace()
     const categories = await prisma.category.findMany({
+      where: { workspaceId: workspace.id },
       orderBy: [{ order: "asc" }, { name: "asc" }],
       select: {
         id: true,
@@ -937,12 +1359,15 @@ export async function checkSiteHealth(siteId: string) {
   }
 }
 
-// 获取全部站点的 id/url，供前端“全部测活”编排使用（不分页）
+// 获取全部站点的 id/url，供前端“全部测活”编排使用（不分页，按当前工作区）
 export async function getSiteIdsForHealthCheck() {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    const workspace = await getAdminWorkspace()
+    const categoryIds = await getWorkspaceCategoryIds(workspace.id)
     const sites = await prisma.site.findMany({
+      where: { categoryId: { in: categoryIds } },
       select: { id: true, name: true, url: true },
       orderBy: [{ isPinned: "desc" }, { order: "asc" }],
     })
@@ -1104,10 +1529,14 @@ export async function searchSites(query: string) {
       return { success: true, data: [] }
     }
 
+    // 搜索范围限定在当前请求的工作区
+    const workspace = await getCurrentWorkspace()
+    const categoryIds = await getWorkspaceCategoryIds(workspace.id)
     const sites = await prisma.site.findMany({
       where: {
         AND: [
           { isPublished: true },
+          { categoryId: { in: categoryIds } },
           {
             OR: [
               { name: { contains: query, mode: "insensitive" } },
@@ -1160,6 +1589,21 @@ export async function getSystemSettings() {
   } catch (error) {
     console.error("Error fetching system settings:", error)
     return { success: false, error: "Failed to fetch system settings" }
+  }
+}
+
+// 前台展示配置：工作区覆盖项优先，未设置时回退全局 SystemSettings
+export async function getDisplaySettings() {
+  const workspace = await getCurrentWorkspace()
+  const result = await getSystemSettings()
+  const settings = (result.success && result.data ? result.data : {}) as Record<string, unknown>
+  return {
+    ...settings,
+    siteName: workspace.siteName || (settings.siteName as string | undefined),
+    siteDescription:
+      workspace.siteDescription || (settings.siteDescription as string | undefined),
+    siteLogo: workspace.siteLogo || (settings.siteLogo as string | null | undefined),
+    favicon: workspace.favicon || (settings.favicon as string | null | undefined),
   }
 }
 
@@ -1407,12 +1851,84 @@ export async function getVisitFrequency(days: number = 30) {
 
 // ==================== Data Import/Export ====================
 
-// 完整数据导出（JSON格式，包含所有字段）
-export async function exportData() {
+// 数据导出：workspace 模式导出当前后台选中工作区（兼容旧格式数组）；
+// full 模式导出含工作区结构与域名绑定的全量备份
+export async function exportData(mode: "workspace" | "full" = "workspace") {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    if (mode === "full") {
+      const workspaces = await prisma.workspace.findMany({
+        orderBy: { order: 'asc' },
+        include: { domains: true },
+      })
+      const categories = await prisma.category.findMany({
+        orderBy: { order: 'asc' },
+        include: {
+          sites: {
+            orderBy: { order: 'asc' },
+            include: {
+              screenshots: {
+                orderBy: { order: 'asc' },
+                select: { source: true, url: true, data: true, mimeType: true, order: true },
+              },
+            },
+          },
+        },
+      })
+
+      return {
+        success: true,
+        data: {
+          format: "nav-full-backup",
+          version: 2,
+          workspaces: workspaces.map((ws: any) => ({
+            slug: ws.slug,
+            name: ws.name,
+            description: ws.description,
+            siteName: ws.siteName,
+            siteDescription: ws.siteDescription,
+            siteLogo: ws.siteLogo,
+            favicon: ws.favicon,
+            isDefault: ws.isDefault,
+            isPublished: ws.isPublished,
+            order: ws.order,
+            domains: (ws.domains || []).map((d: any) => ({
+              host: d.host,
+              isPrimary: d.isPrimary,
+            })),
+            categories: categories
+              .filter((c: any) => c.workspaceId === ws.id)
+              .map((category: any) => ({
+                name: category.name,
+                slug: category.slug,
+                order: category.order,
+                sites: (category.sites || []).map((site: any) => ({
+                  name: site.name,
+                  url: site.url,
+                  description: site.description,
+                  iconUrl: site.iconUrl,
+                  order: site.order,
+                  isPublished: site.isPublished,
+                  detailContent: site.detailContent,
+                  screenshots: (site.screenshots || []).map((shot: any) => ({
+                    source: shot.source,
+                    url: shot.url,
+                    data: shot.data,
+                    mimeType: shot.mimeType,
+                    order: shot.order,
+                  })),
+                })),
+              })),
+          })),
+        },
+      }
+    }
+
+    // workspace 模式：导出当前选中工作区（保持旧版数组格式，便于单站迁移）
+    const workspace = await getAdminWorkspace()
     const categories = await prisma.category.findMany({
+      where: { workspaceId: workspace.id },
       orderBy: { order: 'asc' },
       include: {
         sites: {
@@ -1460,12 +1976,14 @@ export async function exportData() {
   }
 }
 
-// Chrome书签导出（HTML格式，仅基本字段，兼容浏览器）
+// Chrome书签导出（HTML格式，仅基本字段，兼容浏览器；按当前选中工作区导出）
 export async function exportBookmarks() {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    const workspace = await getAdminWorkspace()
     const categories = await prisma.category.findMany({
+      where: { workspaceId: workspace.id },
       orderBy: { order: 'asc' },
       include: {
         sites: {
@@ -1495,7 +2013,10 @@ export async function exportBookmarks() {
   }
 }
 
-// JSON数据导入（完整数据）
+// JSON数据导入：
+// - 旧版/工作区格式（分类数组）→ 导入到当前后台选中的工作区
+// - 全量备份（{ format: "nav-full-backup", workspaces: [...] }）→ 按 slug
+//   upsert 工作区与域名，内容跟随各自工作区
 export async function importData(
   jsonData: any,
   mode: 'overwrite' | 'append'
@@ -1503,22 +2024,36 @@ export async function importData(
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    // 全量备份格式：分流到独立处理
+    if (jsonData && typeof jsonData === 'object' && Array.isArray(jsonData.workspaces)) {
+      return importFullBackup(jsonData, mode)
+    }
+
     // 验证数据格式
     if (!Array.isArray(jsonData)) {
       return { success: false, error: "Invalid data format" }
     }
 
-    // 覆盖模式：删除所有现有数据
+    const workspace = await getAdminWorkspace()
+
+    // 覆盖模式：仅清空当前工作区的分类与网址（不影响其他工作区）
     if (mode === 'overwrite') {
-      await prisma.visit.deleteMany({})
-      await prisma.site.deleteMany({})
-      await prisma.category.deleteMany({})
+      const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
+      if (workspaceCategoryIds.length > 0) {
+        await prisma.site.deleteMany({
+          where: { categoryId: { in: workspaceCategoryIds } },
+        })
+        await prisma.category.deleteMany({
+          where: { workspaceId: workspace.id },
+        })
+      }
     }
 
-    // 追加模式：获取当前最大排序值
+    // 追加模式：获取当前工作区最大排序值
     let currentMaxOrder = 0
     if (mode === 'append') {
       const maxOrderCategory = await prisma.category.findFirst({
+        where: { workspaceId: workspace.id },
         orderBy: { order: 'desc' },
         select: { order: true },
       })
@@ -1532,11 +2067,11 @@ export async function importData(
       const transliteration = require('transliteration')
       const slug = categoryData.slug || transliteration.slugify(categoryData.name)
 
-      // 检查分类是否已存在（追加模式）
+      // 检查分类是否已存在（追加模式，限定当前工作区）
       let category
       if (mode === 'append') {
-        category = await prisma.category.findUnique({
-          where: { slug },
+        category = await prisma.category.findFirst({
+          where: { slug, workspaceId: workspace.id },
         })
       }
 
@@ -1547,6 +2082,7 @@ export async function importData(
             name: categoryData.name,
             slug,
             order: categoryData.order !== undefined ? categoryData.order : currentMaxOrder,
+            workspaceId: workspace.id,
           },
         })
       }
@@ -1610,6 +2146,162 @@ export async function importData(
   }
 }
 
+// 全量备份导入：按 slug upsert 工作区；域名冲突（已绑其他工作区）跳过并计数
+async function importFullBackup(
+  backup: { workspaces: Array<Record<string, any>> },
+  mode: 'overwrite' | 'append'
+) {
+  let importedWorkspaces = 0
+  let skippedDomains = 0
+
+  for (const wsData of backup.workspaces) {
+    if (!wsData.slug || !isValidWorkspaceSlug(wsData.slug)) continue
+
+    let workspace = await prisma.workspace.findUnique({
+      where: { slug: wsData.slug },
+    })
+    if (!workspace) {
+      workspace = await prisma.workspace.create({
+        data: {
+          slug: wsData.slug,
+          name: wsData.name || wsData.slug,
+          description: wsData.description || null,
+          siteName: wsData.siteName || null,
+          siteDescription: wsData.siteDescription || null,
+          siteLogo: wsData.siteLogo || null,
+          favicon: wsData.favicon || null,
+          isPublished: Boolean(wsData.isPublished),
+          order: wsData.order ?? 0,
+        },
+      })
+    } else if (mode === 'overwrite') {
+      workspace = await prisma.workspace.update({
+        where: { id: workspace.id },
+        data: {
+          name: wsData.name || workspace.name,
+          description: wsData.description || null,
+          siteName: wsData.siteName || null,
+          siteDescription: wsData.siteDescription || null,
+          siteLogo: wsData.siteLogo || null,
+          favicon: wsData.favicon || null,
+          isPublished: Boolean(wsData.isPublished),
+          order: wsData.order ?? workspace.order,
+        },
+      })
+    }
+    importedWorkspaces++
+
+    // 域名绑定：冲突项跳过
+    for (const domainData of wsData.domains || []) {
+      const host = normalizeHost(domainData.host)
+      if (!host) continue
+      const existing = await prisma.domain.findUnique({ where: { host } })
+      if (existing) {
+        if (existing.workspaceId !== workspace.id) skippedDomains++
+        continue
+      }
+      await prisma.domain.create({
+        data: { host, isPrimary: Boolean(domainData.isPrimary), workspaceId: workspace.id },
+      })
+    }
+
+    // 分类与网址：overwrite 模式先清空该工作区内容
+    if (mode === 'overwrite') {
+      const catIds = await getWorkspaceCategoryIds(workspace.id)
+      if (catIds.length > 0) {
+        await prisma.site.deleteMany({
+          where: { categoryId: { in: catIds } },
+        })
+        await prisma.category.deleteMany({
+          where: { workspaceId: workspace.id },
+        })
+      }
+    }
+
+    let order = 0
+    for (const categoryData of wsData.categories || []) {
+      order++
+      const existingCategory = await prisma.category.findFirst({
+        where: { slug: categoryData.slug, workspaceId: workspace.id },
+      })
+      let category = existingCategory
+      if (!category) {
+        category = await prisma.category.create({
+          data: {
+            name: categoryData.name,
+            slug: categoryData.slug,
+            order: categoryData.order ?? order,
+            workspaceId: workspace.id,
+          },
+        })
+      }
+      for (const siteData of categoryData.sites || []) {
+        if (!isSafeSiteUrl(siteData.url)) continue
+        const detailContent = normalizeDetailContent(siteData.detailContent)
+        const screenshots = Array.isArray(siteData.screenshots)
+          ? siteData.screenshots.filter((shot: ScreenshotInput) =>
+              shot && (shot.source === 'UPLOAD' || (shot.source === 'URL' && isSafeSiteUrl(shot.url))))
+          : []
+        const createdSite = await prisma.site.create({
+          data: {
+            name: siteData.name,
+            url: siteData.url,
+            description: siteData.description || '',
+            iconUrl: siteData.iconUrl || null,
+            categoryId: category.id,
+            order: siteData.order || 0,
+            isPublished: siteData.isPublished !== undefined ? siteData.isPublished : true,
+            detailContent,
+            hasDetail: computeHasDetail(detailContent, screenshots.length),
+          },
+        })
+        if (screenshots.length > 0) {
+          await prisma.screenshot.createMany({
+            data: screenshots.map((shot: ScreenshotInput, index: number) => ({
+              siteId: createdSite.id,
+              source: shot.source,
+              url: shot.source === 'URL' ? shot.url || null : null,
+              data: shot.source === 'UPLOAD' ? shot.data || null : null,
+              mimeType: shot.source === 'UPLOAD' ? shot.mimeType || null : null,
+              order: shot.order !== undefined ? shot.order : index,
+            })),
+          })
+        }
+      }
+    }
+  }
+
+  // 备份中的默认工作区标记恢复：清掉多默认
+  const defaults = await prisma.workspace.findMany({ where: { isDefault: true } })
+  if (defaults.length === 0) {
+    const anyWs = await prisma.workspace.findFirst({})
+    if (anyWs) {
+      await prisma.workspace.update({
+        where: { id: anyWs.id },
+        data: { isDefault: true, isPublished: true },
+      })
+    }
+  } else if (defaults.length > 1) {
+    // 保留备份中标记为默认的第一个
+    for (const ws of defaults.slice(1)) {
+      await prisma.workspace.update({
+        where: { id: ws.id },
+        data: { isDefault: false },
+      })
+    }
+  }
+
+  revalidatePath('/', 'layout')
+  revalidatePath('/category/[slug]', 'page')
+
+  const domainNote = skippedDomains > 0 ? `，跳过 ${skippedDomains} 个冲突域名` : ''
+  return {
+    success: true,
+    message: `全量备份导入完成：${importedWorkspaces} 个工作区${domainNote}`,
+    importedCount: importedWorkspaces,
+  }
+}
+
 export async function importBookmarks(
   html: string,
   mode: 'overwrite' | 'append'
@@ -1619,19 +2311,27 @@ export async function importBookmarks(
   try {
     const { parseChromeBookmarks } = await import('./bookmarks')
     const parsed = parseChromeBookmarks(html)
+    // 书签导入归属当前后台选中的工作区
+    const workspace = await getAdminWorkspace()
 
-    // 覆盖模式：删除所有现有网站和分类
+    // 覆盖模式：仅清空当前工作区的数据
     if (mode === 'overwrite') {
-      // 删除所有网站（级联删除会自动处理关联）
-      await prisma.site.deleteMany({})
-      // 删除所有分类
-      await prisma.category.deleteMany({})
+      const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
+      if (workspaceCategoryIds.length > 0) {
+        await prisma.site.deleteMany({
+          where: { categoryId: { in: workspaceCategoryIds } },
+        })
+        await prisma.category.deleteMany({
+          where: { workspaceId: workspace.id },
+        })
+      }
     }
 
-    // 追加模式：保留现有数据，只添加新的
+    // 追加模式：保留现有数据，只添加新的（限定当前工作区）
     let currentMaxOrder = 0
     if (mode === 'append') {
       const maxOrderCategory = await prisma.category.findFirst({
+        where: { workspaceId: workspace.id },
         orderBy: { order: 'desc' },
         select: { order: true },
       })
@@ -1645,11 +2345,11 @@ export async function importBookmarks(
       const transliteration = require('transliteration')
       const slug = transliteration.slugify(categoryData.name)
 
-      // 检查分类是否已存在（追加模式）
+      // 检查分类是否已存在（追加模式，限定当前工作区）
       let category
       if (mode === 'append') {
-        category = await prisma.category.findUnique({
-          where: { slug },
+        category = await prisma.category.findFirst({
+          where: { slug, workspaceId: workspace.id },
         })
       }
 
@@ -1660,6 +2360,7 @@ export async function importBookmarks(
             name: categoryData.name,
             slug,
             order: currentMaxOrder,
+            workspaceId: workspace.id,
           },
         })
       }

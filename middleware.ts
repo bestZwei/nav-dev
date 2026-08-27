@@ -17,6 +17,37 @@ const protectedApiRoutes = ["/api/admin"]
 // 登录接口自身放行（自身的凭据校验与限流见 app/api/admin/login/route.ts）
 const apiAuthExempt = ["/api/admin/login"]
 
+// 工作区预览参数是否启用：开发模式或显式开启（预览环境无子域名时调试用）
+const workspacePreviewEnabled =
+  process.env.NODE_ENV === "development" ||
+  process.env.ENABLE_WORKSPACE_PREVIEW === "true"
+
+// 工作区域名解析相关逻辑运行在应用层（lib/workspace.ts），middleware 只做
+// 纯字符串处理并注入请求头（Edge Runtime 无法使用 Prisma）
+function buildWorkspaceHeaders(request: NextRequest): Headers {
+  const headers = new Headers(request.headers)
+
+  // Host 提取：x-forwarded-host 优先（反代/Cloudflare 场景），回退 host；
+  // 去端口、转小写由应用层 normalizeHost 统一完成，这里保留原始值传递
+  const rawHost =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    request.headers.get("host") ||
+    ""
+  if (rawHost) {
+    headers.set("x-workspace-host", rawHost.toLowerCase())
+  }
+
+  // 开发/预览模式：?__workspace=slug 模拟子域名访问指定工作区
+  if (workspacePreviewEnabled) {
+    const previewSlug = request.nextUrl.searchParams.get("__workspace")
+    if (previewSlug) {
+      headers.set("x-workspace-preview", previewSlug)
+    }
+  }
+
+  return headers
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -27,7 +58,9 @@ export async function middleware(request: NextRequest) {
   if (isProtectedApi) {
     const isExempt = apiAuthExempt.some((route) => pathname.startsWith(route))
     if (isExempt) {
-      return NextResponse.next()
+      return NextResponse.next({
+        request: { headers: buildWorkspaceHeaders(request) },
+      })
     }
     // 校验签名会话：验签 + 过期检查均由 verifySessionToken 完成，
     // 明文伪造 user_id/user_role cookie 无法通过此处
@@ -36,7 +69,9 @@ export async function middleware(request: NextRequest) {
     if (!apiSession || apiSession.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    return NextResponse.next()
+    return NextResponse.next({
+      request: { headers: buildWorkspaceHeaders(request) },
+    })
   }
 
   // ---- 页面路由 ----
@@ -84,9 +119,14 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  return NextResponse.next()
+  return NextResponse.next({
+    request: { headers: buildWorkspaceHeaders(request) },
+  })
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  // 工作区域名解析需要覆盖全部动态路由；排除静态资源与健康检查
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api/health|robots.txt|sitemap.xml).*)",
+  ],
 }

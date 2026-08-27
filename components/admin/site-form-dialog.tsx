@@ -24,7 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MarkdownContent } from "@/components/markdown-content"
-import { createSite, updateSite, getAllCategories, type ScreenshotInput } from "@/lib/actions"
+import { createSite, updateSite, getAdminCategories, type ScreenshotInput } from "@/lib/actions"
 import { fetchPublicSettings } from "@/lib/client-settings"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
@@ -102,7 +102,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
   useEffect(() => {
     let cancelled = false
     async function loadCategories() {
-      const result = await getAllCategories()
+      const result = await getAdminCategories()
       if (!cancelled && result.success && result.data) {
         const list = result.data
         setCategories(list)

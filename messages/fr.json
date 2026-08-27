@@ -9,7 +9,8 @@
     "operationFailed": "Échec de l'opération",
     "loadFailed": "Échec du chargement",
     "retryLater": "Veuillez réessayer plus tard",
-    "backToTop": "Retour en haut"
+    "backToTop": "Retour en haut",
+    "edit": "Modifier"
   },
   "locale": {
     "switch": "Changer de langue",
@@ -136,7 +137,8 @@
         "updateAvailable": "Nouv. {version}",
         "unavailable": "Vérification de mise à jour indisponible",
         "dev": "dev"
-      }
+      },
+      "workspaces": "Espaces de travail"
     },
     "login": {
       "subtitle": "Connectez-vous pour gérer votre navigation",
@@ -514,7 +516,9 @@
       "fieldUrl": "URL",
       "fieldDesc": "Description",
       "fieldOrder": "Ordre",
-      "fieldPublished": "Statut de publication"
+      "fieldPublished": "Statut de publication",
+      "fullBackup": "Sauvegarde complète (espaces inclus)",
+      "fullBackupDesc": "Inclut les structures d'espaces et liaisons de domaine pour la migration"
     },
     "settings": {
       "saveSuccess": "Enregistré",
@@ -578,7 +582,10 @@
       "siteDetailHint": "Si activé, les sites avec contenu détaillé affichent un dialogue de présentation (texte, captures, usage) avant la redirection",
       "siteDetailMemoryWarning": "Le mode mémoire est actif : ce commutateur sera réinitialisé au redémarrage ou au recyclage de l'instance. La fonction de détails du site nécessite une base de données (DATABASE_URL).",
       "memoryModeToastTitle": "Avis mode mémoire",
-      "memoryModeToastDesc": "Aucune base de données connectée. Les paramètres seront réinitialisés après redémarrage ou recyclage. Les fonctions comme les détails du site nécessitent une base de données."
+      "memoryModeToastDesc": "Aucune base de données connectée. Les paramètres seront réinitialisés après redémarrage ou recyclage. Les fonctions comme les détails du site nécessitent une base de données.",
+      "workspaceContext": "Espace de travail actuel : {name}",
+      "workspaceIsDefault": " (configuration globale)",
+      "workspaceOverrideHint": "Ces champs d'affichage s'appliquent uniquement à cet espace ; les valeurs vides retombent sur les réglages globaux"
     },
     "profile": {
       "admin": "Admin",
@@ -620,6 +627,57 @@
       "changeFailed": "Échec du changement",
       "changeFailedDesc": "Impossible de changer le mot de passe, veuillez réessayer plus tard",
       "confirmChange": "Confirmer"
+    },
+    "workspaces": {
+      "title": "Gestion des espaces de travail",
+      "desc": "Un espace de travail est un espace de contenu indépendant (titre, description, catégories, sites). Après avoir lié un domaine, le sous-domaine correspondant affiche ce contenu ; les domaines non appariés retombent sur l'espace par défaut.",
+      "create": "Nouvel espace",
+      "cannotLoad": "Impossible de charger les espaces de travail",
+      "emptyTitle": "Aucun espace de travail",
+      "emptyDesc": "Cliquez sur « Nouvel espace » en haut à droite pour créer le premier",
+      "default": "Défaut",
+      "published": "Publié",
+      "unpublished": "Non publié",
+      "setPrimary": "Définir par défaut",
+      "setPrimaryTip": "Les requêtes sans domaine apparié affichent l'espace par défaut",
+      "primarySet": "« {name} » est maintenant l'espace par défaut",
+      "deleteSuccess": "Espace de travail supprimé",
+      "deleteTitle": "Supprimer l'espace",
+      "deleteDesc": "Supprimer l'espace « {name} » ? Seuls les espaces sans catégorie et non par défaut peuvent être supprimés.",
+      "actionFailed": "Échec de l'action",
+      "domains": "Domaines liés",
+      "noDomains": "Aucun domaine (correspondance par défaut)",
+      "addDomain": "Lier",
+      "domainAdded": "Domaine {host} lié",
+      "domainRemoved": "Domaine délié",
+      "removeDomain": "Délier le domaine"
+    },
+    "workspaceForm": {
+      "createTitle": "Nouvel espace de travail",
+      "editTitle": "Modifier l'espace",
+      "formDesc": "Configurer les informations de base de l'espace ; les champs d'affichage (titre, description, etc.) se modifient par espace dans les réglages système.",
+      "name": "Nom",
+      "namePlaceholder": "ex. Site français",
+      "nameRequired": "Le nom est requis",
+      "slug": "Slug",
+      "slugRequired": "Le slug est requis",
+      "description": "Description",
+      "descriptionPlaceholder": "Note interne (admin uniquement)",
+      "published": "Publié",
+      "publishedDesc": "Les espaces non publiés retombent sur l'espace par défaut même avec un domaine lié",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "create": "Créer",
+      "updateSuccess": "Espace mis à jour",
+      "createSuccess": "Espace créé",
+      "saveFailed": "Échec de l'enregistrement"
+    },
+    "workspaceSwitcher": {
+      "label": "Changer d'espace",
+      "defaultSuffix": "défaut",
+      "switchedTo": "Basculé vers « {name} »",
+      "globalLabel": "Global",
+      "globalTooltip": "Cette page affiche des données de tout le site et ne change pas avec le sélecteur d'espace"
     }
   },
   "siteDetail": {

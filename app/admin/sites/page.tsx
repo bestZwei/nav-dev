@@ -169,6 +169,19 @@ export default function AdminSitesPage() {
     loadCategoriesRef.current()
   }, [])
 
+  // 顶栏切换工作区后重新加载当前工作区的网址与分类筛选列表
+  useEffect(() => {
+    const onWorkspaceChanged = () => {
+      handleResetFilters()
+      loadSitesRef.current(1)
+      loadCategoriesRef.current()
+    }
+    window.addEventListener("workspace-context-changed", onWorkspaceChanged)
+    return () =>
+      window.removeEventListener("workspace-context-changed", onWorkspaceChanged)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // 重置筛选
   const handleResetFilters = () => {
     setFilterCategory("all")

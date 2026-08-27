@@ -10,15 +10,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Workspace {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  name            String
+  description     String?
+  // 展示覆盖项：为空时回退 SystemSettings 对应值
+  siteName        String?    @map("site_name")
+  siteDescription String?    @map("site_description")
+  siteLogo        String?    @map("site_logo")
+  favicon         String?
+  isDefault       Boolean    @default(false) @map("is_default")
+  // 未发布工作区对前台按「未匹配域名」处理（渲染默认工作区）
+  isPublished     Boolean    @default(false) @map("is_published")
+  order           Int        @default(0)
+  domains         Domain[]
+  categories      Category[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@map("Workspace")
+}
+
+model Domain {
+  id          String    @id @default(cuid())
+  // 规范化主机名：小写、无协议、无端口
+  host        String    @unique
+  isPrimary   Boolean   @default(false) @map("is_primary")
+  workspaceId String    @map("workspace_id")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@map("Domain")
+}
+
 model Category {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  icon      String?
-  order     Int      @default(0)
-  sites     Site[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  slug        String
+  icon        String?
+  order       Int       @default(0)
+  workspaceId String    @map("workspace_id")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  sites       Site[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@map("Category")
 }
 
 model Site {

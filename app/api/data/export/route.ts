@@ -1,13 +1,15 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { exportData } from '@/lib/actions'
 import { getAdminSession } from '@/lib/api-auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (!(await getAdminSession())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    const result = await exportData()
+    // mode=workspace（默认）：导出当前选中工作区；mode=full：含工作区结构与域名绑定的全量备份
+    const mode = request.nextUrl.searchParams.get('mode') === 'full' ? 'full' : 'workspace'
+    const result = await exportData(mode)
 
     if (!result.success || !result.data) {
       return NextResponse.json(
@@ -16,12 +18,12 @@ export async function GET() {
       )
     }
 
-    // 返回JSON文件下载
+    const suffix = mode === 'full' ? 'full_backup' : 'workspace_backup'
     return new NextResponse(JSON.stringify(result.data, null, 2), {
       status: 200,
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
-        'Content-Disposition': `attachment; filename="nav_backup_${new Date().toISOString().split('T')[0]}.json"`,
+        'Content-Disposition': `attachment; filename="nav_${suffix}_${new Date().toISOString().split('T')[0]}.json"`,
       },
     })
   } catch (error) {

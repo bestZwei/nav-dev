@@ -7,8 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Plus, Trash2, Info, Zap, Link2, PanelBottom, TriangleAlert } from "lucide-react"
-import { getSystemSettings, updateSystemSettings, isMemoryMode } from "@/lib/actions"
+import { Loader2, Plus, Trash2, Info, Zap, Link2, PanelBottom, TriangleAlert, Layers } from "lucide-react"
+import {
+  getSystemSettings,
+  updateSystemSettings,
+  isMemoryMode,
+  getWorkspaceDisplaySettings,
+  updateWorkspaceDisplaySettings,
+} from "@/lib/actions"
 import { useTranslations } from "next-intl"
 import { locales, localeNames, isLocale, type Locale } from "@/lib/i18n"
 import {
@@ -27,6 +33,9 @@ interface SystemSettingsData {
   siteDescription: string
   siteLogo: string | undefined
   favicon: string | undefined
+  // 非默认工作区上下文时，全局设置的回退值（提示用）
+  siteLogoFallback?: string | null
+  faviconFallback?: string | null
   pageSize: number
   showFooter: boolean
   footerCopyright: string
@@ -81,6 +90,12 @@ export default function AdminSettingsPage() {
   const [savingSettings, setSavingSettings] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
   const [memoryMode, setMemoryMode] = useState(false)
+  // 当前设置页生效的工作区上下文（基本信息区块按其读写）
+  const [workspaceCtx, setWorkspaceCtx] = useState<{
+    id: string
+    name: string
+    isDefault: boolean
+  } | null>(null)
 
   // 加载数据
   useEffect(() => {
@@ -90,31 +105,80 @@ export default function AdminSettingsPage() {
     })
   }, [])
 
-  const loadSettings = async () => {
-    const result = await getSystemSettings()
-    if (result.success && result.data) {
-      setSettings({
-        ...result.data,
-        siteLogo: result.data.siteLogo || undefined,
-        favicon: result.data.favicon || undefined,
-        footerLinks: (result.data.footerLinks as Array<{ name: string; url: string }>) || [],
-        githubUrl: result.data.githubUrl || undefined,
-        showIcp: result.data.showIcp || false,
-        icpNumber: result.data.icpNumber || undefined,
-        icpLink: result.data.icpLink || undefined,
-        enableSubmission: result.data.enableSubmission ?? true,
-        enableSiteDetail: result.data.enableSiteDetail ?? false,
-        enablePoetry: result.data.enablePoetry ?? true,
-        submissionMaxPerDay: result.data.submissionMaxPerDay ?? 3,
-        defaultLanguage: isLocale(result.data.defaultLanguage) ? result.data.defaultLanguage : "zh",
+  // 顶栏切换工作区后重新加载当前工作区的设置
+  useEffect(() => {
+    const onWorkspaceChanged = () => loadSettings()
+    window.addEventListener("workspace-context-changed", onWorkspaceChanged)
+    return () =>
+      window.removeEventListener("workspace-context-changed", onWorkspaceChanged)
+  }, [])
+
+  // 向顶栏切换器声明当前区块作用域：基本信息随工作区，其余区块全局
+  // （切换器据此切换可用/禁用态，替代区块内提示条）
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("admin-scope-changed", {
+        detail: { scope: activeSection === "basic" ? "workspace" : "global" },
       })
+    )
+  }, [activeSection])
+
+  const loadSettings = async () => {
+    const [result, displayResult] = await Promise.all([
+      getSystemSettings(),
+      getWorkspaceDisplaySettings(),
+    ])
+    const global = result.success && result.data ? result.data : null
+    const display =
+      displayResult.success && displayResult.data ? displayResult.data : null
+    if (global) {
+      setSettings(prev => ({
+        ...prev,
+        ...global,
+        // 基本信息四项按当前工作区上下文取值（非默认工作区为覆盖值，空即回退全局）
+        siteName: display ? display.display.siteName : global.siteName,
+        siteDescription: display ? display.display.siteDescription : global.siteDescription,
+        siteLogo: (display ? display.display.siteLogo : global.siteLogo) || undefined,
+        favicon: (display ? display.display.favicon : global.favicon) || undefined,
+        siteLogoFallback: global.siteLogo,
+        faviconFallback: global.favicon,
+        footerLinks: (global.footerLinks as Array<{ name: string; url: string }>) || [],
+        githubUrl: global.githubUrl || undefined,
+        showIcp: global.showIcp || false,
+        icpNumber: global.icpNumber || undefined,
+        icpLink: global.icpLink || undefined,
+        enableSubmission: global.enableSubmission ?? true,
+        enableSiteDetail: global.enableSiteDetail ?? false,
+        enablePoetry: global.enablePoetry ?? true,
+        submissionMaxPerDay: global.submissionMaxPerDay ?? 3,
+        defaultLanguage: isLocale(global.defaultLanguage) ? global.defaultLanguage : "zh",
+      }))
+    }
+    if (display) {
+      setWorkspaceCtx(display.workspace)
     }
   }
 
   const handleSaveSettings = async () => {
     setSavingSettings(true)
     try {
-      const result = await updateSystemSettings(settings)
+      // 基本信息四项按工作区上下文分流：默认工作区并入全局设置一次写入；
+      // 非默认工作区写覆盖字段（其余设置仍写全局）
+      let result
+      if (workspaceCtx && !workspaceCtx.isDefault) {
+        result = await updateWorkspaceDisplaySettings({
+          siteName: settings.siteName || "",
+          siteDescription: settings.siteDescription || "",
+          siteLogo: settings.siteLogo || "",
+          favicon: settings.favicon || "",
+        })
+        if (result.success) {
+          const { siteName: _n, siteDescription: _d, siteLogo: _l, favicon: _f, ...rest } = settings
+          result = await updateSystemSettings(rest)
+        }
+      } else {
+        result = await updateSystemSettings(settings)
+      }
       if (result.success) {
         toast.success(t("saveSuccess"), {
           description: t("saveSuccessDesc"),
@@ -127,7 +191,7 @@ export default function AdminSettingsPage() {
         setTimeout(() => window.location.reload(), 500)
       } else {
         toast.error(t("saveFailed"), {
-          description: result.error || t("saveFailedDesc"),
+          description: (result as { error?: string }).error || t("saveFailedDesc"),
         })
       }
     } catch (error) {
@@ -220,6 +284,23 @@ export default function AdminSettingsPage() {
             {/* 基本信息 */}
             {activeSection === "basic" && (
               <div className="space-y-8">
+                {/* 工作区上下文提示 */}
+                {workspaceCtx && (
+                  <div className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 text-sm">
+                    <Layers className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div>
+                      <p>
+                        {t("workspaceContext", { name: workspaceCtx.name })}
+                        {workspaceCtx.isDefault ? t("workspaceIsDefault") : ""}
+                      </p>
+                      {!workspaceCtx.isDefault && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {t("workspaceOverrideHint")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="site-name">{t("siteNameLabel")}</Label>
                   <Input
