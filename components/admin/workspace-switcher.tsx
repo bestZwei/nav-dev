@@ -28,8 +28,8 @@ interface WorkspaceOption {
   isPublished: boolean
 }
 
-// 纯全局页面：数据不随工作区切换，切换器禁用并显示「全局」
-const GLOBAL_PAGES = ["/admin/dashboard"]
+// 纯全局页面：数据不随工作区切换（仪表盘为全站统计，工作区管理页跨工作区操作），切换器禁用并显示「全局」
+const GLOBAL_PAGES = ["/admin/dashboard", "/admin/workspaces"]
 
 // 后台顶栏工作区切换器：选中值写入 admin_workspace_id Cookie，
 // 分类/网址/数据等管理页面的 Server Action 均按该 Cookie 解析工作区上下文
