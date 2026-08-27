@@ -284,6 +284,7 @@
       "thHealth": "Disponibilité",
       "healthUp": "En ligne",
       "healthDown": "Hors ligne",
+      "healthSuspicious": "Possiblement restreint",
       "healthUnknown": "Non vérifié",
       "healthNeverChecked": "Pas encore vérifié",
       "healthDetail": "HTTP {status} · {latency} ms · {time}",
@@ -293,9 +294,10 @@
       "checkingProgress": "Vérification {done}/{total}",
       "checkAllDone": "Vérification terminée",
       "checkAllStopped": "Vérification arrêtée",
-      "checkAllDoneDesc": "{up} en ligne, {down} hors ligne",
+      "checkAllDoneDesc": "{up} en ligne, {down} hors ligne, {suspicious} possiblement restreints",
       "checkUpDesc": "Le site est accessible normalement",
-      "checkDownDesc": "Le site est inaccessible ou hors ligne"
+      "checkDownDesc": "Le site est inaccessible ou hors ligne",
+      "checkSuspiciousDesc": "Le site a répondu mais rejette la vérification (souvent une protection CDN/WAF) ; vérification manuelle recommandée"
     },
     "siteForm": {
       "createTitle": "Ajouter un site",

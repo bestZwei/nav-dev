@@ -284,6 +284,7 @@
       "thHealth": "접속 확인",
       "healthUp": "온라인",
       "healthDown": "접속 불가",
+      "healthSuspicious": "제한 가능",
       "healthUnknown": "미확인",
       "healthNeverChecked": "아직 확인되지 않음",
       "healthDetail": "HTTP {status} · {latency} ms · {time}",
@@ -293,9 +294,10 @@
       "checkingProgress": "확인 중 {done}/{total}",
       "checkAllDone": "확인 완료",
       "checkAllStopped": "확인이 중지되었습니다",
-      "checkAllDoneDesc": "온라인 {up}개, 접속 불가 {down}개",
+      "checkAllDoneDesc": "온라인 {up}개, 접속 불가 {down}개, 제한 가능 {suspicious}개",
       "checkUpDesc": "사이트에 정상적으로 접속할 수 있습니다",
-      "checkDownDesc": "사이트에 접속할 수 없거나 사용할 수 없습니다"
+      "checkDownDesc": "사이트에 접속할 수 없거나 사용할 수 없습니다",
+      "checkSuspiciousDesc": "사이트가 응답했지만 확인을 거부했습니다(대부분 CDN/WAF 보호). 수동으로 확인하는 것이 좋습니다"
     },
     "siteForm": {
       "createTitle": "사이트 추가",

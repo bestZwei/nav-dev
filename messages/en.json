@@ -284,6 +284,7 @@
       "thHealth": "Health",
       "healthUp": "Online",
       "healthDown": "Dead",
+      "healthSuspicious": "Possibly blocked",
       "healthUnknown": "Unchecked",
       "healthNeverChecked": "Not checked yet",
       "healthDetail": "HTTP {status} · {latency} ms · {time}",
@@ -293,9 +294,10 @@
       "checkingProgress": "Checking {done}/{total}",
       "checkAllDone": "Health check completed",
       "checkAllStopped": "Health check stopped",
-      "checkAllDoneDesc": "{up} online, {down} dead",
+      "checkAllDoneDesc": "{up} online, {down} dead, {suspicious} possibly blocked",
       "checkUpDesc": "Site is reachable",
-      "checkDownDesc": "Site is unreachable or dead"
+      "checkDownDesc": "Site is unreachable or dead",
+      "checkSuspiciousDesc": "The site responded but rejected the probe (likely CDN/WAF protection); manual verification recommended"
     },
     "siteForm": {
       "createTitle": "Add site",
