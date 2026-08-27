@@ -434,7 +434,7 @@ export default function AdminSitesPage() {
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>{t("filterCategory")}</FieldLabel>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-auto min-w-[140px]">
                 <SelectValue placeholder={t("filterCategoryAll")} />
               </SelectTrigger>
               <SelectContent>
@@ -452,7 +452,7 @@ export default function AdminSitesPage() {
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>{t("filterStatus")}</FieldLabel>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-auto min-w-[120px]">
                 <SelectValue placeholder={t("filterStatusAll")} />
               </SelectTrigger>
               <SelectContent>
@@ -467,7 +467,7 @@ export default function AdminSitesPage() {
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>{t("filterSource")}</FieldLabel>
             <Select value={filterSubmitter} onValueChange={setFilterSubmitter}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-auto min-w-[130px]">
                 <SelectValue placeholder={t("filterSourceAll")} />
               </SelectTrigger>
               <SelectContent>
@@ -483,7 +483,7 @@ export default function AdminSitesPage() {
             <FieldLabel>{t("sortBy")}</FieldLabel>
             <div className="flex items-center gap-1">
               <Select value={sortBy} onValueChange={handleSortByChange}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-auto min-w-[130px]">
                   <SelectValue placeholder={t("sortByDefault")} />
                 </SelectTrigger>
                 <SelectContent>
