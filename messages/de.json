@@ -280,7 +280,22 @@
       "pinnedToast": "Angeheftet",
       "unpinnedDesc": "Die Seite wird in der üblichen Reihenfolge angezeigt",
       "pinnedDesc": "Die erscheint am Anfang ihrer Kategorie",
-      "pinToggleFailed": "Anheften fehlgeschlagen"
+      "pinToggleFailed": "Anheften fehlgeschlagen",
+      "thHealth": "Erreichbarkeit",
+      "healthUp": "Online",
+      "healthDown": "Offline",
+      "healthUnknown": "Ungeprüft",
+      "healthNeverChecked": "Noch nicht geprüft",
+      "healthDetail": "HTTP {status} · {latency} ms · {time}",
+      "checkHealth": "Prüfen, ob diese Website erreichbar ist",
+      "checkAll": "Alle prüfen",
+      "stopCheckAll": "Stopp",
+      "checkingProgress": "Prüfung {done}/{total}",
+      "checkAllDone": "Prüfung abgeschlossen",
+      "checkAllStopped": "Prüfung gestoppt",
+      "checkAllDoneDesc": "{up} online, {down} offline",
+      "checkUpDesc": "Website ist normal erreichbar",
+      "checkDownDesc": "Website ist nicht erreichbar oder offline"
     },
     "siteForm": {
       "createTitle": "Seite hinzufügen",

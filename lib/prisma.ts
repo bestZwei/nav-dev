@@ -37,6 +37,10 @@ export interface SiteItem {
   order: number
   detailContent: string | null
   hasDetail: boolean
+  healthStatus: string
+  lastHttpStatus: number | null
+  latencyMs: number | null
+  lastCheckedAt: Date | null
   createdAt: Date
   updatedAt: Date
   category?: CategoryItem | null
@@ -196,6 +200,10 @@ const initialSites: SiteItem[] = seedSitesData.map((s, idx) => {
     order: idx + 1,
     detailContent: null,
     hasDetail: false,
+    healthStatus: 'unknown',
+    lastHttpStatus: null,
+    latencyMs: null,
+    lastCheckedAt: null,
     createdAt: new Date(Date.now() - (idx * 3600 * 1000)),
     updatedAt: new Date(Date.now() - (idx * 3600 * 1000)),
   }
@@ -657,6 +665,10 @@ class InMemoryDatabase {
         order: args.data.order ?? this.sites.length + 1,
         detailContent: args.data.detailContent ?? null,
         hasDetail: args.data.hasDetail ?? false,
+        healthStatus: args.data.healthStatus ?? 'unknown',
+        lastHttpStatus: args.data.lastHttpStatus ?? null,
+        latencyMs: args.data.latencyMs ?? null,
+        lastCheckedAt: args.data.lastCheckedAt ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }

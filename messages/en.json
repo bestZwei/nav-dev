@@ -280,7 +280,22 @@
       "pinnedToast": "Pinned",
       "unpinnedDesc": "The site will be shown in regular order",
       "pinnedDesc": "The site will be featured first in its category",
-      "pinToggleFailed": "Failed to toggle pin"
+      "pinToggleFailed": "Failed to toggle pin",
+      "thHealth": "Health",
+      "healthUp": "Online",
+      "healthDown": "Dead",
+      "healthUnknown": "Unchecked",
+      "healthNeverChecked": "Not checked yet",
+      "healthDetail": "HTTP {status} · {latency} ms · {time}",
+      "checkHealth": "Check whether this site is reachable",
+      "checkAll": "Check all",
+      "stopCheckAll": "Stop",
+      "checkingProgress": "Checking {done}/{total}",
+      "checkAllDone": "Health check completed",
+      "checkAllStopped": "Health check stopped",
+      "checkAllDoneDesc": "{up} online, {down} dead",
+      "checkUpDesc": "Site is reachable",
+      "checkDownDesc": "Site is unreachable or dead"
     },
     "siteForm": {
       "createTitle": "Add site",

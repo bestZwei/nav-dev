@@ -36,6 +36,11 @@ model Site {
   order            Int       @default(0)
   detailContent    String?   @map("detail_content")
   hasDetail        Boolean   @default(false) @map("has_detail")
+  // 测活（健康检测）结果，由管理后台手动触发写入
+  healthStatus     String    @default("unknown") @map("health_status") // unknown | up | down
+  lastHttpStatus   Int?      @map("last_http_status")
+  latencyMs        Int?      @map("latency_ms")
+  lastCheckedAt    DateTime? @map("last_checked_at")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   visits           Visit[]

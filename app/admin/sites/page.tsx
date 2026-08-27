@@ -42,10 +42,10 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useTranslations } from "next-intl"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search } from "lucide-react"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
-import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter } from "@/lib/actions"
+import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter, checkSiteHealth, getSiteIdsForHealthCheck } from "@/lib/actions"
 import { toast } from "sonner"
 
 interface Site {
@@ -64,6 +64,12 @@ interface Site {
     id: string
     name: string
   } | null
+  detailContent?: string | null
+  hasDetail?: boolean
+  healthStatus?: string
+  lastHttpStatus?: number | null
+  latencyMs?: number | null
+  lastCheckedAt?: Date | string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -272,7 +278,6 @@ export default function AdminSitesPage() {
 
   // 切换置顶状态（防连点）
   const [togglingPinId, setTogglingPinId] = useState<string | null>(null)
-
   const handleTogglePin = async (siteId: string, currentPin?: boolean) => {
     if (togglingPinId) return
     setTogglingPinId(siteId)
@@ -294,6 +299,107 @@ export default function AdminSitesPage() {
       })
     } finally {
       setTogglingPinId(null)
+    }
+  }
+
+  // 单站测活（防连点）
+  const [checkingId, setCheckingId] = useState<string | null>(null)
+
+  const handleCheckHealth = async (siteId: string) => {
+    if (checkingId || batchChecking) return
+    setCheckingId(siteId)
+    try {
+      const result = await checkSiteHealth(siteId)
+      if (result.success && result.data) {
+        const data = result.data as unknown as Site
+        // 局部更新该行，避免整页重载丢失当前分页/筛选
+        setSites((prev) => prev.map((s) => (s.id === siteId ? { ...s, ...data } : s)))
+        if (data.healthStatus === "up") {
+          toast.success(t("healthUp"), { description: t("checkUpDesc") })
+        } else {
+          toast.error(t("healthDown"), { description: t("checkDownDesc") })
+        }
+      } else {
+        toast.error(tc("operationFailed"), {
+          description: result.error || tc("retryLater"),
+        })
+      }
+    } catch (error) {
+      toast.error(tc("operationFailed"), {
+        description: tc("retryLater"),
+      })
+    } finally {
+      setCheckingId(null)
+    }
+  }
+
+  // 全部测活：前端以受限并发逐个调用单站 Action（每个请求短，兼容 Serverless 超时）
+  const HEALTH_CHECK_CONCURRENCY = 5
+  const [batchChecking, setBatchChecking] = useState(false)
+  const [batchProgress, setBatchProgress] = useState({ done: 0, total: 0 })
+  const batchCancelRef = useRef(false)
+
+  const handleCheckAll = async () => {
+    if (batchChecking || checkingId) return
+    batchCancelRef.current = false
+    setBatchChecking(true)
+    setBatchProgress({ done: 0, total: 0 })
+    try {
+      const listResult = await getSiteIdsForHealthCheck()
+      if (!listResult.success || !listResult.data) {
+        toast.error(tc("operationFailed"), {
+          description: listResult.error || tc("retryLater"),
+        })
+        return
+      }
+      const targets = listResult.data as Array<{ id: string; name: string; url: string }>
+      setBatchProgress({ done: 0, total: targets.length })
+
+      let up = 0
+      let down = 0
+      let done = 0
+      const queue = [...targets]
+
+      const worker = async () => {
+        while (queue.length > 0) {
+          if (batchCancelRef.current) return
+          const item = queue.shift()
+          if (!item) return
+          try {
+            const result = await checkSiteHealth(item.id)
+            if (result.success && result.data && (result.data as { healthStatus?: string }).healthStatus === "up") {
+              up += 1
+            } else {
+              down += 1
+            }
+          } catch {
+            down += 1
+          } finally {
+            done += 1
+            setBatchProgress({ done, total: targets.length })
+          }
+        }
+      }
+
+      await Promise.all(
+        Array.from(
+          { length: Math.min(HEALTH_CHECK_CONCURRENCY, targets.length) },
+          () => worker()
+        )
+      )
+
+      if (batchCancelRef.current) {
+        toast.warning(t("checkAllStopped"), {
+          description: t("checkAllDoneDesc", { up, down }),
+        })
+      } else {
+        toast.success(t("checkAllDone"), {
+          description: t("checkAllDoneDesc", { up, down }),
+        })
+      }
+      loadSites()
+    } finally {
+      setBatchChecking(false)
     }
   }
 
@@ -402,10 +508,40 @@ export default function AdminSitesPage() {
           <CardTitle>{t("listTitle")}</CardTitle>
           <CardDescription>{t("totalSites", { count: pagination?.total || 0 })}</CardDescription>
           <CardAction>
-            <Button onClick={handleCreate} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              {t("addSite")}
-            </Button>
+            <div className="flex items-center gap-2">
+              {batchChecking ? (
+                <>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {t("checkingProgress", { done: batchProgress.done, total: batchProgress.total })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-muted-foreground"
+                    onClick={() => {
+                      batchCancelRef.current = true
+                    }}
+                  >
+                    <Square className="h-3.5 w-3.5" />
+                    {t("stopCheckAll")}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={handleCheckAll}
+                  disabled={checkingId !== null}
+                  className="gap-1.5"
+                >
+                  <Activity className="h-4 w-4" />
+                  {t("checkAll")}
+                </Button>
+              )}
+              <Button onClick={handleCreate} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                {t("addSite")}
+              </Button>
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent>
@@ -435,8 +571,9 @@ export default function AdminSitesPage() {
                     <TableHead className="w-36 whitespace-nowrap">{t("thCategory")}</TableHead>
                     <TableHead className="w-24 text-center whitespace-nowrap">{t("thPinned")}</TableHead>
                     <TableHead className="w-24 text-center whitespace-nowrap">{t("thStatus")}</TableHead>
+                    <TableHead className="w-24 text-center whitespace-nowrap">{t("thHealth")}</TableHead>
                     <TableHead className="w-28 text-center whitespace-nowrap">{t("thSource")}</TableHead>
-                    <TableHead className="text-right w-36 whitespace-nowrap">{t("thActions")}</TableHead>
+                    <TableHead className="text-right w-44 whitespace-nowrap">{t("thActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -541,6 +678,40 @@ export default function AdminSitesPage() {
                         )}
                       </TableCell>
 
+                      {/* 测活状态 */}
+                      <TableCell className="text-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-default">
+                              {site.healthStatus === "up" ? (
+                                <Badge variant="default" className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30">
+                                  {t("healthUp")}
+                                </Badge>
+                              ) : site.healthStatus === "down" ? (
+                                <Badge variant="default" className="bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/20 border-red-500/30">
+                                  {t("healthDown")}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-muted-foreground">
+                                  {t("healthUnknown")}
+                                </Badge>
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {site.lastCheckedAt
+                                ? t("healthDetail", {
+                                    status: site.lastHttpStatus ?? "-",
+                                    latency: site.latencyMs ?? "-",
+                                    time: new Date(site.lastCheckedAt).toLocaleString(),
+                                  })
+                                : t("healthNeverChecked")}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+
                       {/* 提交来源 */}
                       <TableCell className="text-center text-muted-foreground">
                         {site.submitterIp ? (
@@ -553,15 +724,37 @@ export default function AdminSitesPage() {
                       {/* 操作 */}
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                                                      <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  disabled={togglingPublishId !== null}
-                                  onClick={() => handleTogglePublish(site.id)}
-                                >
+                          {/* 单站测活 */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                disabled={checkingId !== null || batchChecking}
+                                onClick={() => handleCheckHealth(site.id)}
+                              >
+                                {checkingId === site.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Activity className={`h-4 w-4 ${site.healthStatus === "up" ? "text-emerald-600" : site.healthStatus === "down" ? "text-red-500" : "text-muted-foreground"}`} />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{t("checkHealth")}</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                disabled={togglingPublishId !== null}
+                                onClick={() => handleTogglePublish(site.id)}
+                              >
                                   {togglingPublishId === site.id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (

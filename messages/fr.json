@@ -280,7 +280,22 @@
       "pinnedToast": "Épinglé",
       "unpinnedDesc": "Le site sera affiché dans l'ordre habituel",
       "pinnedDesc": "Le site sera mis en avant en tête de sa catégorie",
-      "pinToggleFailed": "Échec du changement d'épinglage"
+      "pinToggleFailed": "Échec du changement d'épinglage",
+      "thHealth": "Disponibilité",
+      "healthUp": "En ligne",
+      "healthDown": "Hors ligne",
+      "healthUnknown": "Non vérifié",
+      "healthNeverChecked": "Pas encore vérifié",
+      "healthDetail": "HTTP {status} · {latency} ms · {time}",
+      "checkHealth": "Vérifier l'accessibilité de ce site",
+      "checkAll": "Tout vérifier",
+      "stopCheckAll": "Arrêter",
+      "checkingProgress": "Vérification {done}/{total}",
+      "checkAllDone": "Vérification terminée",
+      "checkAllStopped": "Vérification arrêtée",
+      "checkAllDoneDesc": "{up} en ligne, {down} hors ligne",
+      "checkUpDesc": "Le site est accessible normalement",
+      "checkDownDesc": "Le site est inaccessible ou hors ligne"
     },
     "siteForm": {
       "createTitle": "Ajouter un site",
