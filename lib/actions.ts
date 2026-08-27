@@ -782,6 +782,106 @@ export async function toggleSitePublish(id: string) {
   }
 }
 
+// ==================== 站点测活（健康检测） ====================
+
+// 探测超时（毫秒）：兼顾死链判定准确性与单次 Action 执行时长（兼容 Serverless 超时）
+const HEALTH_CHECK_TIMEOUT_MS = 10_000
+
+// 多数站点拒绝默认 Node fetch UA，伪装成浏览器访问以降低误判
+const HEALTH_CHECK_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+
+interface ProbeResult {
+  ok: boolean
+  status: number | null
+  latencyMs: number
+}
+
+// 对单个 URL 发起探测：优先 HEAD，不支持时回退 GET。
+// 仅允许 http/https 协议（复用 isSafeSiteUrl 白名单），网络错误/超时视为 down。
+async function probeUrl(url: string): Promise<ProbeResult> {
+  if (!isSafeSiteUrl(url)) {
+    return { ok: false, status: null, latencyMs: 0 }
+  }
+
+  const startedAt = Date.now()
+
+  const doFetch = async (method: "HEAD" | "GET") => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS)
+    try {
+      const res = await fetch(url, {
+        method,
+        redirect: "follow",
+        signal: controller.signal,
+        headers: { "User-Agent": HEALTH_CHECK_USER_AGENT },
+      })
+      return { status: res.status, latencyMs: Date.now() - startedAt }
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  try {
+    const head = await doFetch("HEAD")
+    // 部分站点不支持 HEAD（405/501），回退 GET 再判定
+    if (head.status === 405 || head.status === 501) {
+      const get = await doFetch("GET")
+      return { ok: get.status < 400, status: get.status, latencyMs: get.latencyMs }
+    }
+    return { ok: head.status < 400, status: head.status, latencyMs: head.latencyMs }
+  } catch {
+    return { ok: false, status: null, latencyMs: Date.now() - startedAt }
+  }
+}
+
+// 单站测活：探测后把结果持久化到 Site 表。
+// 单站粒度、请求短（≤ 超时时长），“全部测活”由前端并发编排逐个调用。
+export async function checkSiteHealth(siteId: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const site = await prisma.site.findUnique({
+      where: { id: siteId },
+      select: { id: true, url: true },
+    })
+    if (!site) {
+      return { success: false, error: "Site not found" }
+    }
+
+    const probe = await probeUrl(site.url)
+    const updated = await prisma.site.update({
+      where: { id: siteId },
+      data: {
+        healthStatus: probe.ok ? "up" : "down",
+        lastHttpStatus: probe.status,
+        latencyMs: probe.latencyMs,
+        lastCheckedAt: new Date(),
+      },
+    })
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error("Error checking site health:", error)
+    return { success: false, error: "Failed to check site health" }
+  }
+}
+
+// 获取全部站点的 id/url，供前端“全部测活”编排使用（不分页）
+export async function getSiteIdsForHealthCheck() {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const sites = await prisma.site.findMany({
+      select: { id: true, name: true, url: true },
+      orderBy: [{ isPinned: "desc" }, { order: "asc" }],
+    })
+    return { success: true, data: sites }
+  } catch (error) {
+    console.error("Error fetching sites for health check:", error)
+    return { success: false, error: "Failed to fetch sites" }
+  }
+}
+
 // ==================== Users ====================
 
 export async function getUsersWithPagination(params: {

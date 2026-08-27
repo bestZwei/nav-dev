@@ -280,7 +280,22 @@
       "pinnedToast": "고정됨",
       "unpinnedDesc": "이 사이트는 일반 순서로 표시됩니다",
       "pinnedDesc": "이 사이트는 카테고리 상단에 표시됩니다",
-      "pinToggleFailed": "고정 상태 전환 실패"
+      "pinToggleFailed": "고정 상태 전환 실패",
+      "thHealth": "접속 확인",
+      "healthUp": "온라인",
+      "healthDown": "접속 불가",
+      "healthUnknown": "미확인",
+      "healthNeverChecked": "아직 확인되지 않음",
+      "healthDetail": "HTTP {status} · {latency} ms · {time}",
+      "checkHealth": "이 사이트에 접속할 수 있는지 확인",
+      "checkAll": "전체 확인",
+      "stopCheckAll": "중지",
+      "checkingProgress": "확인 중 {done}/{total}",
+      "checkAllDone": "확인 완료",
+      "checkAllStopped": "확인이 중지되었습니다",
+      "checkAllDoneDesc": "온라인 {up}개, 접속 불가 {down}개",
+      "checkUpDesc": "사이트에 정상적으로 접속할 수 있습니다",
+      "checkDownDesc": "사이트에 접속할 수 없거나 사용할 수 없습니다"
     },
     "siteForm": {
       "createTitle": "사이트 추가",
