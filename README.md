@@ -1,6 +1,6 @@
 # Conan Nav
 
-一个简洁现代化的网址导航系统，基于 Next.js 15、Prisma 和 shadcn/ui 构建。
+A clean and modern link navigation system built with Next.js 15, Prisma, and shadcn/ui.
 
 [![GitHub stars](https://img.shields.io/github/stars/kenanlabs/nav?style=social)](https://github.com/kenanlabs/nav/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/kenanlabs/nav?style=social)](https://github.com/kenanlabs/nav/network/members)
@@ -9,146 +9,146 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+**Languages**: [简体中文](./README.zh-CN.md)
 
-## ✨ 特性
+## ✨ Features
 
-### 前台导航
-- 📂 **分类导航** - shadcn/ui Tabs 风格，按类别组织网站
-- 🔍 实时搜索 - 毫秒级响应，无需页面跳转
-- 📱 响应式设计 - 完美适配移动端
-- 🎨 简洁优雅 - 严格遵循 shadcn/ui 设计规范
-- 🖼️ 智能图标 - 自动获取网站图标，加载失败时显示首字母
-- 🌓 暗黑模式 - 右上角一键切换（支持浅色/深色/跟随系统）
-- 📜 **古诗词展示** - 每日诗词自动获取，优雅的竖向排版
-- 📝 **网站收录** - 访客可提交网站，管理员审核后发布
+### Frontend
+- 📂 **Category Navigation** - shadcn/ui Tabs style, sites organized by category
+- 🔍 Real-time Search - millisecond response, no page reload
+- 📱 Responsive Design - perfectly adapted for mobile
+- 🎨 Clean & Elegant - strictly follows shadcn/ui design guidelines
+- 🖼️ Smart Icons - auto-fetches site favicons, falls back to the first letter on failure
+- 🌓 Dark Mode - one-click toggle (Light / Dark / System)
+- 📜 **Daily Poetry** - fetches a poem of the day with elegant vertical layout
+- 📝 **Site Submission** - visitors can submit sites, published after admin review
 
-### 后台管理
-- 📊 数据统计 - 访问频次图表、网站排行
-- 🌐 网站管理 - 增删改查、发布状态、图标显示
-- 📁 分类管理 - 自定义分类和排序
-- 📦 **数据管理** - 导入/导出书签，支持JSON和Chrome书签格式
-  - JSON格式：完整数据备份（包含描述、排序、发布状态等所有字段）
-  - Chrome书签：浏览器兼容格式（仅包含名称、URL和图标）
-- 👤 管理员系统 - 单管理员设计，侧边栏头像直接编辑
-- ⚙️ 系统设置 - 网站名称、Logo、Favicon、GitHub链接、ICP备案等
-- 📈 访问追踪 - 可开启/关闭的网站访问统计
+### Admin Dashboard
+- 📊 Statistics - visit frequency charts, site rankings
+- 🌐 Site Management - CRUD, publish status, icon display, **health checks**
+- 📁 Category Management - custom categories and sorting
+- 📦 **Data Management** - import/export bookmarks, supports JSON and Chrome bookmark formats
+  - JSON format: complete data backup (description, ordering, publish status, and all fields)
+  - Chrome bookmarks: browser-compatible format (name, URL, and icon only)
+- 👤 Admin System - single-admin design, edit profile from the sidebar avatar
+- ⚙️ System Settings - site name, logo, favicon, GitHub link, ICP filing, etc.
+- 📈 Visit Tracking - optional site visit statistics
 
-### 技术亮点
-- **单管理员架构** - 无需复杂的用户权限系统
-- **动态配置** - 后台实时修改网站设置
-- **分页优化** - 所有列表页支持分页
-- **类型安全** - 完整的 TypeScript 类型定义，零 any 类型
-- **生产环境优化** - 统一日志管理，生产环境静默
-- **数据可视化** - 使用 Recharts 展示访问频次统计
-- **性能优化** - 数据库索引优化，客户端实时搜索（< 10ms 响应）
-- **智能图标** - 用户配置 > 智能 Favicon > 首字母图标（优雅降级）
-- **ICP备案支持** - 前台底部可配置显示 ICP 备案号和链接
-- **shadcn/ui 最佳实践** - 完整的组件组合模式（Card + CardHeader + CardTitle + CardAction）
+### Technical Highlights
+- **Single-admin architecture** - no complex user permission system needed
+- **Dynamic configuration** - modify site settings in real time from the dashboard
+- **Pagination** - all list pages support pagination
+- **Type safety** - full TypeScript typings, zero `any`
+- **Production optimization** - unified logging, silent in production
+- **Data visualization** - visit frequency charts with Recharts
+- **Performance** - database index optimization, client-side real-time search (< 10ms response)
+- **Smart icons** - user config > smart favicon > first-letter icon (graceful degradation)
+- **ICP filing support** - optional ICP filing number and link in the frontend footer
+- **shadcn/ui best practices** - complete composition patterns (Card + CardHeader + CardTitle + CardAction)
 
-## 📸 截图预览
+## 📸 Screenshots
 
 <table>
   <tr>
-    <td><img src="screenshots/01-home.png" alt="首页" /></td>
-    <td><img src="screenshots/02-search.png" alt="搜索" /></td>
+    <td><img src="screenshots/01-home.png" alt="Home" /></td>
+    <td><img src="screenshots/02-search.png" alt="Search" /></td>
   </tr>
   <tr>
-    <td><img src="screenshots/03-dashboard.png" alt="仪表盘" /></td>
-    <td><img src="screenshots/04-data.png" alt="编辑管理员信息" /></td>
+    <td><img src="screenshots/03-dashboard.png" alt="Dashboard" /></td>
+    <td><img src="screenshots/04-data.png" alt="Edit admin info" /></td>
   </tr>
   <tr>
-    <td><img src="screenshots/05-sites.png" alt="网站管理" /></td>
-    <td><img src="screenshots/06-category.png" alt="分类管理" /></td>
+    <td><img src="screenshots/05-sites.png" alt="Site management" /></td>
+    <td><img src="screenshots/06-category.png" alt="Category management" /></td>
   </tr>
   <tr>
-    <td><img src="screenshots/07-system.png" alt="系统设置" /></td>
-    <td><img src="screenshots/08-login.png" alt="登录页" /></td>
+    <td><img src="screenshots/07-system.png" alt="System settings" /></td>
+    <td><img src="screenshots/08-login.png" alt="Login page" /></td>
   </tr>
 </table>
 
+## 🛠️ Tech Stack
 
-## 🛠️ 技术栈
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript
+- **UI**: shadcn/ui, Tailwind CSS, Lucide Icons
+- **Charts**: Recharts
+- **Backend**: Next.js Server Actions, Prisma ORM
+- **Database**: PostgreSQL
+- **Auth**: Simple cookie-based auth (single admin)
+- **Deployment**: Docker, GitHub Actions CI/CD
 
-- **前端**: Next.js 15 (App Router)、React 19、TypeScript
-- **UI**: shadcn/ui、Tailwind CSS、Lucide Icons
-- **图表**: Recharts
-- **后端**: Next.js Server Actions、Prisma ORM
-- **数据库**: PostgreSQL
-- **认证**: 简单 Cookie 认证（单管理员）
-- **部署**: Docker、GitHub Actions CI/CD
+## 🚀 Quick Start
 
-## 🚀 快速开始
-
-### 本地开发
+### Local Development
 
 ```bash
-# 1. 安装依赖
+# 1. Install dependencies
 npm install
 
-# 2. 配置环境变量
+# 2. Configure environment variables
 cp .env.example .env
-# 编辑 .env 文件，配置数据库连接
+# Edit .env to configure the database connection
 
-# 3. 初始化数据库（会自动填充基础数据）
+# 3. Initialize the database (auto-seeds basic data)
 npx prisma generate
-npm run db:push  # 4个分类+4个示例网站
+npm run db:push  # 4 categories + 4 sample sites
 
-# 如需更多示例数据：
-npm run db:seed:full  # 10个分类+50+个精选网站
+# For more sample data:
+npm run db:seed:full  # 10 categories + 50+ curated sites
 
-# 4. 启动开发服务器
+# 4. Start the dev server
 npm run dev
 ```
 
-🌐 **访问地址**：
-- 前台：`http://localhost:3000`
-- 后台：`http://localhost:3000/admin`
+🌐 **Access**:
+- Frontend: `http://localhost:3000`
+- Admin: `http://localhost:3000/admin`
 
-**默认管理员账号**：
-- 邮箱：`admin@example.com`
-- 密码：`admin123`
+**Default admin account**:
+- Email: `admin@example.com`
+- Password: `admin123`
 
-⚠️ **重要**：首次登录后请立即修改默认密码！
+⚠️ **Important**: change the default password immediately after the first login!
 
-## 📦 生产部署
+## 📦 Production Deployment
 
-### 方式一：使用 Docker（推荐）
+### Option 1: Docker (Recommended)
 
-本项目提供完整的 Docker 部署方案，包括优化的多阶段构建和 docker-compose 配置。
+This project ships a complete Docker deployment setup with an optimized multi-stage build and a docker-compose configuration.
 
-#### 快速开始
+#### Quick Start
 
 ```bash
-# 1. 克隆代码
+# 1. Clone the repo
 git clone https://github.com/kenanlabs/nav.git
 cd nav
 
-# 2. 配置环境变量
+# 2. Configure environment variables
 cp .env.example .env
-# 编辑 .env 文件，配置 SESSION_SECRET（或 NEXTAUTH_SECRET）
-# Docker 部署时 DATABASE_URL 会自动生成
+# Edit .env to set SESSION_SECRET (or NEXTAUTH_SECRET)
+# DATABASE_URL is auto-generated for Docker deployments
 
-# 3. 启动服务（使用 GitHub Actions 构建的镜像）
+# 3. Start the service (uses the image built by GitHub Actions)
 docker compose up -d
 
-# 4. 查看日志
+# 4. View logs
 docker compose logs -f nav
 ```
 
-🌐 **访问地址**（根据 `PORT` 环境变量，默认 3000）：
-- 本地：`http://localhost:3000`
-- 远程：`http://你的服务器IP:3000` 或 `http://你的域名.com`
-- 后台：`http://localhost:3000/admin` 或 `http://你的域名.com/admin`
+🌐 **Access** (depends on the `PORT` env var, default 3000):
+- Local: `http://localhost:3000`
+- Remote: `http://your-server-ip:3000` or `http://your-domain.com`
+- Admin: `http://localhost:3000/admin` or `http://your-domain.com/admin`
 
-#### 环境变量（Docker 部署）
+#### Environment Variables (Docker)
 
 ```bash
-# 核心配置（必填）
-SESSION_SECRET=your-session-secret-here # 会话签名密钥，未设置时回退 NEXTAUTH_SECRET
+# Core config (required)
+SESSION_SECRET=your-session-secret-here # session signing key, falls back to NEXTAUTH_SECRET
 NEXTAUTH_SECRET=your-nextauth-secret-here
-NEXTAUTH_URL=http://localhost:3000 # 生产环境填写实际域名
+NEXTAUTH_URL=http://localhost:3000 # use your real domain in production
 
-# Docker 配置（可选，有默认值）
+# Docker config (optional, has defaults)
 POSTGRES_USER=nav
 POSTGRES_PASSWORD=FkyM5NhrsYHtmmKc
 POSTGRES_DB=nav
@@ -156,259 +156,258 @@ POSTGRES_PORT=5432
 PORT=3000
 ```
 
-#### 常用命令
+#### Common Commands
 
 ```bash
-# 拉取最新镜像并重启
+# Pull the latest image and restart
 docker compose pull && docker compose up -d
 
-# 查看服务状态
+# Check service status
 docker compose ps
 
-# 查看日志
+# View logs
 docker compose logs -f nav
 
-# 停止服务
+# Stop the service
 docker compose down
 
-# 停止服务并删除数据卷（⚠️ 会删除数据库数据）
+# Stop and remove data volumes (⚠️ deletes database data)
 docker compose down -v
 ```
 
 #### GitHub Actions CI/CD
 
-本项目使用 GitHub Actions 自动构建 Docker 镜像，推送到 GitHub Container Registry：
+Docker images are built automatically by GitHub Actions and pushed to the GitHub Container Registry:
 
-- **镜像地址**: `ghcr.io/kenanlabs/nav:latest`
-- **触发条件**: Git tag 推送（格式：`v*.*.*`）
-- **构建结果**: 同时推送 `version` 和 `latest` 标签
+- **Image**: `ghcr.io/kenanlabs/nav:latest`
+- **Trigger**: Git tag push (format: `v*.*.*`)
+- **Result**: pushes both `version` and `latest` tags
 
-**发布新版本**：
+**Publishing a new release**:
 
 ```bash
-# 创建并推送 git tag（触发 GitHub Actions）
+# Create and push a git tag (triggers GitHub Actions)
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-### 方式二：使用 PM2 + Nginx
+### Option 2: PM2 + Nginx
 
 ```bash
-# 1. 克隆代码
+# 1. Clone the repo
 git clone https://github.com/kenanlabs/nav.git
 cd nav
 
-# 2. 安装依赖
+# 2. Install dependencies
 npm install
 
-# 3. 配置环境变量
+# 3. Configure environment variables
 cp .env.example .env
-# 编辑 .env 文件，配置 DATABASE_URL 和 NEXTAUTH_SECRET
+# Edit .env to set DATABASE_URL and NEXTAUTH_SECRET
 
-# 4. 初始化数据库
+# 4. Initialize the database
 npx prisma generate
 npm run db:push
 
-# 5. 构建并启动
+# 5. Build and start
 npm run build
 npm start
 
-# 或使用 PM2 管理
+# Or manage with PM2
 npm install -g pm2
 pm2 start npm --name "nav" -- start
-pm2 startup  # 设置开机自启
+pm2 startup  # enable auto-start on boot
 pm2 save
 ```
 
-## ⚙️ 环境变量
+## ⚙️ Environment Variables
 
-| 变量名 | 说明 | 示例 | 必填 |
-|--------|------|------|------|
-| `DATABASE_URL` | PostgreSQL 连接字符串（**Docker 部署时自动生成**） | `postgresql://user:pass@localhost:5432/nav` | ❌（Docker）/ ✅（本地） |
-| `SESSION_SECRET` | 后台会话签名密钥（HMAC），未设置时回退 `NEXTAUTH_SECRET` | 随机字符串（`openssl rand -base64 32`） | ✅（二选一） |
-| `NEXTAUTH_SECRET` | 加密密钥（兼作会话签名回退密钥） | 随机字符串（`openssl rand -base64 32`） | ✅ |
-| `NEXTAUTH_URL` | 应用完整 URL | `http://localhost:3000` 或 `https://your-domain.com` | ✅ |
+| Variable | Description | Example | Required |
+|----------|-------------|---------|----------|
+| `DATABASE_URL` | PostgreSQL connection string (**auto-generated for Docker**) | `postgresql://user:pass@localhost:5432/nav` | ❌ (Docker) / ✅ (local) |
+| `SESSION_SECRET` | Session signing key (HMAC), falls back to `NEXTAUTH_SECRET` | random string (`openssl rand -base64 32`) | ✅ (one of the two) |
+| `NEXTAUTH_SECRET` | Encryption key (also used as session signing fallback) | random string (`openssl rand -base64 32`) | ✅ |
+| `NEXTAUTH_URL` | Full app URL | `http://localhost:3000` or `https://your-domain.com` | ✅ |
 
-**Docker 部署**：只需配置 `SESSION_SECRET`（或 `NEXTAUTH_SECRET`），其他环境变量有默认值或自动生成。
+**Docker**: only `SESSION_SECRET` (or `NEXTAUTH_SECRET`) is required; other variables have defaults or are auto-generated.
 
-**本地开发**：需要手动配置完整的 `DATABASE_URL`。
+**Local dev**: configure the full `DATABASE_URL` manually.
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 .
 ├── app/                  # Next.js App Router
-│   ├── (public)/         # 前台页面
-│   ├── admin/            # 后台管理
-│   └── api/              # API 路由
-├── components/           # React 组件
-│   ├── ui/              # shadcn/ui 组件
-│   ├── layout/          # 布局组件
-│   │   ├── jinrishici-card.tsx         # 古诗词卡片组件
-│   │   └── jinrishici-card-wrapper.tsx # 古诗词卡片包装器（动画）
-│   ├── admin/           # 后台组件
-│   ├── poetry-toggle.tsx         # 古诗词开关按钮
-│   └── theme-provider/  # 主题提供者
+│   ├── (public)/         # Frontend pages
+│   ├── admin/            # Admin dashboard
+│   └── api/              # API routes
+├── components/           # React components
+│   ├── ui/              # shadcn/ui components
+│   ├── layout/          # Layout components
+│   │   ├── jinrishici-card.tsx         # Daily poetry card
+│   │   └── jinrishici-card-wrapper.tsx # Poetry card wrapper (animations)
+│   ├── admin/           # Admin components
+│   ├── poetry-toggle.tsx         # Poetry toggle button
+│   └── theme-provider/  # Theme provider
 ├── hooks/
-│   └── use-poetry-toggle.ts  # 古诗词显示状态管理 hook
-├── lib/                 # 工具函数和 Server Actions
-├── prisma/              # 数据库模型和种子数据
-├── public/              # 静态资源
-└── screenshots/         # 项目截图
+│   └── use-poetry-toggle.ts  # Poetry visibility state hook
+├── lib/                 # Utilities and Server Actions
+├── prisma/              # Database models and seed data
+├── public/              # Static assets
+└── screenshots/         # Project screenshots
 ```
 
-## 🔄 升级指南
+## 🔄 Upgrade Guide
 
-从 **v0.0.8** 开始支持自动数据库迁移（版本化）。
+Versioned automatic database migrations are supported since **v0.0.8**.
 
-### 从 v0.0.8 升级（含）之后的版本
+### Upgrading from v0.0.8 (and later)
 
-**Docker**（自动）：
+**Docker** (automatic):
 ```bash
 docker compose pull && docker compose up -d
-# entrypoint.sh 自动执行数据库迁移
-# ✅ 无需手动操作，安全可靠
+# entrypoint.sh runs database migrations automatically
+# ✅ no manual steps needed
 ```
 
-**npm**：
+**npm**:
 ```bash
 git pull && npm install && npm run db:migrate:deploy && npm start
 ```
 
-
 ---
 
-## 🔧 常见问题
+## 🔧 FAQ
 
-### npx prisma generate 和 npm run db:push 的区别？
+### What's the difference between `npx prisma generate` and `npm run db:push`?
 
-- **`npx prisma generate`**：生成 Prisma Client（数据库访问代码），只在 schema 变化时需要
-- **`npm run db:push`**：同步数据库结构 + 填充初始数据，首次安装或 schema 变化时需要
+- **`npx prisma generate`**: generates the Prisma Client (database access code); only needed when the schema changes
+- **`npm run db:push`**: syncs the database schema + seeds initial data; needed on first install or when the schema changes
 
-**首次安装必须两步都做**。
+**Both steps are required on first install**.
 
-### 为什么数据库连接失败？
+### Why does the database connection fail?
 
-1. PostgreSQL 服务是否启动
-2. `.env` 文件中的 `DATABASE_URL` 是否正确
-3. 数据库用户名和密码是否正确
-4. 数据库 `nav` 是否已创建
+1. Is PostgreSQL running?
+2. Is `DATABASE_URL` in `.env` correct?
+3. Are the database username and password correct?
+4. Does the `nav` database exist?
 
-### 如何重置管理员密码？
+### How do I reset the admin password?
 
-**方法 1**（推荐）：登录后台 → 点击侧边栏头像 → 编辑资料 → 修改密码
+**Method 1** (recommended): log into the dashboard → click the sidebar avatar → edit profile → change password
 
-**方法 2**：连接数据库删除管理员后重新初始化
+**Method 2**: delete the admin from the database, then re-initialize
 ```bash
-# 1. 连接数据库删除管理员
+# 1. Connect and delete the admin
 psql -h localhost -U nav -d nav -c "DELETE FROM \"User\" WHERE email = 'admin@example.com';"
 
-# 2. 重新初始化数据库
+# 2. Re-initialize the database
 npm run db:push
 ```
 
-### 为什么直接修改数据库后前台不更新？
+### Why doesn't the frontend update after I modify the database directly?
 
-#### 数据更新流程
+#### Data update flow
 
-1. **后台管理界面操作**（推荐）
-   - 在后台添加/修改网站或分类
-   - 前台会在 10 秒内自动刷新
-   - ✅ **无需重启服务或重新构建**
+1. **Via the admin dashboard** (recommended)
+   - Add/modify sites or categories in the dashboard
+   - The frontend refreshes automatically within 10 seconds
+   - ✅ **no service restart or rebuild needed**
 
-2. **直接操作数据库**
-   - 使用 SQL、Prisma Studio 等工具直接修改数据库
-   - 前台**不会立即更新**（缓存有效期 10 秒）
-   - ⚠️ **需要等待缓存过期（最多 10 秒）或手动清除**
+2. **Direct database access**
+   - Modify the database directly with SQL, Prisma Studio, etc.
+   - The frontend will **not update immediately** (cache TTL is 10 seconds)
+   - ⚠️ **wait for the cache to expire (up to 10s) or clear it manually**
 
-#### 最佳实践
+#### Best practices
 
-- ✅ **优先使用后台管理界面**进行所有数据操作
-- ✅ 避免直接操作数据库（除非进行批量导入或高级操作）
-- ✅ 如果必须直接操作数据库，操作后重启服务以立即生效
+- ✅ **Prefer the admin dashboard** for all data operations
+- ✅ Avoid direct database access (except bulk import or advanced operations)
+- ✅ If you must touch the database, restart the service afterwards for immediate effect
 
-### 系统管理页面为什么没有用户管理？
+### Why is there no user management in the system settings page?
 
-Conan Nav 采用**单管理员架构**，管理员信息的编辑已集成到侧边栏的头像组件中，设计更加简洁直观。
+Conan Nav uses a **single-admin architecture**. Admin profile editing is integrated into the sidebar avatar component, which is simpler and more intuitive.
 
-### 如何备份数据库？
+### How do I back up the database?
 
-**⚠️ 重要提示**：在执行任何数据库操作前，请务必备份数据库！
+**⚠️ Important**: back up the database before performing any database operations!
 
-#### Docker 环境
+#### Docker
 
 ```bash
-# 1. 停止服务
+# 1. Stop the service
 docker compose down
 
-# 2. 备份数据库（包含所有数据）
+# 2. Back up the database (includes all data)
 docker compose exec postgresql pg_dump -U nav nav > backup_$(date +%Y%m%d_%H%M%S).sql
 
-# 3. 重新启动服务
+# 3. Restart the service
 docker compose up -d
 ```
 
-#### npm 环境
+#### npm
 
 ```bash
-# 1. 备份数据库
+# 1. Back up the database
 pg_dump -h localhost -U nav nav > backup_$(date +%Y%m%d_%H%M%S).sql
 
-# 或备份为 Docker 容器的数据卷
+# Or back up the Docker data volume
 docker run --rm -v nav_postgresql_data:/data -v $(pwd):/backup ubuntu tar czf /backup/backup_$(date +%Y%m%d_%H%M%S).tar.gz /data
 ```
 
-#### 如何恢复备份？
+#### How to restore a backup?
 
 ```bash
-# Docker 环境
+# Docker
 docker compose exec postgresql psql -U nav nav < backup_20260121_143000.sql
 
-# npm 环境
+# npm
 psql -h localhost -U nav nav < backup_20260121_143000.sql
 ```
 
-#### 备份策略建议
+#### Backup strategy suggestions
 
-1. **定期自动备份**：使用 cron 定时任务每日备份
-2. **异地备份**：将备份文件上传到云存储（S3/OSS）
-3. **备份验证**：定期测试备份文件是否可恢复
-4. **备份保留**：保留至少 30 天的备份文件
+1. **Scheduled automatic backups**: use a cron job for daily backups
+2. **Offsite backups**: upload backups to cloud storage (S3/OSS)
+3. **Backup verification**: periodically test that backups can be restored
+4. **Backup retention**: keep at least 30 days of backups
 
-#### 导出数据（不包含访问统计）
+#### Exporting data (without visit stats)
 
-如果只需要网站和分类数据（不包含访问统计），可以使用后台的"数据管理"功能：
+If you only need site and category data (no visit statistics), use the "Data Management" feature in the dashboard:
 
-- 导出为 JSON 格式：包含所有网站、分类、系统设置
-- 不包含：访问记录、管理员账号
+- Export as JSON: includes all sites, categories, and system settings
+- Does NOT include: visit records, admin account
 
-这适合数据迁移和部分恢复场景。
+This is useful for data migration and partial recovery.
 
-## 💡 相关资源
+## 💡 Related Resources
 
-- 📘 [完整文档](https://deepwiki.com/kenanlabs/nav)
-- 📬 [问题反馈](../../issues)
-- 💬 [讨论区](../../discussions)
+- 📘 [Full documentation](https://deepwiki.com/kenanlabs/nav)
+- 📬 [Issues](../../issues)
+- 💬 [Discussions](../../discussions)
 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=kenanlabs/nav&type=date&legend=top-left)](https://www.star-history.com/#kenanlabs/nav&type=date&legend=top-left)
 
-## 🤝 贡献
+## 🤝 Contributing
 
-欢迎贡献代码、报告问题或提出新功能建议！
+Contributions, issues, and feature requests are welcome!
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'feat: add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'feat: add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 License
 
 MIT
 
-## 🙏 致谢
+## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/)
 - [shadcn/ui](https://ui.shadcn.com/)
