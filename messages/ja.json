@@ -284,6 +284,7 @@
       "thHealth": "稼働",
       "healthUp": "オンライン",
       "healthDown": "不通",
+      "healthSuspicious": "制限の可能性",
       "healthUnknown": "未チェック",
       "healthNeverChecked": "まだチェックされていません",
       "healthDetail": "HTTP {status} · {latency} ms · {time}",
@@ -293,9 +294,10 @@
       "checkingProgress": "チェック中 {done}/{total}",
       "checkAllDone": "チェック完了",
       "checkAllStopped": "チェックを停止しました",
-      "checkAllDoneDesc": "{up} 件オンライン、{down} 件不通",
+      "checkAllDoneDesc": "{up} 件オンライン、{down} 件不通、{suspicious} 件制限の可能性",
       "checkUpDesc": "サイトは正常にアクセスできます",
-      "checkDownDesc": "サイトにアクセスできないか、無効になっています"
+      "checkDownDesc": "サイトにアクセスできないか、無効になっています",
+      "checkSuspiciousDesc": "サイトは応答しましたがチェックを拒否しました（CDN/WAF 防護の可能性）。手動での確認をおすすめします"
     },
     "siteForm": {
       "createTitle": "サイトを追加",

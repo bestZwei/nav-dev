@@ -316,6 +316,8 @@ export default function AdminSitesPage() {
         setSites((prev) => prev.map((s) => (s.id === siteId ? { ...s, ...data } : s)))
         if (data.healthStatus === "up") {
           toast.success(t("healthUp"), { description: t("checkUpDesc") })
+        } else if (data.healthStatus === "suspicious") {
+          toast.warning(t("healthSuspicious"), { description: t("checkSuspiciousDesc") })
         } else {
           toast.error(t("healthDown"), { description: t("checkDownDesc") })
         }
@@ -357,6 +359,7 @@ export default function AdminSitesPage() {
 
       let up = 0
       let down = 0
+      let suspicious = 0
       let done = 0
       const queue = [...targets]
 
@@ -367,8 +370,13 @@ export default function AdminSitesPage() {
           if (!item) return
           try {
             const result = await checkSiteHealth(item.id)
-            if (result.success && result.data && (result.data as { healthStatus?: string }).healthStatus === "up") {
+            const status = result.success && result.data
+              ? (result.data as { healthStatus?: string }).healthStatus
+              : undefined
+            if (status === "up") {
               up += 1
+            } else if (status === "suspicious") {
+              suspicious += 1
             } else {
               down += 1
             }
@@ -390,11 +398,11 @@ export default function AdminSitesPage() {
 
       if (batchCancelRef.current) {
         toast.warning(t("checkAllStopped"), {
-          description: t("checkAllDoneDesc", { up, down }),
+          description: t("checkAllDoneDesc", { up, down, suspicious }),
         })
       } else {
         toast.success(t("checkAllDone"), {
-          description: t("checkAllDoneDesc", { up, down }),
+          description: t("checkAllDoneDesc", { up, down, suspicious }),
         })
       }
       loadSites()
@@ -687,6 +695,10 @@ export default function AdminSitesPage() {
                                 <Badge variant="default" className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30">
                                   {t("healthUp")}
                                 </Badge>
+                              ) : site.healthStatus === "suspicious" ? (
+                                <Badge variant="default" className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border-amber-500/30">
+                                  {t("healthSuspicious")}
+                                </Badge>
                               ) : site.healthStatus === "down" ? (
                                 <Badge variant="default" className="bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/20 border-red-500/30">
                                   {t("healthDown")}
@@ -737,7 +749,7 @@ export default function AdminSitesPage() {
                                 {checkingId === site.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Activity className={`h-4 w-4 ${site.healthStatus === "up" ? "text-emerald-600" : site.healthStatus === "down" ? "text-red-500" : "text-muted-foreground"}`} />
+                                  <Activity className={`h-4 w-4 ${site.healthStatus === "up" ? "text-emerald-600" : site.healthStatus === "suspicious" ? "text-amber-500" : site.healthStatus === "down" ? "text-red-500" : "text-muted-foreground"}`} />
                                 )}
                               </Button>
                             </TooltipTrigger>

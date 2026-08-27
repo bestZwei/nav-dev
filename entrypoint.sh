@@ -20,7 +20,8 @@ fi
 if [ -z "$DATABASE_URL" ]; then
   echo "⚠️  未配置 DATABASE_URL，使用内置内存数据（重启后修改不会保留）"
   echo "🚀 启动应用..."
-  exec node server.js
+  # --max-http-header-size：测活探测需要，Google 等站点响应头（Set-Cookie）超过 undici 默认 16KB 上限
+  exec node --max-http-header-size=65536 server.js
 fi
 
 echo "🔧 初始化数据库..."
@@ -140,4 +141,5 @@ else
 fi
 
 echo "🚀 启动应用..."
-exec node server.js
+# --max-http-header-size：测活探测需要，避免 Google 等站点响应头超 undici 16KB 上限导致误判失效
+exec node --max-http-header-size=65536 server.js

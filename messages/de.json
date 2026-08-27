@@ -284,6 +284,7 @@
       "thHealth": "Erreichbarkeit",
       "healthUp": "Online",
       "healthDown": "Offline",
+      "healthSuspicious": "Möglicherweise blockiert",
       "healthUnknown": "Ungeprüft",
       "healthNeverChecked": "Noch nicht geprüft",
       "healthDetail": "HTTP {status} · {latency} ms · {time}",
@@ -293,9 +294,10 @@
       "checkingProgress": "Prüfung {done}/{total}",
       "checkAllDone": "Prüfung abgeschlossen",
       "checkAllStopped": "Prüfung gestoppt",
-      "checkAllDoneDesc": "{up} online, {down} offline",
+      "checkAllDoneDesc": "{up} online, {down} offline, {suspicious} möglicherweise blockiert",
       "checkUpDesc": "Website ist normal erreichbar",
-      "checkDownDesc": "Website ist nicht erreichbar oder offline"
+      "checkDownDesc": "Website ist nicht erreichbar oder offline",
+      "checkSuspiciousDesc": "Die Website hat geantwortet, lehnt aber die Prüfung ab (meist CDN/WAF-Schutz); manuelle Überprüfung empfohlen"
     },
     "siteForm": {
       "createTitle": "Seite hinzufügen",
