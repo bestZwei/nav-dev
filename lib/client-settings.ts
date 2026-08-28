@@ -12,10 +12,9 @@ export interface PublicSettings {
   icpNumber: string | null
   icpLink: string | null
   enableVisitTracking: boolean
-  enableSubmission: boolean
   enableSiteDetail: boolean
   enablePoetry: boolean
-  submissionMaxPerDay: number
+  enableAboutPage: boolean
   githubUrl: string | null
   defaultLanguage: string
 }
@@ -34,10 +33,9 @@ export const defaultSettings: PublicSettings = {
   icpNumber: null,
   icpLink: null,
   enableVisitTracking: true,
-  enableSubmission: true,
   enableSiteDetail: false,
   enablePoetry: true,
-  submissionMaxPerDay: 3,
+  enableAboutPage: false,
   githubUrl: "https://github.com/kenanlabs/nav",
   defaultLanguage: "zh",
 }

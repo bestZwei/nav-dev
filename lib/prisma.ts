@@ -18,6 +18,7 @@ export interface WorkspaceItem {
   siteDescription: string | null
   siteLogo: string | null
   favicon: string | null
+  aboutContent: string | null
   isDefault: boolean
   isPublished: boolean
   order: number
@@ -55,8 +56,6 @@ export interface SiteItem {
   url: string
   description: string
   iconUrl: string | null
-  submitterContact: string | null
-  submitterIp: string | null
   categoryId: string
   isPublished: boolean
   isPinned?: boolean
@@ -98,10 +97,10 @@ export interface SystemSettingsItem {
   icpNumber: string | null
   icpLink: string | null
   enableVisitTracking: boolean
-  enableSubmission: boolean
   enableSiteDetail: boolean
   enablePoetry: boolean
-  submissionMaxPerDay: number
+  enableAboutPage: boolean
+  aboutContent: string | null
   githubUrl: string | null
   defaultLanguage: string
   createdAt: Date
@@ -145,6 +144,7 @@ const initialWorkspaces: WorkspaceItem[] = [
     siteDescription: null,
     siteLogo: null,
     favicon: null,
+    aboutContent: null,
     isDefault: true,
     isPublished: true,
     order: 0,
@@ -243,8 +243,6 @@ const initialSites: SiteItem[] = seedSitesData.map((s, idx) => {
     url: s.url,
     description: s.description,
     iconUrl: `https://www.google.com/s2/favicons?domain=${new URL(s.url).hostname}&sz=128`,
-    submitterContact: null,
-    submitterIp: null,
     categoryId: cat.id,
     isPublished: true,
     isPinned: Boolean(s.isPinned),
@@ -293,10 +291,10 @@ const initialSystemSettings: SystemSettingsItem = {
   icpNumber: null,
   icpLink: null,
   enableVisitTracking: true,
-  enableSubmission: true,
   enableSiteDetail: false,
   enablePoetry: true,
-  submissionMaxPerDay: 3,
+  enableAboutPage: false,
+  aboutContent: null,
   githubUrl: 'https://github.com/kenanlabs/nav',
   defaultLanguage: 'zh',
   createdAt: new Date(),
@@ -371,6 +369,7 @@ class InMemoryDatabase {
         siteDescription: args.data.siteDescription ?? null,
         siteLogo: args.data.siteLogo ?? null,
         favicon: args.data.favicon ?? null,
+        aboutContent: args.data.aboutContent ?? null,
         isDefault: args.data.isDefault ?? false,
         isPublished: args.data.isPublished ?? false,
         order: args.data.order ?? this.workspaces.length + 1,
@@ -762,15 +761,6 @@ class InMemoryDatabase {
         if (args.where.isPinned !== undefined) {
           result = result.filter(s => s.isPinned === args.where.isPinned)
         }
-        if (args.where.submitterIp !== undefined) {
-          if (args.where.submitterIp && typeof args.where.submitterIp === 'object' && 'not' in args.where.submitterIp) {
-            result = result.filter(s => s.submitterIp !== null)
-          } else if (args.where.submitterIp === null) {
-            result = result.filter(s => s.submitterIp === null)
-          } else {
-            result = result.filter(s => s.submitterIp === args.where.submitterIp)
-          }
-        }
         if (args.where.id?.in) {
           result = result.filter(s => args.where.id.in.includes(s.id))
         }
@@ -883,8 +873,6 @@ class InMemoryDatabase {
         url: args.data.url || '',
         description: args.data.description || '',
         iconUrl: icon || null,
-        submitterContact: args.data.submitterContact || null,
-        submitterIp: args.data.submitterIp || null,
         categoryId: args.data.categoryId || (this.categories[0]?.id ?? 'cat-1'),
         isPublished: args.data.isPublished ?? true,
         isPinned: args.data.isPinned ?? false,

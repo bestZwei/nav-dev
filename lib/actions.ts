@@ -2,7 +2,6 @@
 
 import { prisma, useRealDatabase } from "./prisma"
 import { revalidatePath } from "next/cache"
-import { headers } from "next/headers"
 import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { isLocale, type Locale } from "./i18n"
@@ -127,6 +126,7 @@ export async function getWorkspaceDisplaySettings() {
             siteDescription: settings?.siteDescription ?? "",
             siteLogo: settings?.siteLogo ?? "",
             favicon: settings?.favicon ?? "",
+            aboutContent: settings?.aboutContent ?? "",
           },
         },
       }
@@ -141,6 +141,7 @@ export async function getWorkspaceDisplaySettings() {
           siteDescription: workspace.siteDescription ?? "",
           siteLogo: workspace.siteLogo ?? "",
           favicon: workspace.favicon ?? "",
+          aboutContent: workspace.aboutContent ?? "",
         },
       },
     }
@@ -157,6 +158,7 @@ export async function updateWorkspaceDisplaySettings(data: {
   siteDescription: string
   siteLogo: string
   favicon: string
+  aboutContent?: string
 }) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
@@ -169,6 +171,7 @@ export async function updateWorkspaceDisplaySettings(data: {
         siteDescription: data.siteDescription,
         siteLogo: data.siteLogo || undefined,
         favicon: data.favicon || undefined,
+        aboutContent: data.aboutContent,
       })
     }
 
@@ -179,9 +182,11 @@ export async function updateWorkspaceDisplaySettings(data: {
         siteDescription: data.siteDescription.trim() || null,
         siteLogo: data.siteLogo.trim() || null,
         favicon: data.favicon.trim() || null,
+        aboutContent: data.aboutContent?.trim() || null,
       },
     })
     revalidatePath("/", "layout")
+    revalidatePath("/about")
     revalidatePath("/admin/workspaces")
     return { success: true, data: updated }
   } catch (error) {
@@ -655,7 +660,6 @@ export async function deleteCategory(id: string) {
 export async function getSites() {
   try {
     // 仅返回已发布站点：此 Action 可被客户端直接调用，
-    // 避免未收录审核中的站点元数据外泄
     // 按当前请求的工作区过滤（Site 经 Category 归属工作区）
     const workspace = await getCurrentWorkspace()
     const categoryIds = await getWorkspaceCategoryIds(workspace.id)
@@ -679,7 +683,6 @@ export async function getSitesWithPagination(params: {
   categoryId?: string
   search?: string
   isPublished?: boolean
-  submitterIp?: string
   sortBy?: "default" | "health" | "createdAt"
   sortDir?: "asc" | "desc"
 }) {
@@ -719,12 +722,6 @@ export async function getSitesWithPagination(params: {
 
     if (params.isPublished !== undefined) {
       where.isPublished = params.isPublished
-    }
-
-    if (params.submitterIp === "true") {
-      where.submitterIp = { not: null }
-    } else if (params.submitterIp === "false") {
-      where.submitterIp = null
     }
 
     // 排序规则：默认置顶优先 + 手动 order；
@@ -992,8 +989,6 @@ export async function createSite(data: {
   url: string
   description: string
   iconUrl?: string
-  submitterContact?: string
-  submitterIp?: string
   categoryId: string
   isPublished?: boolean
   isPinned?: boolean
@@ -1023,8 +1018,6 @@ export async function createSite(data: {
           url: data.url,
           description: data.description,
           iconUrl: data.iconUrl,
-          submitterContact: data.submitterContact,
-          submitterIp: data.submitterIp,
           categoryId: data.categoryId,
           isPublished: data.isPublished ?? false,
           isPinned: data.isPinned ?? false,
@@ -1059,8 +1052,6 @@ export async function updateSite(id: string, data: {
   url?: string
   description?: string
   iconUrl?: string
-  submitterContact?: string
-  submitterIp?: string
   categoryId?: string
   isPublished?: boolean
   isPinned?: boolean
@@ -1091,8 +1082,6 @@ export async function updateSite(id: string, data: {
       if (data.url !== undefined) updateData.url = data.url
       if (data.description !== undefined) updateData.description = data.description
       if (data.iconUrl !== undefined) updateData.iconUrl = data.iconUrl
-      if (data.submitterContact !== undefined) updateData.submitterContact = data.submitterContact
-      if (data.submitterIp !== undefined) updateData.submitterIp = data.submitterIp
       if (data.categoryId !== undefined) updateData.category = { connect: { id: data.categoryId } }
       if (data.isPublished !== undefined) updateData.isPublished = data.isPublished
       if (data.isPinned !== undefined) updateData.isPinned = data.isPinned
@@ -1607,6 +1596,20 @@ export async function getDisplaySettings() {
   }
 }
 
+// About 页数据：总开关取全局 SystemSettings，内容按工作区覆盖、空则回退全局。
+// 仅供 /about 页服务端调用，避免整篇 Markdown 进入公开设置接口
+export async function getAboutPage() {
+  const workspace = await getCurrentWorkspace()
+  const result = await getSystemSettings()
+  const settings = result.success && result.data ? result.data : null
+  return {
+    enabled: settings?.enableAboutPage ?? false,
+    siteName:
+      workspace.siteName || (settings?.siteName ?? "Conan Nav"),
+    content: workspace.aboutContent || settings?.aboutContent || "",
+  }
+}
+
 // 允许写入的设置字段白名单：拒绝任意字段注入（如伪造 footerHtml 等）
 const ALLOWED_SETTINGS_FIELDS = [
   "siteName",
@@ -1622,10 +1625,10 @@ const ALLOWED_SETTINGS_FIELDS = [
   "icpNumber",
   "icpLink",
   "enableVisitTracking",
-  "enableSubmission",
   "enableSiteDetail",
   "enablePoetry",
-  "submissionMaxPerDay",
+  "enableAboutPage",
+  "aboutContent",
   "githubUrl",
   "defaultLanguage",
 ] as const
@@ -1644,10 +1647,10 @@ export async function updateSystemSettings(data: {
   icpNumber?: string | null
   icpLink?: string | null
   enableVisitTracking?: boolean
-  enableSubmission?: boolean
   enableSiteDetail?: boolean
   enablePoetry?: boolean
-  submissionMaxPerDay?: number
+  enableAboutPage?: boolean
+  aboutContent?: string | null
   githubUrl?: string
   defaultLanguage?: Locale
 }) {
@@ -1687,6 +1690,7 @@ export async function updateSystemSettings(data: {
 
     revalidatePath("/admin/settings")
     revalidatePath("/")
+    revalidatePath("/about")
     revalidatePath("/admin/dashboard")
 
     return { success: true, data: settings }
@@ -2415,81 +2419,3 @@ export async function importBookmarks(
   }
 }
 
-// ==================== Site Submission ====================
-
-export async function submitSite(data: {
-  name: string
-  url: string
-  description: string
-  categoryId: string
-  submitterContact?: string
-  request?: Request
-}) {
-  try {
-    // 获取系统设置，检查是否启用收录功能
-    const settingsResult = await getSystemSettings()
-    if (!settingsResult.success || !settingsResult.data?.enableSubmission) {
-      return { success: false, error: "网站收录功能已关闭" }
-    }
-
-    // URL 协议白名单校验：仅允许 http/https，防止 javascript: 等存储型 XSS
-    if (!isSafeSiteUrl(data.url)) {
-      return { success: false, error: "网站URL不合法，仅支持 http/https 链接" }
-    }
-
-    // 获取 IP 地址：Server Action 场景下未传 request 时通过 headers() 读取
-    const requestHeaders = data.request?.headers ?? await headers()
-    const ipAddress = requestHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-                     requestHeaders.get('x-real-ip') ||
-                     'local'  // Fallback: 标记为本地提交
-
-    // IP 频率限制检查（仅对真实 IP 限制）
-    const maxPerDay = settingsResult.data.submissionMaxPerDay || 3
-    if (ipAddress && ipAddress !== 'local') {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-      const recentSubmissions = await prisma.site.count({
-        where: {
-          submitterIp: ipAddress,
-          createdAt: { gte: oneDayAgo },
-        },
-      })
-
-      if (recentSubmissions >= maxPerDay) {
-        return {
-          success: false,
-          error: `提交太频繁啦！24小时内最多${maxPerDay}次，请明天再试🙅`
-        }
-      }
-    }
-
-    // 创建网站记录（默认未发布）
-    const site = await prisma.site.create({
-      data: {
-        name: data.name,
-        url: data.url,
-        description: data.description,
-        submitterContact: data.submitterContact || null,
-        submitterIp: ipAddress,  // 记录提交者 IP
-        categoryId: data.categoryId,
-        isPublished: false, // 默认待审核
-        order: 0,
-      },
-      include: {
-        category: true,
-      },
-    })
-
-    revalidatePath("/admin/sites")
-    revalidatePath("/")
-    revalidatePath(`/category/${site.category?.slug || ''}`)
-
-    return {
-      success: true,
-      data: site,
-      message: "提交成功！我们会尽快审核，感谢您的贡献"
-    }
-  } catch (error) {
-    console.error("Error submitting site:", error)
-    return { success: false, error: "提交失败，请稍后重试" }
-  }
-}
