@@ -16,6 +16,15 @@ import {
 } from "./workspace"
 import type { WorkspaceItem } from "./prisma"
 
+// Next.js 内部用于标记“此路由需动态渲染”的信号错误（digest 以 DYNAMIC 或
+// NEXT_DYNAMIC 开头）。这类“错误”不是真正的异常，必须原样重新抛出，
+// 否则会被 catch 吞掉导致页面静态化或返回假失败。
+function isNextDynamicError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const digest = (error as { digest?: string }).digest
+  return typeof digest === "string" && /^DYNAMIC/.test(digest)
+}
+
 // ==================== 安全辅助 ====================
 
 // 管理操作统一鉴权闸门：会话有效返回 null，否则返回统一错误结果。
@@ -71,6 +80,7 @@ export async function getWorkspaces() {
     })
     return { success: true, data: workspaces as WorkspaceItem[] }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching workspaces:", error)
     return { success: false, error: "Failed to fetch workspaces" }
   }
@@ -95,6 +105,7 @@ export async function getWorkspaceOptions() {
       })),
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching workspace options:", error)
     return { success: false, error: "Failed to fetch workspace options" }
   }
@@ -148,6 +159,7 @@ export async function getWorkspaceDisplaySettings() {
       },
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching workspace display settings:", error)
     return { success: false, error: "Failed to fetch display settings" }
   }
@@ -192,6 +204,7 @@ export async function updateWorkspaceDisplaySettings(data: {
     revalidatePath("/admin/workspaces")
     return { success: true, data: updated }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error updating workspace display settings:", error)
     return { success: false, error: "Failed to update display settings" }
   }
@@ -241,6 +254,7 @@ export async function createWorkspace(data: {
     revalidatePath("/admin/workspaces")
     return { success: true, data: workspace }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error creating workspace:", error)
     return { success: false, error: "Failed to create workspace" }
   }
@@ -294,6 +308,7 @@ export async function updateWorkspace(id: string, data: {
     revalidatePath("/admin/workspaces")
     return { success: true, data: workspace }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error updating workspace:", error)
     return { success: false, error: "Failed to update workspace" }
   }
@@ -321,6 +336,7 @@ export async function deleteWorkspace(id: string) {
     revalidatePath("/admin/workspaces")
     return { success: true }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error deleting workspace:", error)
     return { success: false, error: "Failed to delete workspace" }
   }
@@ -353,6 +369,7 @@ export async function setPrimaryWorkspace(id: string) {
     revalidatePath("/admin/workspaces")
     return { success: true }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error setting primary workspace:", error)
     return { success: false, error: "Failed to set primary workspace" }
   }
@@ -387,6 +404,7 @@ export async function addWorkspaceDomain(workspaceId: string, rawHost: string) {
     revalidatePath("/admin/workspaces")
     return { success: true, data: domain }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error adding workspace domain:", error)
     return { success: false, error: "Failed to add domain" }
   }
@@ -401,6 +419,7 @@ export async function removeWorkspaceDomain(domainId: string) {
     revalidatePath("/admin/workspaces")
     return { success: true }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error removing workspace domain:", error)
     return { success: false, error: "Failed to remove domain" }
   }
@@ -438,6 +457,7 @@ export async function verifyWorkspaceDomain(domainId: string) {
       data: { status: result.status, detail: result.detail, verifiedAt },
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error verifying workspace domain:", error)
     return { success: false, error: "Failed to verify domain" }
   }
@@ -461,6 +481,7 @@ export async function getCategories() {
     })
     return { success: true, data: categories }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching categories:", error)
     return { success: false, error: "Failed to fetch categories" }
   }
@@ -484,6 +505,7 @@ export async function getCategoryBySlug(slug: string) {
     }
     return { success: true, data: category }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching category:", error)
     return { success: false, error: "Failed to fetch category" }
   }
@@ -498,6 +520,7 @@ export async function getAllCategories() {
     })
     return { success: true, data: categories }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching all categories:", error)
     return { success: false, error: "Failed to fetch categories" }
   }
@@ -515,6 +538,7 @@ export async function getAdminCategories() {
     })
     return { success: true, data: categories }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching admin categories:", error)
     return { success: false, error: "Failed to fetch categories" }
   }
@@ -569,6 +593,7 @@ export async function getCategoriesWithPagination(params: {
       },
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching categories with pagination:", error)
     return { success: false, error: "Failed to fetch categories" }
   }
@@ -586,6 +611,7 @@ export async function getCategoryById(id: string) {
     }
     return { success: true, data: category }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching category:", error)
     return { success: false, error: "Failed to fetch category" }
   }
@@ -711,6 +737,7 @@ export async function getSites() {
     })
     return { success: true, data: sites }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching sites:", error)
     return { success: false, error: "Failed to fetch sites" }
   }
@@ -817,6 +844,7 @@ export async function getSitesWithPagination(params: {
       },
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching sites with pagination:", error)
     return { success: false, error: "Failed to fetch sites" }
   }
@@ -838,6 +866,7 @@ export async function getCategoriesForFilter() {
 
     return { success: true, data: categories }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching categories:", error)
     return { success: false, error: "Failed to fetch categories" }
   }
@@ -1454,6 +1483,7 @@ export async function getSiteIdsForHealthCheck() {
     })
     return { success: true, data: sites }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching sites for health check:", error)
     return { success: false, error: "Failed to fetch sites" }
   }
