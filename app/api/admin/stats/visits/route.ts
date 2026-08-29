@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getVisitStats } from "@/lib/actions"
+import { getVisitStats } from "@/plugins/visit-tracking/actions"
 import { getAdminSession } from "@/lib/api-auth"
 
 export async function GET(request: NextRequest) {

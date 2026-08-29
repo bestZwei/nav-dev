@@ -1,3 +1,5 @@
+import type { ClientPluginView } from "./plugins/types"
+
 export interface PublicSettings {
   siteName: string
   siteDescription: string
@@ -11,12 +13,10 @@ export interface PublicSettings {
   showIcp: boolean
   icpNumber: string | null
   icpLink: string | null
-  enableVisitTracking: boolean
-  enableSiteDetail: boolean
-  enablePoetry: boolean
-  enableAboutPage: boolean
   githubUrl: string | null
   defaultLanguage: string
+  // 插件系统：前台注入点消费的精简视图
+  plugins: ClientPluginView
 }
 
 export const defaultSettings: PublicSettings = {
@@ -32,17 +32,21 @@ export const defaultSettings: PublicSettings = {
   showIcp: false,
   icpNumber: null,
   icpLink: null,
-  enableVisitTracking: true,
-  enableSiteDetail: false,
-  enablePoetry: true,
-  enableAboutPage: false,
   githubUrl: "https://github.com/kenanlabs/nav",
   defaultLanguage: "zh",
+  plugins: { builtinEnabledIds: [], uploaded: [] },
 }
 
 let cachedSettings: PublicSettings | null = null
 let cacheTimestamp = 0
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// 使客户端设置缓存失效：插件启停/上传/删除等会改变 plugins 视图的操作
+// 必须调用，否则各消费方（注入点、来源列、详情编辑区等）最长 5 分钟内读到旧状态
+export function invalidateSettingsCache() {
+  cachedSettings = null
+  cacheTimestamp = 0
+}
 
 export async function fetchPublicSettings(): Promise<PublicSettings> {
   const now = Date.now()

@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { VisitFrequencyChart } from "@/components/admin/charts/visit-frequency-chart"
 import { CategoryDistributionChart } from "@/components/admin/charts/category-distribution-chart"
+import { useBuiltinPluginEnabled } from "@/lib/plugins/client"
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -92,6 +93,8 @@ const formatNumber = (value: number) => value.toLocaleString()
 
 export default function AdminDashboardPage() {
   const t = useTranslations("admin.dashboard")
+  // 访问统计相关卡片与图表归属 visit-tracking 插件，禁用时整块隐藏
+  const visitEnabled = useBuiltinPluginEnabled("visit-tracking")
   const [loading, setLoading] = useState(true)
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null)
   const [frequencyData, setFrequencyData] = useState<FrequencyData | null>(null)
@@ -121,8 +124,8 @@ export default function AdminDashboardPage() {
   // 非 2xx（如统计接口 500）一律返回 null，交由调用方回退默认值。
   // 仅解析失败还不够：错误响应体 {error} 是合法 JSON，直接透传会让
   // 后续对缺失字段（如 topSites.length）的访问抛出客户端异常
-  async function safeJson(res: Response): Promise<unknown> {
-    if (!res.ok) return null
+  async function safeJson(res: Response | null): Promise<unknown> {
+    if (!res?.ok) return null
     const ctype = res.headers.get("content-type") || ""
     if (!ctype.includes("application/json")) return null
     return res.json().catch(() => null)
@@ -145,9 +148,14 @@ export default function AdminDashboardPage() {
           fetch("/api/admin/stats/sites"),
           fetch("/api/admin/stats/categories"),
           fetch("/api/admin/stats/users"),
-          fetch(`/api/admin/stats/visits?days=${timeRange}&limit=${topCount}`),
-          fetch(`/api/admin/stats/frequency?days=${timeRange}`),
-          fetch("/api/admin/stats/today"),
+          // 访问统计归属 visit-tracking 插件，禁用时跳过请求
+          visitEnabled
+            ? fetch(`/api/admin/stats/visits?days=${timeRange}&limit=${topCount}`)
+            : Promise.resolve(null),
+          visitEnabled
+            ? fetch(`/api/admin/stats/frequency?days=${timeRange}`)
+            : Promise.resolve(null),
+          visitEnabled ? fetch("/api/admin/stats/today") : Promise.resolve(null),
           fetch("/api/admin/stats/content"),
           fetch("/api/admin/stats/category-distribution"),
         ])
@@ -173,7 +181,7 @@ export default function AdminDashboardPage() {
           total: distributionRaw?.total ?? 0,
         }
 
-        setSiteStats([
+        const nextStats: StatItem[] = [
           { titleKey: "statSites", value: sitesData.total || 0, loading: false, icon: Globe },
           { titleKey: "statCategories", value: categoriesData.total || 0, loading: false, icon: FolderKanban },
           { titleKey: "statVisitors", value: usersData.total || 0, loading: false, icon: Users },
@@ -181,7 +189,14 @@ export default function AdminDashboardPage() {
           { titleKey: "statTodayVisits", value: todayData.today || 0, loading: false, icon: CalendarPlus, badge: todayData.growthRate ?? null },
           { titleKey: "statWeekNew", value: contentData.weekNewSites || 0, loading: false, icon: Sparkles, href: "/admin/sites" },
           { titleKey: "statMissingIcons", value: contentData.missingIcons || 0, loading: false, icon: Globe, href: "/admin/sites" },
-        ])
+        ]
+        setSiteStats(
+          nextStats.filter(
+            (stat) =>
+              visitEnabled ||
+              (stat.titleKey !== "statTotalVisits" && stat.titleKey !== "statTodayVisits")
+          )
+        )
 
         setVisitStats(visitsData as unknown as Parameters<typeof setVisitStats>[0])
         setFrequencyData(frequencyData as unknown as Parameters<typeof setFrequencyData>[0])
@@ -195,7 +210,7 @@ export default function AdminDashboardPage() {
     }
 
     loadStats()
-  }, [timeRange, topCount])
+  }, [timeRange, topCount, visitEnabled])
 
   if (loading) {
     return (
@@ -260,6 +275,7 @@ export default function AdminDashboardPage() {
 
       {/* 排行 + 分类分布 */}
       <div className="grid gap-4 lg:grid-cols-2">
+        {visitEnabled && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -366,6 +382,7 @@ export default function AdminDashboardPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {categoryDistribution && (
           <CategoryDistributionChart data={categoryDistribution.data} />
@@ -373,7 +390,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* 访问频次统计 */}
-      {frequencyData && (
+      {visitEnabled && frequencyData && (
         <VisitFrequencyChart
           data={frequencyData.frequency || []}
           timeRange={timeRange}

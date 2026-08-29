@@ -73,6 +73,9 @@ model Site {
   url              String
   description      String
   iconUrl          String?   @map("icon_url")
+  // site-submission 插件字段：投稿者联系方式与来源 IP（管理员创建时为空）
+  submitterContact String?   @map("submitter_contact")
+  submitterIp      String?   @map("submitter_ip")
   categoryId       String
   category         Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   isPublished      Boolean   @default(false)
@@ -149,15 +152,14 @@ model SystemSettings {
   showIcp          Boolean  @default(false) @map("show_icp")
   icpNumber        String?  @map("icp_number")
   icpLink          String?  @map("icp_link")
-  // Visit tracking settings
-  enableVisitTracking Boolean @default(true) @map("enable_visit_tracking")
-  // Site detail dialog (二级详情弹窗)
-  enableSiteDetail     Boolean  @default(false) @map("enable_site_detail")
-  // Poetry card (今日诗词卡片总开关)
-  enablePoetry         Boolean  @default(true) @map("enable_poetry")
-  // About page (关于页面总开关；内容按工作区覆盖，空则回退 aboutContent)
-  enableAboutPage      Boolean  @default(false) @map("enable_about_page")
+  // About 页内容（展示与否由 about-page 内置插件启停控制）；
+  // 工作区 about_content 为空时回退此处全局默认内容。
+  // 注：原 enableVisitTracking / enableSiteDetail / enablePoetry /
+  // enableAboutPage 功能开关均已迁移为内置插件，启停统一存于下方 enabledPlugins
   aboutContent         String?  @map("about_content")
+  // Plugin system (插件启停状态与各插件配置，键为注册表中的插件 ID)
+  enabledPlugins       Json     @default("[]") @map("enabled_plugins")
+  pluginConfigs        Json     @default("{}") @map("plugin_configs")
   // GitHub link
   githubUrl        String?  @map("github_url")
   // Default site language for visitors without a locale cookie (zh/en)
@@ -166,6 +168,19 @@ model SystemSettings {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("SystemSettings")
+}
+
+// 上传插件（声明式 manifest 包）。内置插件走代码注册表，
+// 启停状态存 SystemSettings.enabledPlugins；上传插件独立启停。
+model Plugin {
+  id        String   @id
+  manifest  Json
+  enabled   Boolean  @default(false)
+  configs   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("Plugin")
 }
 
 model Visit {

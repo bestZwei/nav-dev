@@ -113,7 +113,8 @@
         "unavailable": "更新チェック不可用",
         "dev": "dev"
       },
-      "workspaces": "ワークスペース管理"
+      "workspaces": "ワークスペース管理",
+      "plugins": "プラグイン"
     },
     "login": {
       "subtitle": "サインインしてナビゲーションサイトを管理",
@@ -265,7 +266,13 @@
       "checkAllDoneDesc": "{up} 件オンライン、{down} 件不通、{suspicious} 件制限の可能性",
       "checkUpDesc": "サイトは正常にアクセスできます",
       "checkDownDesc": "サイトにアクセスできないか、無効になっています",
-      "checkSuspiciousDesc": "サイトは応答しましたがチェックを拒否しました（CDN/WAF 防護の可能性）。手動での確認をおすすめします"
+      "checkSuspiciousDesc": "サイトは応答しましたがチェックを拒否しました（CDN/WAF 防護の可能性）。手動での確認をおすすめします",
+      "filterSource": "来源",
+      "filterSourceAll": "すべての来源",
+      "sourceUser": "ユーザー投稿",
+      "sourceAdminCreated": "管理者作成",
+      "sourceAdmin": "管理者",
+      "thSource": "来源"
     },
     "siteForm": {
       "createTitle": "サイトを追加",
@@ -666,5 +673,82 @@
     "retry": "再試行",
     "emptyHint": "詳細な紹介はまだありません",
     "noScreenshots": "スクリーンショットはまだありません"
+  },
+  "plugins": {
+    "registry": {
+      "uploadTitle": "プラグインをアップロード",
+      "uploadDescription": "宣言型プラグインマニフェスト（manifest.json）をアップロードします。アップロード直後は無効で、いつでも有効化・削除できます。アップロード内容のコードは実行されず、宣言のみが処理されます。",
+      "uploadButton": "manifest.json を選択",
+      "uploadSuccess": "プラグインをアップロードしました",
+      "uploadFailed": "プラグインのアップロードに失敗しました",
+      "empty": "インストール済みのプラグインはありません",
+      "sourceBuiltin": "内蔵",
+      "sourceUploaded": "アップロード",
+      "delete": "プラグインを削除",
+      "deleteConfirmTitle": "このプラグインを削除しますか？",
+      "deleteConfirmDescription": "「{name}」のマニフェストと状態を削除します。プラグインが生成したデータは保持されます。",
+      "cancel": "キャンセル",
+      "saveConfig": "設定を保存",
+      "enableSuccess": "プラグインを有効にしました",
+      "disableSuccess": "プラグインを無効にしました",
+      "configSaved": "設定を保存しました",
+      "updateFailed": "操作に失敗しました。再試行してください",
+      "deleteSuccess": "プラグインを削除しました"
+    },
+    "siteSubmission": {
+      "name": "サイト登録",
+      "description": "サイト情報を入力してください。管理者の審査を通過すると公開されます",
+      "config": {
+        "maxPerDay": "IP ごとの 1 日の投稿上限"
+      },
+      "trigger": "サイトを投稿",
+      "title": "サイトを投稿する",
+      "nameLabel": "サイト名 *",
+      "namePlaceholder": "例：GitHub",
+      "nameRequired": "サイト名は必須です",
+      "nameMax": "サイト名は50文字以内で入力してください",
+      "urlLabel": "URL *",
+      "urlRequired": "URLは必須です",
+      "urlInvalid": "有効なURLを入力してください",
+      "descLabel": "説明 *",
+      "descPlaceholder": "サイトの機能や特徴を簡単に説明してください",
+      "descRequired": "説明は必須です",
+      "descMax": "説明は200文字以内で入力してください",
+      "charCount": "{count}/200 文字",
+      "categoryLabel": "カテゴリー *",
+      "categoryPlaceholder": "カテゴリーを選択",
+      "categoryRequired": "カテゴリーを選択してください",
+      "contactLabel": "連絡先（任意）",
+      "contactPlaceholder": "審査の連絡用メールアドレスまたは WeChat",
+      "contactHint": "審査中に管理者から連絡する場合があります",
+      "contactMax": "連絡先は100文字以内で入力してください",
+      "cancel": "キャンセル",
+      "submit": "審査に提出",
+      "success": "投稿されました。早急に審査します。ご協力ありがとうございます",
+      "failed": "投稿に失敗しました",
+      "retry": "投稿に失敗しました。しばらくしてからもう一度お試しください",
+      "errors": {
+        "PLUGIN_DISABLED": "サイト登録機能は無効です",
+        "INVALID_URL": "URL が無効です。http/https のみ対応しています",
+        "RATE_LIMITED": "送信頻度が高すぎます！24 時間以内に最大 {count} 回までです。明日お試しください",
+        "SUBMIT_FAILED": "送信に失敗しました。しばらくしてから再試行してください"
+      }
+    },
+    "poetryCard": {
+      "name": "今日の詩",
+      "description": "ホームページ右上に詩カードを表示し、ヘッダーツールバーで表示を切り替えられます"
+    },
+    "visitTracking": {
+      "name": "アクセス統計",
+      "description": "サイト訪問を記録し、ランキング・頻度グラフ・今日の統計などの管理データを提供します"
+    },
+    "siteDetail": {
+      "name": "サイト詳細ダイアログ",
+      "description": "サイトカードに詳細ダイアログを追加し、テキストやスクリーンショットを表示します"
+    },
+    "aboutPage": {
+      "name": "about ページ",
+      "description": "有効にするとフロントエンドに about ページへのリンク（フッターとサイトマップ）が表示されます。内容はシステム設定で編集します"
+    }
   }
 }

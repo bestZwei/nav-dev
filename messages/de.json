@@ -113,7 +113,8 @@
         "unavailable": "Update-Prüfung nicht verfügbar",
         "dev": "dev"
       },
-      "workspaces": "Workspaces"
+      "workspaces": "Workspaces",
+      "plugins": "Plugins"
     },
     "login": {
       "subtitle": "Melden Sie sich an, um Ihre Navigation zu verwalten",
@@ -265,7 +266,13 @@
       "checkAllDoneDesc": "{up} online, {down} offline, {suspicious} möglicherweise blockiert",
       "checkUpDesc": "Website ist normal erreichbar",
       "checkDownDesc": "Website ist nicht erreichbar oder offline",
-      "checkSuspiciousDesc": "Die Website hat geantwortet, lehnt aber die Prüfung ab (meist CDN/WAF-Schutz); manuelle Überprüfung empfohlen"
+      "checkSuspiciousDesc": "Die Website hat geantwortet, lehnt aber die Prüfung ab (meist CDN/WAF-Schutz); manuelle Überprüfung empfohlen",
+      "filterSource": "Quelle",
+      "filterSourceAll": "Alle Quellen",
+      "sourceUser": "Von Nutzern",
+      "sourceAdminCreated": "Vom Admin",
+      "sourceAdmin": "Admin",
+      "thSource": "Quelle"
     },
     "siteForm": {
       "createTitle": "Seite hinzufügen",
@@ -666,5 +673,82 @@
     "retry": "Erneut versuchen",
     "emptyHint": "Noch keine detaillierte Vorstellung",
     "noScreenshots": "Noch keine Screenshots vorhanden"
+  },
+  "plugins": {
+    "registry": {
+      "uploadTitle": "Plugin hochladen",
+      "uploadDescription": "Deklaratives Plugin-Manifest (manifest.json) hochladen. Hochgeladene Plugins sind standardmäßig deaktiviert und können jederzeit aktiviert oder entfernt werden. Es werden nur Deklarationen verarbeitet, kein Code aus der Datei ausgeführt.",
+      "uploadButton": "manifest.json auswählen",
+      "uploadSuccess": "Plugin hochgeladen",
+      "uploadFailed": "Plugin konnte nicht hochgeladen werden",
+      "empty": "Keine Plugins installiert",
+      "sourceBuiltin": "Integriert",
+      "sourceUploaded": "Hochgeladen",
+      "delete": "Plugin entfernen",
+      "deleteConfirmTitle": "Dieses Plugin entfernen?",
+      "deleteConfirmDescription": "Manifest und Status von „{name}“ werden entfernt. Vom Plugin erzeugte Daten bleiben erhalten.",
+      "cancel": "Abbrechen",
+      "saveConfig": "Konfiguration speichern",
+      "enableSuccess": "Plugin aktiviert",
+      "disableSuccess": "Plugin deaktiviert",
+      "configSaved": "Konfiguration gespeichert",
+      "updateFailed": "Vorgang fehlgeschlagen, bitte wiederholen",
+      "deleteSuccess": "Plugin entfernt"
+    },
+    "siteSubmission": {
+      "name": "Website-Einsendung",
+      "description": "Füllen Sie die Seiteninfos aus; nach Prüfung durch den Admin wird sie veröffentlicht",
+      "config": {
+        "maxPerDay": "Max. Einsendungen pro IP und Tag"
+      },
+      "trigger": "Seite vorschlagen",
+      "title": "Seite vorschlagen",
+      "nameLabel": "Name *",
+      "namePlaceholder": "z. B. GitHub",
+      "nameRequired": "Name ist erforderlich",
+      "nameMax": "Name darf höchstens 50 Zeichen lang sein",
+      "urlLabel": "URL *",
+      "urlRequired": "URL ist erforderlich",
+      "urlInvalid": "Bitte eine gültige URL eingeben",
+      "descLabel": "Beschreibung *",
+      "descPlaceholder": "Beschreiben Sie die Seite kurz",
+      "descRequired": "Beschreibung ist erforderlich",
+      "descMax": "Beschreibung darf höchstens 200 Zeichen lang sein",
+      "charCount": "{count}/200 Zeichen",
+      "categoryLabel": "Kategorie *",
+      "categoryPlaceholder": "Kategorie auswählen",
+      "categoryRequired": "Bitte eine Kategorie auswählen",
+      "contactLabel": "Kontakt (optional)",
+      "contactPlaceholder": "E-Mail oder WeChat für die Prüfung",
+      "contactHint": "Der Admin kontaktiert Sie eventuell während der Prüfung",
+      "contactMax": "Kontakt darf höchstens 100 Zeichen lang sein",
+      "cancel": "Abbrechen",
+      "submit": "Absenden",
+      "success": "Eingereicht! Wir prüfen es zeitnah. Danke für Ihren Beitrag!",
+      "failed": "Einreichung fehlgeschlagen",
+      "retry": "Einreichung fehlgeschlagen, bitte später erneut versuchen",
+      "errors": {
+        "PLUGIN_DISABLED": "Die Website-Einsendung ist nicht aktiviert",
+        "INVALID_URL": "Ungültige URL, nur http/https wird unterstützt",
+        "RATE_LIMITED": "Zu viele Einsendungen! Maximal {count} pro 24 Stunden, bitte morgen erneut versuchen",
+        "SUBMIT_FAILED": "Einsendung fehlgeschlagen, bitte später erneut versuchen"
+      }
+    },
+    "poetryCard": {
+      "name": "Tagesgedicht",
+      "description": "Zeigt oben rechts auf der Startseite eine Gedichtkarte mit Umschalter in der Kopfzeile"
+    },
+    "visitTracking": {
+      "name": "Besuchsstatistik",
+      "description": "Zeichnet Besuche auf und liefert Admin-Statistiken: Rangliste, Häufigkeitsdiagramm, Tagesvergleich"
+    },
+    "siteDetail": {
+      "name": "Website-Detaildialog",
+      "description": "Ergänzt Website-Karten um einen Detaildialog mit Text und Screenshots"
+    },
+    "aboutPage": {
+      "name": "Über-Seite",
+      "description": "Fügt dem Frontend einen Über-Eintrag hinzu (Fußzeilen-Link und Sitemap); der Inhalt wird in den Systemeinstellungen gepflegt"
+    }
   }
 }

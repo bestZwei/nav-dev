@@ -113,7 +113,8 @@
         "unavailable": "Update check unavailable",
         "dev": "dev"
       },
-      "workspaces": "Workspaces"
+      "workspaces": "Workspaces",
+      "plugins": "Plugins"
     },
     "login": {
       "subtitle": "Sign in to manage your navigation site",
@@ -265,7 +266,13 @@
       "checkAllDoneDesc": "{up} online, {down} dead, {suspicious} possibly blocked",
       "checkUpDesc": "Site is reachable",
       "checkDownDesc": "Site is unreachable or dead",
-      "checkSuspiciousDesc": "The site responded but rejected the probe (likely CDN/WAF protection); manual verification recommended"
+      "checkSuspiciousDesc": "The site responded but rejected the probe (likely CDN/WAF protection); manual verification recommended",
+      "filterSource": "Source",
+      "filterSourceAll": "All sources",
+      "sourceUser": "User submitted",
+      "sourceAdminCreated": "Created by admin",
+      "sourceAdmin": "Admin",
+      "thSource": "Source"
     },
     "siteForm": {
       "createTitle": "Add site",
@@ -666,5 +673,82 @@
     "retry": "Retry",
     "emptyHint": "No detailed introduction yet",
     "noScreenshots": "No screenshots yet"
+  },
+  "plugins": {
+    "registry": {
+      "uploadTitle": "Upload Plugin",
+      "uploadDescription": "Upload a declarative plugin manifest (manifest.json). Uploaded plugins are disabled by default and can be enabled or removed anytime. The system executes declarations only, never code from the upload.",
+      "uploadButton": "Choose manifest.json",
+      "uploadSuccess": "Plugin uploaded",
+      "uploadFailed": "Failed to upload plugin",
+      "empty": "No plugins installed",
+      "sourceBuiltin": "Builtin",
+      "sourceUploaded": "Uploaded",
+      "delete": "Delete plugin",
+      "deleteConfirmTitle": "Delete this plugin?",
+      "deleteConfirmDescription": "This removes the manifest and state of \"{name}\". Business data produced by the plugin is preserved.",
+      "cancel": "Cancel",
+      "saveConfig": "Save config",
+      "enableSuccess": "Plugin enabled",
+      "disableSuccess": "Plugin disabled",
+      "configSaved": "Configuration saved",
+      "updateFailed": "Operation failed, please retry",
+      "deleteSuccess": "Plugin deleted"
+    },
+    "siteSubmission": {
+      "name": "Site Submission",
+      "description": "Fill in the site info; it will be published after admin review",
+      "config": {
+        "maxPerDay": "Max submissions per IP per day"
+      },
+      "trigger": "Submit a site",
+      "title": "Submit a site",
+      "nameLabel": "Name *",
+      "namePlaceholder": "e.g. GitHub",
+      "nameRequired": "Name is required",
+      "nameMax": "Name must be at most 50 characters",
+      "urlLabel": "URL *",
+      "urlRequired": "URL is required",
+      "urlInvalid": "Please enter a valid URL",
+      "descLabel": "Description *",
+      "descPlaceholder": "Briefly describe the site",
+      "descRequired": "Description is required",
+      "descMax": "Description must be at most 200 characters",
+      "charCount": "{count}/200 chars",
+      "categoryLabel": "Category *",
+      "categoryPlaceholder": "Select a category",
+      "categoryRequired": "Please select a category",
+      "contactLabel": "Contact (optional)",
+      "contactPlaceholder": "Email or WeChat for review contact",
+      "contactHint": "Admin may contact you during review",
+      "contactMax": "Contact must be at most 100 characters",
+      "cancel": "Cancel",
+      "submit": "Submit",
+      "success": "Submitted! We will review it soon. Thanks for contributing!",
+      "failed": "Submission failed",
+      "retry": "Submission failed, please try again later",
+      "errors": {
+        "PLUGIN_DISABLED": "Site submission is not enabled",
+        "INVALID_URL": "Invalid URL, only http/https is supported",
+        "RATE_LIMITED": "Too many submissions! Up to {count} per 24 hours, please try again tomorrow",
+        "SUBMIT_FAILED": "Submission failed, please try again later"
+      }
+    },
+    "poetryCard": {
+      "name": "Daily Poetry",
+      "description": "Shows a poetry card at the top-right of the homepage with a header toolbar toggle"
+    },
+    "visitTracking": {
+      "name": "Visit Tracking",
+      "description": "Records site visits and powers admin statistics: rankings, frequency chart, today vs. yesterday"
+    },
+    "siteDetail": {
+      "name": "Site Detail Dialog",
+      "description": "Adds a secondary detail dialog to site cards with rich text and screenshots"
+    },
+    "aboutPage": {
+      "name": "About Page",
+      "description": "Adds an About page entry to the frontend (footer link and sitemap); content is maintained in System Settings"
+    }
   }
 }

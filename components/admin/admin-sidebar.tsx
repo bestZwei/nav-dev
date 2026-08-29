@@ -12,6 +12,7 @@ import {
   Users,
   Database,
   Layers,
+  Puzzle,
 } from "lucide-react"
 import {
   Sidebar,
@@ -56,6 +57,11 @@ const navItems = [
     titleKey: "workspaces",
     href: "/admin/workspaces",
     icon: Layers,
+  },
+  {
+    titleKey: "plugins",
+    href: "/admin/plugins",
+    icon: Puzzle,
   },
   {
     titleKey: "settings",

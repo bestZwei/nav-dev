@@ -59,8 +59,7 @@ export default async function RootLayout({
         <WorkspaceMarker />
       </head>
       <body className={inter.className}>
-        {/* 资源提示：提前建立第三方连接，降低图标与诗词接口的首字节延迟 */}
-        <link rel="preconnect" href="https://api.jinrishici.com" />
+        {/* 资源提示：提前建立第三方连接，降低图标接口的首字节延迟（诗词接口 preconnect 随插件化移除） */}
         <link rel="dns-prefetch" href="https://favicon.im" />
         <link rel="dns-prefetch" href="https://www.google.com" />
         <NextIntlClientProvider>

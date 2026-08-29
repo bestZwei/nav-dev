@@ -8,7 +8,8 @@ import { ExternalLink, Copy, Check, Pin } from "lucide-react"
 import { useFaviconService, getProxiedFaviconUrl, proxyIconUrlIfPossible } from "@/hooks/use-favicon-service"
 import { useCardDensity } from "@/hooks/use-card-density"
 import { useSiteDetail } from "@/components/layout/site-detail-provider"
-import { SiteDetailDialog } from "@/components/layout/site-detail-dialog"
+// 装配层：详情弹窗 UI 归属 site-detail 内置插件，显隐由插件状态经 provider 壳控制
+import { SiteDetailDialog } from "@/plugins/site-detail/site-detail-dialog"
 import {
   Tooltip,
   TooltipContent,

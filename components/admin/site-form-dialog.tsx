@@ -114,9 +114,12 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
       }
     }
     async function loadFeatureFlag() {
+      // 详情编辑区显隐跟随 site-detail 内置插件的启用状态
       const settings = await fetchPublicSettings()
       if (!cancelled) {
-        setEnableSiteDetail(settings.enableSiteDetail)
+        setEnableSiteDetail(
+          settings.plugins?.builtinEnabledIds?.includes("site-detail") ?? false
+        )
       }
     }
     loadCategories()
