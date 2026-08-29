@@ -15,6 +15,12 @@ async function requireAdmin(): Promise<{ success: false; error: string } | null>
   return null
 }
 
+// 整数参数钳制：非法输入（NaN/越界）回退默认值，防止退化全表扫描或 Prisma 报错
+function clampInt(value: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(Math.max(Math.trunc(value), min), max)
+}
+
 // 埋点：仅对存在且已发布的站点记录访问，防止伪造 siteId 污染统计
 export async function recordVisit(siteId: string, request?: Request) {
   try {
@@ -69,14 +75,18 @@ export async function recordVisit(siteId: string, request?: Request) {
 export async function getVisitStats(days: number = 30, limit: number = 10) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
+  await assertPluginEnabled(PLUGIN_ID)
   try {
+    // 参数 clamp：NaN/负数会退化为全表扫描，超大值拖垮 DB
+    const safeDays = clampInt(days, 1, 365, 30)
+    const safeLimit = clampInt(limit, 1, 100, 10)
     const topSites = await prisma.visit.groupBy({
       by: ['siteId'],
-      where: days > 0 ? {
+      where: {
         visitedAt: {
-          gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
+          gte: new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000),
         },
-      } : undefined,
+      },
       _count: {
         id: true,
       },
@@ -85,7 +95,7 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
           id: 'desc',
         },
       },
-      take: limit === 0 ? undefined : limit,
+      take: safeLimit,
     })
 
     const siteIds = topSites.map(s => s.siteId)
@@ -107,11 +117,11 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
     })
 
     const totalVisits = await prisma.visit.count({
-      where: days > 0 ? {
+      where: {
         visitedAt: {
-          gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
+          gte: new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000),
         },
-      } : undefined,
+      },
     })
 
     return {
@@ -131,15 +141,17 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
 export async function getVisitFrequency(days: number = 30) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
+  await assertPluginEnabled(PLUGIN_ID)
   try {
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    const safeDays = clampInt(days, 1, 365, 30)
+    const startDate = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000)
 
     const visits = await prisma.visit.findMany({
-      where: days > 0 ? {
+      where: {
         visitedAt: {
           gte: startDate,
         },
-      } : undefined,
+      },
       select: {
         visitedAt: true,
       },
@@ -182,6 +194,7 @@ export async function getVisitFrequency(days: number = 30) {
 export async function getTodayVisitStats() {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
+  await assertPluginEnabled(PLUGIN_ID)
   try {
     const now = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())

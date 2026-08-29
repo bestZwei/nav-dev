@@ -112,7 +112,9 @@ npm run dev
 - 邮箱：`admin@example.com`
 - 密码：`admin123`
 
-⚠️ **重要**：首次登录后请立即修改默认密码！
+💡 可在 `.env` 中通过 `ADMIN_EMAIL` / `ADMIN_PASSWORD` 环境变量自定义首次初始化的管理员账号（仅首次 seed 生效）。
+
+⚠️ **重要**：默认密码是公开的，公网部署务必通过环境变量设置口令，或首次登录后立即修改！
 
 ## 🗂️ 多工作区与子域名路由
 
@@ -201,12 +203,16 @@ SESSION_SECRET=your-session-secret-here # 会话签名密钥，未设置时回�
 NEXTAUTH_SECRET=your-nextauth-secret-here
 NEXTAUTH_URL=http://localhost:3000 # 生产环境填写实际域名
 
-# Docker 配置（可选，有默认值）
+# Docker 配置（POSTGRES_PASSWORD 必填，其余有默认值）
 POSTGRES_USER=nav
-POSTGRES_PASSWORD=FkyM5NhrsYHtmmKc
+POSTGRES_PASSWORD=your-database-password-here # 必填：数据库密码，不设置容器无法启动
 POSTGRES_DB=nav
 POSTGRES_PORT=5432
 PORT=3000
+
+# 初始管理员账号（可选，仅首次 seed 生效）
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-admin-password-here
 ```
 
 #### 常用命令
@@ -282,7 +288,10 @@ pm2 save
 | `NEXTAUTH_SECRET` | 加密密钥（兼作会话签名回退密钥） | 随机字符串（`openssl rand -base64 32`） | ✅ |
 | `NEXTAUTH_URL` | 应用完整 URL | `http://localhost:3000` 或 `https://your-domain.com` | ✅ |
 
-**Docker 部署**：只需配置 `SESSION_SECRET`（或 `NEXTAUTH_SECRET`），其他环境变量有默认值或自动生成。
+| `POSTGRES_PASSWORD` | Docker Compose 的 PostgreSQL 密码（不提供容器无法启动） | 随机长字符串 | ✅（Docker） |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | 初始管理员账号（仅首次 seed 生效） | 邮箱 / 强口令 | ❌ |
+
+**Docker 部署**：需配置 `SESSION_SECRET`（或 `NEXTAUTH_SECRET`）与 `POSTGRES_PASSWORD`，其余环境变量有默认值或自动生成。
 
 **本地开发**：需要手动配置完整的 `DATABASE_URL`。
 

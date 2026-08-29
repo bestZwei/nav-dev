@@ -269,8 +269,10 @@ async function main() {
   console.log(`   - 已存在网站: ${skippedCount} 个\n`)
 
   console.log('💡 提示：')
-  console.log('   - 管理员账号: admin@example.com')
-  console.log('   - 管理员密码: admin123')
+  console.log(`   - 管理员账号: ${process.env.ADMIN_EMAIL?.trim() || 'admin@example.com'}`)
+  console.log(process.env.ADMIN_PASSWORD?.trim()
+    ? '   - 管理员密码: 已通过 ADMIN_PASSWORD 环境变量设置'
+    : '   - 管理员密码: admin123（公开默认值，公网部署请设置 ADMIN_PASSWORD 或登录后立即修改）')
   console.log('   - 后台地址: /admin')
   if (mode === 'basic') {
     console.log('   - 如需更多示例数据，运行: npm run db:seed:full\n')
@@ -279,17 +281,29 @@ async function main() {
 
 async function createDefaultAdmin() {
   console.log('👤 创建管理员用户...')
-  const hashedPassword = await bcrypt.hash('admin123', 10)
-  await prisma.user.create({
-    data: {
-      email: 'admin@example.com',
+  const email = process.env.ADMIN_EMAIL?.trim() || 'admin@example.com'
+  const password = process.env.ADMIN_PASSWORD?.trim() || ''
+  if (!password) {
+    // 未通过环境变量提供口令时使用历史默认值，但必须显式警告：
+    // 默认口令公开在仓库里，公网部署的实例任何人都能用它登录后台
+    console.warn('  ⚠️  未设置 ADMIN_PASSWORD 环境变量，将使用公开的默认口令 admin123！')
+    console.warn('  ⚠️  公网部署请务必设置 ADMIN_PASSWORD（或登录后立即在后台修改密码）。\n')
+  }
+  const finalPassword = password || 'admin123'
+  const hashedPassword = await bcrypt.hash(finalPassword, 10)
+  // upsert 而非 create：多副本同时启动竞态初始化时，唯一约束冲突会让 set -e 的容器进入 crash loop
+  await prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: {
+      email,
       password: hashedPassword,
       name: '管理员',
       avatar: null, // 默认无头像，用户可在后台设置
       role: 'ADMIN',
     },
   })
-  console.log('  ✓ 创建管理员: admin@example.com (密码: admin123)\n')
+  console.log(`  ✓ 创建管理员: ${email}${password ? '（口令来自 ADMIN_PASSWORD 环境变量）' : ' (密码: admin123)'}\n`)
 }
 
 main()

@@ -68,7 +68,8 @@
     "notFoundTitle": "未找到匹配的网站",
     "notFoundDesc": "没有找到与「{query}」相关的站点，请尝试更换关键词或缩短搜索字词。",
     "foundResults": "找到 {count} 个结果",
-    "tryOtherKeywords": "请尝试其他关键词"
+    "tryOtherKeywords": "请尝试其他关键词",
+    "keywordLabel": "关键词："
   },
   "home": {
     "noSitesInCategory": "暂无网站",
@@ -169,7 +170,8 @@
       "rangeAll": "全部时间",
       "range3months": "近3个月",
       "range30days": "近30天",
-      "rangeDays": "近{days}天"
+      "rangeDays": "近{days}天",
+      "loadError": "统计数据加载失败，请稍后重试"
     },
     "chart": {
       "frequencyTitle": "访问频次统计",

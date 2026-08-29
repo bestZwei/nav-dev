@@ -62,7 +62,7 @@ export function AdminAvatar() {
           // 会话无效（/api/admin/me 已在 401 响应中清除脏 cookie）：
           // 硬跳转到登录页重新认证，避免停留在无会话的管理页面上
           window.location.href = "/admin/login"
-        } else if (res.status !== 401) {
+        } else {
           // 仅在 API 真的返回了 JSON 错误时记录日志；5xx 或 HTML 响应
           // （如反向代理 530 / 网关超时）属于网络层问题，避免在控制台刷红
           const ctype = res.headers.get("content-type") || ""
@@ -113,7 +113,8 @@ export function AdminAvatar() {
   // 生成用户名首字母作为 fallback
   const initials = user.name
     ? user.name
-        .split(" ")
+        .split(/\s+/)
+        .filter(Boolean)
         .map((n) => n[0])
         .join("")
         .toUpperCase()

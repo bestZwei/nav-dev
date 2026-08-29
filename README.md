@@ -111,7 +111,9 @@ npm run dev
 - Email: `admin@example.com`
 - Password: `admin123`
 
-⚠️ **Important**: change the default password immediately after the first login!
+💡 Customize the initial admin account via the `ADMIN_EMAIL` / `ADMIN_PASSWORD` environment variables in `.env` (applies to the first seed only).
+
+⚠️ **Important**: the default password is public knowledge. For public deployments, set the credentials via environment variables or change the password immediately after the first login!
 
 ## 🗂️ Multi-Workspace & Subdomain Routing
 
@@ -200,12 +202,16 @@ SESSION_SECRET=your-session-secret-here # session signing key, falls back to NEX
 NEXTAUTH_SECRET=your-nextauth-secret-here
 NEXTAUTH_URL=http://localhost:3000 # use your real domain in production
 
-# Docker config (optional, has defaults)
+# Docker config (POSTGRES_PASSWORD is required, others have defaults)
 POSTGRES_USER=nav
-POSTGRES_PASSWORD=FkyM5NhrsYHtmmKc
+POSTGRES_PASSWORD=your-database-password-here # required: containers will not start without it
 POSTGRES_DB=nav
 POSTGRES_PORT=5432
 PORT=3000
+
+# Initial admin account (optional, first seed only)
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-admin-password-here
 ```
 
 #### Common Commands
@@ -281,7 +287,10 @@ pm2 save
 | `NEXTAUTH_SECRET` | Encryption key (also used as session signing fallback) | random string (`openssl rand -base64 32`) | ✅ |
 | `NEXTAUTH_URL` | Full app URL | `http://localhost:3000` or `https://your-domain.com` | ✅ |
 
-**Docker**: only `SESSION_SECRET` (or `NEXTAUTH_SECRET`) is required; other variables have defaults or are auto-generated.
+| `POSTGRES_PASSWORD` | PostgreSQL password for Docker Compose (containers will not start without it) | random long string | ✅ (Docker) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Initial admin account (first seed only) | email / strong password | ❌ |
+
+**Docker**: configure `SESSION_SECRET` (or `NEXTAUTH_SECRET`) and `POSTGRES_PASSWORD`; other variables have defaults or are auto-generated.
 
 **Local dev**: configure the full `DATABASE_URL` manually.
 

@@ -96,6 +96,7 @@ export default function AdminDashboardPage() {
   // 访问统计相关卡片与图表归属 visit-tracking 插件，禁用时整块隐藏
   const visitEnabled = useBuiltinPluginEnabled("visit-tracking")
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null)
   const [frequencyData, setFrequencyData] = useState<FrequencyData | null>(null)
   const [todayStats, setTodayStats] = useState<TodayStats | null>(null)
@@ -134,6 +135,7 @@ export default function AdminDashboardPage() {
   // 加载统计数据
   useEffect(() => {
     async function loadStats() {
+      setLoadError(false)
       try {
         const [
           sitesRes,
@@ -203,13 +205,15 @@ export default function AdminDashboardPage() {
         setTodayStats(todayData as unknown as Parameters<typeof setTodayStats>[0])
         setCategoryDistribution(distributionData as unknown as Parameters<typeof setCategoryDistribution>[0])
       } catch (error) {
+        // 失败必须显式呈现：静默降级会让管理员把「加载失败」误读为数据清零
         console.error("Failed to load stats:", error)
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
     }
 
-    loadStats()
+    loadStats().catch(() => {})
   }, [timeRange, topCount, visitEnabled])
 
   if (loading) {
@@ -230,6 +234,11 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {t("loadError")}
+        </div>
+      )}
       {/* 统计卡片：全站口径由顶栏切换器的「全局」禁用态示意 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {siteStats.map((stat) => (

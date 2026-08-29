@@ -68,7 +68,8 @@
     "notFoundTitle": "일치하는 사이트 없음",
     "notFoundDesc": "\"{query}\"와 일치하는 사이트가 없습니다. 다른 키워드로 시도해 보세요.",
     "foundResults": "{count}개 결과",
-    "tryOtherKeywords": "다른 키워드를 시도해 보세요"
+    "tryOtherKeywords": "다른 키워드를 시도해 보세요",
+    "keywordLabel": "키워드: "
   },
   "home": {
     "noSitesInCategory": "사이트 없음",
@@ -169,7 +170,8 @@
       "rangeAll": "전체 기간",
       "range3months": "최근 3개월",
       "range30days": "최근 30일",
-      "rangeDays": "최근 {days}일"
+      "rangeDays": "최근 {days}일",
+      "loadError": "통계 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요"
     },
     "chart": {
       "frequencyTitle": "방문 빈도",

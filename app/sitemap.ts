@@ -10,18 +10,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = await getRequestBaseUrl()
 
   // 静态页面（始终包含）
+  // /search 不进 sitemap：无 q 参数时 302 回首页，收录无意义
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
-    },
-    {
-      url: `${baseUrl}/search`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
     },
   ]
 

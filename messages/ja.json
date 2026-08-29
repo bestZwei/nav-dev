@@ -68,7 +68,8 @@
     "notFoundTitle": "一致するサイトが見つかりません",
     "notFoundDesc": "「{query}」に一致するサイトがありません。別のキーワードを試してください。",
     "foundResults": "{count} 件の結果",
-    "tryOtherKeywords": "別のキーワードをお試しください"
+    "tryOtherKeywords": "別のキーワードをお試しください",
+    "keywordLabel": "キーワード："
   },
   "home": {
     "noSitesInCategory": "サイトがありません",
@@ -169,7 +170,8 @@
       "rangeAll": "全期間",
       "range3months": "過去3ヶ月",
       "range30days": "過去30日間",
-      "rangeDays": "過去{days}日間"
+      "rangeDays": "過去{days}日間",
+      "loadError": "統計データの読み込みに失敗しました。後でもう一度お試しください"
     },
     "chart": {
       "frequencyTitle": "アクセス頻度",

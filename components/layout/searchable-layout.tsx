@@ -132,7 +132,7 @@ export function SearchableLayout({
                     {t("found", { count: filteredSites.length })}
                   </Badge>
                   <p className="text-sm text-muted-foreground">
-                    {t("keyword")}：<span className="font-semibold text-foreground">{t("quoted", { query: searchQuery })}</span>
+                    {t("keywordLabel")}<span className="font-semibold text-foreground">{t("quoted", { query: searchQuery })}</span>
                   </p>
                 </div>
 

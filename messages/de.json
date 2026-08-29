@@ -68,7 +68,8 @@
     "notFoundTitle": "Keine passenden Seiten",
     "notFoundDesc": "Keine Seiten zu „{query}“ gefunden. Versuchen Sie andere oder kürzere Stichwörter.",
     "foundResults": "{count} Ergebnisse",
-    "tryOtherKeywords": "Versuchen Sie andere Stichwörter"
+    "tryOtherKeywords": "Versuchen Sie andere Stichwörter",
+    "keywordLabel": "Stichwort: "
   },
   "home": {
     "noSitesInCategory": "Keine Seiten",
@@ -169,7 +170,8 @@
       "rangeAll": "Gesamter Zeitraum",
       "range3months": "Letzte 3 Monate",
       "range30days": "Letzte 30 Tage",
-      "rangeDays": "Letzte {days} Tage"
+      "rangeDays": "Letzte {days} Tage",
+      "loadError": "Statistiken konnten nicht geladen werden. Bitte später erneut versuchen."
     },
     "chart": {
       "frequencyTitle": "Besuchshäufigkeit",

@@ -29,7 +29,8 @@ export async function GET() {
     if (databaseUrl) {
       try {
         // 解析 PostgreSQL 连接字符串: postgresql://user:password@host:port/database
-        const match = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/)
+        // 库名剥掉 ?sslmode=... 等查询参数
+        const match = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/)
         if (match) {
           const [, username, , host, port, database] = match
           dbInfo = {
@@ -49,9 +50,12 @@ export async function GET() {
     return NextResponse.json(dbInfo)
   } catch (error) {
     console.error("Database connection error:", error)
-    return NextResponse.json({
-      type: "PostgreSQL",
-      status: "error" as const,
-    })
+    return NextResponse.json(
+      {
+        type: "PostgreSQL",
+        status: "error" as const,
+      },
+      { status: 503 }
+    )
   }
 }

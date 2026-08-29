@@ -6,12 +6,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-nav}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-FkyM5NhrsYHtmmKc}
+      # 密码必填：公开仓库里的默认密码等于全网皆知，必须由 .env 显式提供
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 中设置 POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-nav}
     volumes:
       - postgresql-data:/var/lib/postgresql/data
     ports:
-      - ${POSTGRES_PORT:-5432}:5432
+      # 仅绑定本机回环：数据库无需暴露到所有网卡，应用经内部网络访问
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nav}"]
       interval: 10s
@@ -28,7 +30,7 @@ services:
     ports:
       - ${PORT:-3000}:3000
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nav}:${POSTGRES_PASSWORD:-FkyM5NhrsYHtmmKc}@postgresql:5432/${POSTGRES_DB:-nav}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nav}:${POSTGRES_PASSWORD:?请在 .env 中设置 POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB:-nav}
       # 会话签名密钥，未设置时回退 NEXTAUTH_SECRET
       SESSION_SECRET: ${SESSION_SECRET:-${NEXTAUTH_SECRET}}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
