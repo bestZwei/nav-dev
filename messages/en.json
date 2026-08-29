@@ -564,7 +564,14 @@
       "aboutTabEdit": "Edit",
       "aboutTabPreview": "Preview",
       "aboutEmptyPreview": "No content yet",
-      "aboutFallbackHint": "Content is empty; the global default content will be shown"
+      "aboutFallbackHint": "Content is empty; the global default content will be shown",
+      "secCustomCode": "Custom Code",
+      "secCustomCodeDesc": "Inject custom HTML/CSS/JS into all site pages",
+      "customCodeWarning": "Injected code runs site-wide exactly as written. Never paste scripts from untrusted sources; malformed code can break the frontend — clear the field to recover.",
+      "customHeadCodeLabel": "Head Code",
+      "customHeadCodeHint": "Injected at the start of body, executes early: ideal for analytics, site verification scripts and custom styles.",
+      "customBodyCodeLabel": "Footer Code",
+      "customBodyCodeHint": "Injected at the end of body, executes after render: ideal for page effects, third-party widgets and live chat."
     },
     "profile": {
       "admin": "Admin",

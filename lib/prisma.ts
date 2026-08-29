@@ -105,6 +105,8 @@ export interface SystemSettingsItem {
   pluginConfigs: Record<string, Record<string, number | string | boolean>>
   githubUrl: string | null
   defaultLanguage: string
+  customHeadCode: string | null
+  customBodyCode: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -309,6 +311,8 @@ const initialSystemSettings: SystemSettingsItem = {
   pluginConfigs: {},
   githubUrl: 'https://github.com/kenanlabs/nav',
   defaultLanguage: 'zh',
+  customHeadCode: null,
+  customBodyCode: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 }

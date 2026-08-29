@@ -1647,6 +1647,9 @@ export async function getDisplaySettings() {
       workspace.siteDescription || (settings.siteDescription as string | undefined),
     siteLogo: workspace.siteLogo || (settings.siteLogo as string | null | undefined),
     favicon: workspace.favicon || (settings.favicon as string | null | undefined),
+    // 自定义代码为全局配置（不参与工作区覆盖），显式透传以保证类型可见
+    customHeadCode: settings.customHeadCode as string | null | undefined,
+    customBodyCode: settings.customBodyCode as string | null | undefined,
   }
 }
 
@@ -1685,6 +1688,8 @@ const ALLOWED_SETTINGS_FIELDS = [
   "aboutContent",
   "githubUrl",
   "defaultLanguage",
+  "customHeadCode",
+  "customBodyCode",
 ] as const
 
 export async function updateSystemSettings(data: {
@@ -1703,6 +1708,8 @@ export async function updateSystemSettings(data: {
   aboutContent?: string | null
   githubUrl?: string
   defaultLanguage?: Locale
+  customHeadCode?: string | null
+  customBodyCode?: string | null
 }) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized

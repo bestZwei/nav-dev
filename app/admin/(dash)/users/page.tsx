@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Plus, Trash2, Info, Link2, PanelBottom, Layers, FileText } from "lucide-react"
+import { Loader2, Plus, Trash2, Info, Link2, PanelBottom, Layers, FileText, Code2, AlertTriangle } from "lucide-react"
 import {
   getSystemSettings,
   updateSystemSettings,
@@ -52,6 +52,8 @@ interface SystemSettingsData {
   icpNumber: string | undefined
   icpLink: string | undefined
   defaultLanguage: Locale
+  customHeadCode: string | undefined
+  customBodyCode: string | undefined
 }
 
 const sections = [
@@ -59,6 +61,7 @@ const sections = [
   { id: "links", titleKey: "secLinks", icon: Link2 },
   { id: "footer", titleKey: "secFooter", icon: PanelBottom },
   { id: "about", titleKey: "secAbout", icon: FileText },
+  { id: "customCode", titleKey: "secCustomCode", icon: Code2 },
 ] as const
 
 type SectionId = (typeof sections)[number]["id"]
@@ -83,6 +86,8 @@ export default function AdminSettingsPage() {
     icpNumber: undefined,
     icpLink: undefined,
     defaultLanguage: "zh",
+    customHeadCode: undefined,
+    customBodyCode: undefined,
   })
   const [savingSettings, setSavingSettings] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
@@ -160,6 +165,8 @@ export default function AdminSettingsPage() {
         icpNumber: global.icpNumber || undefined,
         icpLink: global.icpLink || undefined,
         defaultLanguage: isLocale(global.defaultLanguage) ? global.defaultLanguage : "zh",
+        customHeadCode: global.customHeadCode || undefined,
+        customBodyCode: global.customBodyCode || undefined,
       }))
     }
     if (display) {
@@ -242,6 +249,7 @@ export default function AdminSettingsPage() {
     about: { title: t("secAbout"), description: t("secAboutDesc") },
     links: { title: t("secLinks"), description: t("secLinksDesc") },
     footer: { title: t("secFooter"), description: t("secFooterDesc") },
+    customCode: { title: t("secCustomCode"), description: t("secCustomCodeDesc") },
   }
 
   return (
@@ -599,6 +607,46 @@ export default function AdminSettingsPage() {
                       </Button>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* 自定义代码 */}
+            {activeSection === "customCode" && (
+              <div className="space-y-8">
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>{t("customCodeWarning")}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-head-code">{t("customHeadCodeLabel")}</Label>
+                  <Textarea
+                    id="custom-head-code"
+                    value={settings.customHeadCode || ""}
+                    onChange={(e) => setSettings({ ...settings, customHeadCode: e.target.value })}
+                    rows={7}
+                    className="font-mono text-xs"
+                    placeholder={'<script>\n  // 统计代码、站点验证脚本、自定义 <style>...\n</script>'}
+                    spellCheck={false}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {t("customHeadCodeHint")}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-body-code">{t("customBodyCodeLabel")}</Label>
+                  <Textarea
+                    id="custom-body-code"
+                    value={settings.customBodyCode || ""}
+                    onChange={(e) => setSettings({ ...settings, customBodyCode: e.target.value })}
+                    rows={7}
+                    className="font-mono text-xs"
+                    placeholder={'<script>\n  // 页面特效、第三方挂件、客服代码...\n</script>'}
+                    spellCheck={false}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {t("customBodyCodeHint")}
+                  </p>
                 </div>
               </div>
             )}

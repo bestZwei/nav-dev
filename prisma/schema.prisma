@@ -159,6 +159,11 @@ model SystemSettings {
   pluginConfigs        Json     @default("{}") @map("plugin_configs")
   // GitHub link
   githubUrl        String?  @map("github_url")
+  // 自定义代码（管理员注入全站，仅信任管理员输入）
+  // customHeadCode：注入 body 起始处（页面加载早期执行，适合统计/验证脚本）
+  // customBodyCode：注入 body 结尾处（水合后执行，适合特效/挂件/客服）
+  customHeadCode   String?  @map("custom_head_code")
+  customBodyCode   String?  @map("custom_body_code")
   // Default site language for visitors without a locale cookie (zh/en)
   defaultLanguage  String   @default("zh") @map("default_language")
   createdAt        DateTime @default(now()) @map("created_at")
