@@ -32,6 +32,9 @@ export interface DomainItem {
   host: string
   isPrimary: boolean
   workspaceId: string
+  // 反向探测结果（见 lib/domain-verify.ts）
+  lastVerifiedStatus?: string | null
+  lastVerifiedAt?: Date | string | null
   createdAt: Date
 }
 
@@ -305,7 +308,7 @@ const initialSystemSettings: SystemSettingsItem = {
   icpNumber: null,
   icpLink: null,
   aboutContent: null,
-  enabledPlugins: [],
+  enabledPlugins: ['visit-tracking', 'poetry-card'],
   pluginConfigs: {},
   githubUrl: 'https://github.com/kenanlabs/nav',
   defaultLanguage: 'zh',
@@ -408,6 +411,26 @@ class InMemoryDatabase {
       return { ...this.workspaces[idx] }
     },
 
+    updateMany: async (args: { where?: { isDefault?: boolean; id?: { not?: string } }; data: Partial<WorkspaceItem> }): Promise<{ count: number }> => {
+      const targets = this.workspaces.filter(w => {
+        if (args.where?.isDefault !== undefined && w.isDefault !== args.where.isDefault) return false
+        if (args.where?.id?.not && w.id === args.where.id.not) return false
+        return true
+      })
+      for (const w of targets) {
+        await this.workspace.update({ where: { id: w.id }, data: args.data })
+      }
+      return { count: targets.length }
+    },
+
+    upsert: async (args: { where: { slug?: string; id?: string }; update: Partial<WorkspaceItem>; create: Partial<WorkspaceItem> }): Promise<WorkspaceItem> => {
+      const existing = await this.workspace.findUnique({ where: args.where })
+      if (existing) {
+        return this.workspace.update({ where: args.where, data: args.update })
+      }
+      return this.workspace.create({ data: args.create })
+    },
+
     delete: async (args: { where: { id: string } }): Promise<WorkspaceItem> => {
       const idx = this.workspaces.findIndex(w => w.id === args.where.id)
       if (idx === -1) throw new Error('Workspace not found')
@@ -438,6 +461,13 @@ class InMemoryDatabase {
         result = result.filter(d => d.workspaceId === args.where!.workspaceId)
       }
       return result.map(d => ({ ...d }))
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<DomainItem> }): Promise<DomainItem> => {
+      const idx = this.domains.findIndex(d => d.id === args.where.id)
+      if (idx === -1) throw new Error('Domain not found')
+      this.domains[idx] = { ...this.domains[idx], ...args.data }
+      return { ...this.domains[idx] }
     },
 
     create: async (args: { data: Partial<DomainItem> }): Promise<DomainItem> => {
@@ -900,7 +930,8 @@ class InMemoryDatabase {
         submitterContact: args.data.submitterContact ?? null,
         submitterIp: args.data.submitterIp ?? null,
         categoryId: args.data.categoryId || (this.categories[0]?.id ?? 'cat-1'),
-        isPublished: args.data.isPublished ?? true,
+        // 与 schema 的 @default(false) 对齐，避免内存/数据库两种模式行为漂移
+        isPublished: args.data.isPublished ?? false,
         isPinned: args.data.isPinned ?? false,
         order: args.data.order ?? this.sites.length + 1,
         detailContent: args.data.detailContent ?? null,
@@ -1039,17 +1070,36 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       return { count: created.length }
     },
 
-    deleteMany: async (args?: { where?: { siteId?: string } }) => {
+    // 支持 where.siteId / where.id（字符串或 { in: string[] }），与 updateSite
+    // 的增量 diff（保留 keepId 命中项、删除其余）对齐
+    deleteMany: async (args?: { where?: { siteId?: string; id?: string | { in: string[] } } }) => {
       let count = 0
-      if (!args?.where?.siteId) {
+      if (!args?.where) {
         count = this.screenshots.length
         this.screenshots = []
-      } else {
-        const before = this.screenshots.length
-        this.screenshots = this.screenshots.filter(s => s.siteId !== args.where!.siteId)
-        count = before - this.screenshots.length
+        return { count }
       }
+      const match = (s: ScreenshotItem): boolean => {
+        if (args.where!.siteId !== undefined && s.siteId !== args.where!.siteId) return false
+        if (args.where!.id !== undefined) {
+          const target = args.where!.id
+          if (typeof target === 'string' ? s.id !== target : !target.in.includes(s.id)) return false
+        }
+        return true
+      }
+      const before = this.screenshots.length
+      this.screenshots = this.screenshots.filter(s => !match(s))
+      count = before - this.screenshots.length
       return { count }
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<ScreenshotItem> }) => {
+      const shot = this.screenshots.find(s => s.id === args.where.id)
+      if (!shot) {
+        throw new Error(`Screenshot not found: ${args.where.id}`)
+      }
+      Object.assign(shot, args.data)
+      return shot
     },
 
     findMany: async (args?: { where?: { siteId?: string; id?: string }; orderBy?: { order?: 'asc' | 'desc' } }): Promise<ScreenshotItem[]> => {
@@ -1069,11 +1119,28 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       if (args?.select) {
         const out: any = {}
         for (const k of Object.keys(args.select)) {
-          if (args.select[k]) out[k] = (shot as any)[k]
+          const v = args.select[k]
+          if (v === true) {
+            out[k] = (shot as any)[k]
+          } else if (k === 'site' && v && typeof v === 'object') {
+            // 嵌套关系投影：与真实 Prisma 的 select: { site: { select } } 语义对齐，
+            // 否则截图服务路由读 site.isPublished 时拿到 undefined 直接 500
+            const site = this.sites.find(s => s.id === shot.siteId)
+            out.site = site
+              ? (v.select ? this.selectScalars(site, v.select) : { ...site })
+              : null
+          }
         }
         return out
       }
       return { ...shot }
+    },
+
+    count: async (args?: { where?: { siteId?: string; id?: string } }): Promise<number> => {
+      let result = this.screenshots
+      if (args?.where?.siteId) result = result.filter(s => s.siteId === args.where!.siteId)
+      if (args?.where?.id) result = result.filter(s => s.id === args.where!.id)
+      return result.length
     },
   }
 
@@ -1179,6 +1246,13 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       return { ...this.systemSettingsItem }
     },
 
+    upsert: async (args: { where: { id: string }; update: Partial<SystemSettingsItem>; create: Partial<SystemSettingsItem> }): Promise<SystemSettingsItem> => {
+      if (this.systemSettingsItem.id === args.where.id) {
+        return this.systemSettings.update({ where: { id: args.where.id }, data: args.update })
+      }
+      return this.systemSettings.create({ data: { ...args.create, id: args.where.id } })
+    },
+
     count: async () => 1,
   }
 
@@ -1235,10 +1309,27 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
 
   // Visit tracking methods
   visit = {
-    findMany: async (args?: any): Promise<VisitItem[]> => {
+    findMany: async (args?: any): Promise<any[]> => {
       let result = [...this.visits]
       if (args?.where?.visitedAt?.gte) {
         result = result.filter(v => v.visitedAt >= args.where.visitedAt.gte)
+      }
+      if (args?.where?.visitedAt?.lt) {
+        result = result.filter(v => v.visitedAt < args.where.visitedAt.lt)
+      }
+      // Prisma 的 { not: null } 语义：过滤掉 null 值（独立访客数按 IP 统计前使用）
+      if (args?.where?.ipAddress?.not === null) {
+        result = result.filter(v => v.ipAddress !== null)
+      }
+      // distinct：按指定字段去重（保留首条）
+      if (Array.isArray(args?.distinct) && args.distinct.length > 0) {
+        const seen = new Set<string>()
+        result = result.filter(v => {
+          const key = args.distinct.map((k: string) => String((v as any)[k])).join('|')
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
       }
       if (args?.orderBy?.visitedAt) {
         const dir = args.orderBy.visitedAt
@@ -1246,6 +1337,15 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
           if (a.visitedAt < b.visitedAt) return dir === 'desc' ? 1 : -1
           if (a.visitedAt > b.visitedAt) return dir === 'desc' ? -1 : 1
           return 0
+        })
+      }
+      if (args?.select) {
+        return result.map(v => {
+          const out: any = {}
+          for (const key of Object.keys(args.select)) {
+            if (args.select[key]) out[key] = (v as any)[key]
+          }
+          return out
         })
       }
       return result
@@ -1258,17 +1358,23 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
         ipAddress: args.data.ipAddress || null,
         userAgent: args.data.userAgent || null,
         referer: args.data.referer || null,
-        visitedAt: new Date(),
+        visitedAt: args.data.visitedAt || new Date(),
       }
       this.visits.push(newVisit)
       return newVisit
     },
 
     count: async (args?: any): Promise<number> => {
+      let result = this.visits
+      // gte / lt 均需支持：今日统计用 { gte, lt } 圈定昨日区间，
+      // 忽略 lt 会把今日访问计入昨日，导致环比数据失真
       if (args?.where?.visitedAt?.gte) {
-        return this.visits.filter(v => v.visitedAt >= args.where.visitedAt.gte).length
+        result = result.filter(v => v.visitedAt >= args.where.visitedAt.gte)
       }
-      return this.visits.length
+      if (args?.where?.visitedAt?.lt) {
+        result = result.filter(v => v.visitedAt < args.where.visitedAt.lt)
+      }
+      return result.length
     },
 
     groupBy: async (args: {

@@ -22,6 +22,36 @@ const workspacePreviewEnabled =
   process.env.NODE_ENV === "development" ||
   process.env.ENABLE_WORKSPACE_PREVIEW === "true"
 
+// ---- CSRF 防护 ----
+// 会话 cookie 含 SameSite=None 分支（跨站 iframe 场景），会被跨站请求携带，
+// 而 Route Handler 不享受 Server Action 的内建 Origin 校验。
+// 浏览器对 POST/PUT/PATCH/DELETE 的 fetch 请求总是附带 Origin 头（含同源），
+// 与请求 Host（x-forwarded-host 优先，回退 host）比对即可识别跨站伪造；
+// Origin 缺失时放行：非浏览器客户端不构成 CSRF 风险，且保留 API 直连能力。
+function isSameOriginApiRequest(request: NextRequest): boolean {
+  if (
+    request.method === "GET" ||
+    request.method === "HEAD" ||
+    request.method === "OPTIONS"
+  ) {
+    return true
+  }
+  const origin = request.headers.get("origin")
+  if (!origin) return true
+  let originHost: string
+  try {
+    originHost = new URL(origin).host
+  } catch {
+    return false
+  }
+  if (!originHost) return false
+  const requestHost =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    request.headers.get("host") ||
+    ""
+  return requestHost.toLowerCase() === originHost.toLowerCase()
+}
+
 // 工作区域名解析相关逻辑运行在应用层（lib/workspace.ts），middleware 只做
 // 纯字符串处理并注入请求头（Edge Runtime 无法使用 Prisma）
 function buildWorkspaceHeaders(request: NextRequest): Headers {
@@ -50,6 +80,14 @@ function buildWorkspaceHeaders(request: NextRequest): Headers {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ---- CSRF：拒绝跨站伪造的 API 写请求 ----
+  if (pathname.startsWith("/api/") && !isSameOriginApiRequest(request)) {
+    return NextResponse.json(
+      { error: "Cross-origin request rejected" },
+      { status: 403 }
+    )
+  }
 
   // ---- 管理 API 鉴权：未认证返回 401 JSON（不重定向） ----
   const isProtectedApi = protectedApiRoutes.some((route) =>

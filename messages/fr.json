@@ -629,7 +629,13 @@
       "addDomain": "Lier",
       "domainAdded": "Domaine {host} lié",
       "domainRemoved": "Domaine délié",
-      "removeDomain": "Délier le domaine"
+      "removeDomain": "Délier le domaine",
+      "verifyDomain": "Vérifier l'état du domaine",
+      "verifyOk": "Le domaine est actif et affiche cet espace de travail",
+      "verifyFallback": "Le domaine est accessible mais affiche l'espace de travail par défaut. Vérifiez l'interrupteur de publication, le DNS et la transmission de l'en-tête Host par votre proxy",
+      "verifyUnreachable": "Le domaine est inaccessible ou a renvoyé une réponse inattendue. Vérifiez le DNS, le certificat HTTPS et le pare-feu",
+      "verifyFailed": "Échec de la vérification, veuillez réessayer plus tard",
+      "verifyAt": "Dernière vérification : {time}"
     },
     "workspaceForm": {
       "createTitle": "Nouvel espace de travail",

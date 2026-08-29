@@ -1,17 +1,22 @@
 #!/bin/sh
 set -e
 
-# 会话签名密钥兜底：未显式配置时生成并持久化到挂载卷之外的 /app/.session-secret，
+# 会话签名密钥兜底：未显式配置时生成并持久化到 SESSION_SECRET_FILE（Dockerfile 预建的
+# nextjs 可写目录 /app/.session-data/.session-secret，可在 compose 挂卷持久化），
 # 保证容器重启后会话不全部失效（镜像重建时会重新生成，届时需重新登录）
 if [ -z "$SESSION_SECRET" ] && [ -z "$NEXTAUTH_SECRET" ]; then
-  SECRET_FILE="/app/.session-secret"
+  SECRET_FILE="${SESSION_SECRET_FILE:-/app/.session-secret}"
   if [ -f "$SECRET_FILE" ]; then
     export SESSION_SECRET="$(cat "$SECRET_FILE")"
     echo "⚠️  使用容器内持久化的会话密钥（建议在环境变量中显式配置 SESSION_SECRET）"
   else
     export SESSION_SECRET="$(head -c 32 /dev/urandom | base64)"
-    echo "$SESSION_SECRET" > "$SECRET_FILE" 2>/dev/null || true
-    chmod 600 "$SECRET_FILE" 2>/dev/null || true
+    if echo "$SESSION_SECRET" > "$SECRET_FILE" 2>/dev/null; then
+      chmod 600 "$SECRET_FILE" 2>/dev/null || true
+    else
+      # 写入失败（文件系统只读/无权限）：本次运行的会话重启后失效，显式提示避免静默掉线
+      echo "❌ 警告：无法持久化会话密钥（$SECRET_FILE 不可写），容器重启后需重新登录。请配置 SESSION_SECRET 环境变量或挂载可写卷。"
+    fi
     echo "⚠️  未配置 SESSION_SECRET，已自动生成会话密钥（建议在环境变量中显式配置并持久化）"
   fi
 fi

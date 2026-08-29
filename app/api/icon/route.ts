@@ -57,7 +57,7 @@ const memoryCache = new Map<string, CacheEntry>()
 const inflight = new Map<string, Promise<CacheEntry>>()
 
 function cacheKeyFor(rawKey: string): string {
-  return crypto.createHash("sha1").update(rawKey).digest("hex")
+  return crypto.createHash("sha256").update(rawKey).digest("hex")
 }
 
 function setMemoryCache(key: string, entry: CacheEntry) {
@@ -151,7 +151,7 @@ async function resolveDomainIcon(domain: string, preferred: FaviconServiceKey): 
       return {
         body: result.body,
         contentType: result.contentType,
-        etag: crypto.createHash("sha1").update(result.body).digest("hex").slice(0, 16),
+        etag: crypto.createHash("sha256").update(result.body).digest("hex").slice(0, 16),
         expires: Date.now() + SUCCESS_TTL,
         ok: true,
       }
@@ -166,7 +166,7 @@ async function resolveUrlIcon(url: string): Promise<CacheEntry> {
     return {
       body: result.body,
       contentType: result.contentType,
-      etag: crypto.createHash("sha1").update(result.body).digest("hex").slice(0, 16),
+      etag: crypto.createHash("sha256").update(result.body).digest("hex").slice(0, 16),
       expires: Date.now() + SUCCESS_TTL,
       ok: true,
     }

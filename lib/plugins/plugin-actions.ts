@@ -9,15 +9,9 @@ import { resolveConfig } from "./runtime"
 import type { PluginConfigField, PluginManifest } from "./types"
 
 // 管理动作：插件启停、配置、上传、删除。
-// 与 lib/actions.ts 的 requireAdmin 同款双层校验（签名 + 查库确认角色）
+// getAdminSession 已含双层校验（签名 + 查库确认角色），不再重复查库
 async function requireAdmin(): Promise<{ success: false; error: string } | null> {
-  const session = await getAdminSession()
-  if (!session) return { success: false, error: "Unauthorized" }
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { role: true },
-  })
-  if (!user || user.role !== "ADMIN") {
+  if (!(await getAdminSession())) {
     return { success: false, error: "Unauthorized" }
   }
   return null

@@ -629,7 +629,13 @@
       "addDomain": "Binden",
       "domainAdded": "Domain {host} gebunden",
       "domainRemoved": "Domain-Bindung aufgehoben",
-      "removeDomain": "Domain-Bindung aufheben"
+      "removeDomain": "Domain-Bindung aufheben",
+      "verifyDomain": "Domain-Status prüfen",
+      "verifyOk": "Domain ist aktiv und zeigt diesen Workspace an",
+      "verifyFallback": "Domain ist erreichbar, zeigt aber den Standard-Workspace an. Prüfen Sie den Veröffentlichungsschalter, das DNS und ob Ihr Proxy den Host-Header weiterleitet",
+      "verifyUnreachable": "Die Domain ist nicht erreichbar oder antwortet unerwartet. Prüfen Sie DNS, HTTPS-Zertifikat und Firewall",
+      "verifyFailed": "Prüfung fehlgeschlagen, bitte später erneut versuchen",
+      "verifyAt": "Zuletzt geprüft: {time}"
     },
     "workspaceForm": {
       "createTitle": "Neuer Workspace",

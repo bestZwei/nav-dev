@@ -7,14 +7,9 @@ import { PLUGIN_ID } from "./constants"
 // 访问统计插件后端能力。
 // API 路由（/api/visit、/api/admin/stats/*）作为装配层薄壳调用本模块。
 
+// getAdminSession 已含双层校验（签名 + 查库确认角色），不再重复查库
 async function requireAdmin(): Promise<{ success: false; error: string } | null> {
-  const session = await getAdminSession()
-  if (!session) return { success: false, error: "Unauthorized" }
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { role: true },
-  })
-  if (!user || user.role !== "ADMIN") {
+  if (!(await getAdminSession())) {
     return { success: false, error: "Unauthorized" }
   }
   return null
@@ -153,10 +148,16 @@ export async function getVisitFrequency(days: number = 30) {
       },
     })
 
-    // 按日期分组统计
+    // 按日期分组统计（本地时区日界，与 getTodayVisitStats 的"今日"口径一致：
+    // toISOString 的 UTC 日界会在非 UTC 服务器上把同一天的访问拆到两列）
+    const localDateKey = (date: Date) => {
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const d = String(date.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
+    }
     const visitsByDate = visits.reduce((acc, visit) => {
-      const date = new Date(visit.visitedAt)
-      const dateKey = date.toISOString().split('T')[0] // YYYY-MM-DD
+      const dateKey = localDateKey(new Date(visit.visitedAt))
       acc[dateKey] = (acc[dateKey] || 0) + 1
       return acc
     }, {} as Record<string, number>)

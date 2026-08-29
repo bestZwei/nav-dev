@@ -35,6 +35,8 @@ interface HeaderProps {
   siteLogo?: string | null
   searchQuery?: string
   onSearchChange?: (query: string) => void
+  // 回车提交搜索：URL 驱动的搜索页（/search）需要，首页客户端过滤无需传
+  onSearchSubmit?: (query: string) => void
   useAnchorLinks?: boolean
   onCategoryClick?: (slug: string) => void
 }
@@ -46,6 +48,7 @@ export function Header({
   siteLogo = null,
   searchQuery = "",
   onSearchChange,
+  onSearchSubmit,
   useAnchorLinks = false,
   onCategoryClick,
 }: HeaderProps) {
@@ -305,6 +308,12 @@ export function Header({
                 className="h-9 w-40 sm:w-48 lg:w-64 pl-8 pr-8 text-xs bg-muted/40 transition-all focus:bg-background focus:w-56 sm:focus:w-60 lg:focus:w-72 [&::-webkit-search-cancel-button]:hidden [&::-ms-clear]:hidden"
                 value={searchQuery}
                 onChange={(e) => onSearchChange?.(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && onSearchSubmit) {
+                    e.preventDefault()
+                    onSearchSubmit(searchQuery)
+                  }
+                }}
                 suppressHydrationWarning
               />
               {searchQuery ? (

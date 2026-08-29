@@ -629,7 +629,13 @@
       "addDomain": "绑定",
       "domainAdded": "已绑定域名 {host}",
       "domainRemoved": "已解绑域名",
-      "removeDomain": "解绑域名"
+      "removeDomain": "解绑域名",
+      "verifyDomain": "检测域名是否生效",
+      "verifyOk": "域名已生效，正在渲染本工作区",
+      "verifyFallback": "域名可访问，但当前渲染的是默认工作区。请检查工作区发布开关是否打开、DNS 是否指向本服务器、反代是否透传了 Host",
+      "verifyUnreachable": "无法访问该域名或响应异常。请检查 DNS 解析、HTTPS 证书与防火墙设置",
+      "verifyFailed": "检测执行失败，请稍后重试",
+      "verifyAt": "最近检测：{time}"
     },
     "workspaceForm": {
       "createTitle": "新建工作区",
