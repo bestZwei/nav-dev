@@ -27,19 +27,13 @@ function isNextDynamicError(error: unknown): boolean {
 
 // ==================== 安全辅助 ====================
 
-// 管理操作统一鉴权闸门：会话有效返回 null，否则返回统一错误结果。
+// 管理操作统一鉴权闸门：会话无效返回统一错误结果。
 // Server Actions 可被客户端直接构造调用，每个写操作/敏感读操作
 // 必须自行校验，不能依赖页面层拦截。
-// 双层校验：签名验证（防伪造）+ 查库确认用户仍存在且为 ADMIN
-// （防数据库重建/删除用户后旧 token 在有效期内继续生效）。
+// getAdminSession 已含双层校验：签名验证（防伪造）+ 查库确认用户仍存在且为 ADMIN
+// （防数据库重建/删除用户后旧 token 在有效期内继续生效），此处不再重复查库。
 async function requireAdmin(): Promise<{ success: false; error: string } | null> {
-  const session = await getAdminSession()
-  if (!session) return { success: false, error: "Unauthorized" }
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { role: true },
-  })
-  if (!user || user.role !== "ADMIN") {
+  if (!(await getAdminSession())) {
     return { success: false, error: "Unauthorized" }
   }
   return null

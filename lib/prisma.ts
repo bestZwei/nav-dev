@@ -1079,7 +1079,17 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       if (args?.select) {
         const out: any = {}
         for (const k of Object.keys(args.select)) {
-          if (args.select[k]) out[k] = (shot as any)[k]
+          const v = args.select[k]
+          if (v === true) {
+            out[k] = (shot as any)[k]
+          } else if (k === 'site' && v && typeof v === 'object') {
+            // 嵌套关系投影：与真实 Prisma 的 select: { site: { select } } 语义对齐，
+            // 否则截图服务路由读 site.isPublished 时拿到 undefined 直接 500
+            const site = this.sites.find(s => s.id === shot.siteId)
+            out.site = site
+              ? (v.select ? this.selectScalars(site, v.select) : { ...site })
+              : null
+          }
         }
         return out
       }
@@ -1250,6 +1260,9 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       if (args?.where?.visitedAt?.gte) {
         result = result.filter(v => v.visitedAt >= args.where.visitedAt.gte)
       }
+      if (args?.where?.visitedAt?.lt) {
+        result = result.filter(v => v.visitedAt < args.where.visitedAt.lt)
+      }
       if (args?.orderBy?.visitedAt) {
         const dir = args.orderBy.visitedAt
         result.sort((a, b) => {
@@ -1275,10 +1288,16 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
     },
 
     count: async (args?: any): Promise<number> => {
+      let result = this.visits
+      // gte / lt 均需支持：今日统计用 { gte, lt } 圈定昨日区间，
+      // 忽略 lt 会把今日访问计入昨日，导致环比数据失真
       if (args?.where?.visitedAt?.gte) {
-        return this.visits.filter(v => v.visitedAt >= args.where.visitedAt.gte).length
+        result = result.filter(v => v.visitedAt >= args.where.visitedAt.gte)
       }
-      return this.visits.length
+      if (args?.where?.visitedAt?.lt) {
+        result = result.filter(v => v.visitedAt < args.where.visitedAt.lt)
+      }
+      return result.length
     },
 
     groupBy: async (args: {

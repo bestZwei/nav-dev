@@ -7,14 +7,9 @@ import { PLUGIN_ID } from "./constants"
 // 访问统计插件后端能力。
 // API 路由（/api/visit、/api/admin/stats/*）作为装配层薄壳调用本模块。
 
+// getAdminSession 已含双层校验（签名 + 查库确认角色），不再重复查库
 async function requireAdmin(): Promise<{ success: false; error: string } | null> {
-  const session = await getAdminSession()
-  if (!session) return { success: false, error: "Unauthorized" }
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { role: true },
-  })
-  if (!user || user.role !== "ADMIN") {
+  if (!(await getAdminSession())) {
     return { success: false, error: "Unauthorized" }
   }
   return null
