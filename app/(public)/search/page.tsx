@@ -1,4 +1,4 @@
-import { Header } from "@/components/layout/header"
+import { SearchPageHeader } from "@/components/layout/search-page-header"
 import { Footer } from "@/components/layout/footer"
 import { SiteCard } from "@/components/layout/site-card"
 import { searchSites, getAllCategories, getDisplaySettings } from "@/lib/actions"
@@ -25,7 +25,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header categories={categories || []} siteName={settings?.siteName} />
+      <SearchPageHeader
+        categories={categories || []}
+        siteName={settings?.siteName}
+        initialQuery={query}
+      />
 
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 page-enter">
         <div className="mx-auto max-w-7xl w-full">

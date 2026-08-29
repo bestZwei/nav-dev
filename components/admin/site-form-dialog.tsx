@@ -47,10 +47,12 @@ interface Category {
   name: string
 }
 
-// 截图表单项：新增项在客户端暂存（UPLOAD 为 base64），保存时统一提交
+// 截图表单项：新增项在客户端暂存（UPLOAD 为 base64），保存时统一提交；
+// 编辑时从服务端回填的已有项携带 keepId，提交后原样保留而非删除重建
 interface ScreenshotFormItem {
   key: string
   source: "URL" | "UPLOAD"
+  keepId?: string
   url?: string
   data?: string
   mimeType?: string
@@ -174,12 +176,22 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
           if (!data) return
           setFormData(prev => ({ ...prev, detailContent: data.detailContent || "" }))
           setScreenshots(
-            (data.screenshots || []).map((shot: { id: string; displayUrl: string }) => ({
-              key: shot.id,
-              source: "URL" as const,
-              url: shot.displayUrl,
-              previewUrl: shot.displayUrl,
-            }))
+            (data.screenshots || []).map((shot: { id: string; source: string; displayUrl: string }) =>
+              shot.source === "UPLOAD"
+                ? {
+                    key: shot.id,
+                    source: "UPLOAD" as const,
+                    keepId: shot.id,
+                    previewUrl: shot.displayUrl,
+                  }
+                : {
+                    key: shot.id,
+                    source: "URL" as const,
+                    keepId: shot.id,
+                    url: shot.displayUrl,
+                    previewUrl: shot.displayUrl,
+                  }
+            )
           )
         })
         .catch(() => {
@@ -290,9 +302,12 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
     setLoading(true)
 
     try {
-      // 截图数据转换：编辑时已存在的 URL 截图 displayUrl 可能是 /api/screenshots/{id}，
-      // 需转换为可提交的输入格式
+      // 截图数据转换：编辑回填的已有项带 keepId 原样保留；新增 UPLOAD 携带 base64；
+      // 新增 URL 携带外链。已存在的 URL 截图 displayUrl 即原始外链，可正常通过校验
       const screenshotInputs: ScreenshotInput[] = screenshots.map(shot => {
+        if (shot.keepId) {
+          return { source: shot.source, keepId: shot.keepId }
+        }
         if (shot.source === "UPLOAD") {
           return { source: "UPLOAD", data: shot.data, mimeType: shot.mimeType }
         }

@@ -1070,17 +1070,36 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       return { count: created.length }
     },
 
-    deleteMany: async (args?: { where?: { siteId?: string } }) => {
+    // 支持 where.siteId / where.id（字符串或 { in: string[] }），与 updateSite
+    // 的增量 diff（保留 keepId 命中项、删除其余）对齐
+    deleteMany: async (args?: { where?: { siteId?: string; id?: string | { in: string[] } } }) => {
       let count = 0
-      if (!args?.where?.siteId) {
+      if (!args?.where) {
         count = this.screenshots.length
         this.screenshots = []
-      } else {
-        const before = this.screenshots.length
-        this.screenshots = this.screenshots.filter(s => s.siteId !== args.where!.siteId)
-        count = before - this.screenshots.length
+        return { count }
       }
+      const match = (s: ScreenshotItem): boolean => {
+        if (args.where!.siteId !== undefined && s.siteId !== args.where!.siteId) return false
+        if (args.where!.id !== undefined) {
+          const target = args.where!.id
+          if (typeof target === 'string' ? s.id !== target : !target.in.includes(s.id)) return false
+        }
+        return true
+      }
+      const before = this.screenshots.length
+      this.screenshots = this.screenshots.filter(s => !match(s))
+      count = before - this.screenshots.length
       return { count }
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<ScreenshotItem> }) => {
+      const shot = this.screenshots.find(s => s.id === args.where.id)
+      if (!shot) {
+        throw new Error(`Screenshot not found: ${args.where.id}`)
+      }
+      Object.assign(shot, args.data)
+      return shot
     },
 
     findMany: async (args?: { where?: { siteId?: string; id?: string }; orderBy?: { order?: 'asc' | 'desc' } }): Promise<ScreenshotItem[]> => {

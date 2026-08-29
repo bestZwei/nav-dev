@@ -665,12 +665,29 @@ export async function updateCategory(id: string, data: {
         return { success: false, error: "当前工作区下已存在同名 slug 的分类" }
       }
     }
+    // 字段白名单拷贝：Server Action 入参类型注解运行时不存在，
+    // 直接透传客户端对象会让 workspaceId 等字段穿透（跨工作区越权移动数据）
+    const existing = await prisma.category.findUnique({ where: { id } })
+    const updateData: {
+      name?: string
+      slug?: string
+      icon?: string | null
+      order?: number
+    } = {}
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.slug !== undefined) updateData.slug = data.slug
+    if (data.icon !== undefined) updateData.icon = data.icon
+    if (data.order !== undefined) updateData.order = data.order
     const category = await prisma.category.update({
       where: { id },
-      data,
+      data: updateData,
     })
     revalidatePath("/admin/categories")
     revalidatePath("/")
+    // slug 变更时旧路径也要失效，避免旧 URL 持续返回旧内容
+    if (existing && existing.slug !== category.slug) {
+      revalidatePath(`/category/${existing.slug}`)
+    }
     revalidatePath(`/category/${category.slug}`)
     return { success: true, data: category }
   } catch (error) {
@@ -914,6 +931,9 @@ const ALLOWED_SCREENSHOT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 
 
 export interface ScreenshotInput {
   source: 'URL' | 'UPLOAD'
+  // 已有截图保留标识：更新时命中站点现有截图则原样保留（不删除重建），
+  // 未命中（不属于该站点或已不存在）则整体忽略该条目
+  keepId?: string
   url?: string
   data?: string
   mimeType?: string
@@ -926,6 +946,13 @@ function validateScreenshots(screenshots: ScreenshotInput[]): string | null {
     return `Screenshots exceed the limit of ${MAX_SCREENSHOTS_PER_SITE}`
   }
   for (const shot of screenshots) {
+    // 保留型条目不携带 url/data，仅校验标识存在，归属校验在事务内做
+    if (shot.keepId !== undefined) {
+      if (typeof shot.keepId !== 'string' || !shot.keepId) {
+        return 'Kept screenshot requires a valid id'
+      }
+      continue
+    }
     if (shot.source === 'URL') {
       if (!shot.url || typeof shot.url !== 'string') {
         return 'URL screenshot requires a valid url'
@@ -1035,6 +1062,7 @@ export async function getSiteDetail(siteId: string) {
       ...site,
       screenshots: site.screenshots.map(shot => ({
         id: shot.id,
+        source: shot.source,
         order: shot.order,
         displayUrl: shot.source === 'URL' ? shot.url! : `/api/screenshots/${shot.id}`,
       })),
@@ -1253,11 +1281,34 @@ export async function updateSite(id: string, data: {
       })
 
       if (screenshotsProvided) {
-        await tx.screenshot.deleteMany({ where: { siteId: id } })
-        if (screenshots.length > 0) {
+        // 增量 diff：keepId 命中站点现有截图的原样保留（含上传截图的二进制数据），
+        // 其余删除；未带 keepId 的条目按新建处理，keepId 未命中站点的条目直接丢弃
+        const existingShots = await tx.screenshot.findMany({
+          where: { siteId: id },
+          select: { id: true },
+        })
+        const keepIds = screenshots
+          .map((shot) => shot.keepId)
+          .filter((keepId): keepId is string => typeof keepId === 'string')
+        const keptIdSet = new Set(keepIds.filter((keepId) => existingShots.some((shot) => shot.id === keepId)))
+        const deleteIds = existingShots.filter((shot) => !keptIdSet.has(shot.id)).map((shot) => shot.id)
+        if (deleteIds.length > 0) {
+          await tx.screenshot.deleteMany({ where: { id: { in: deleteIds } } })
+        }
+        const newShots = screenshots.filter((shot) => !shot.keepId || !keptIdSet.has(shot.keepId))
+        if (newShots.length > 0) {
           await tx.screenshot.createMany({
-            data: buildScreenshotCreateMany(id, screenshots),
+            data: buildScreenshotCreateMany(id, newShots),
           })
+        }
+        // 保留截图按提交顺序同步排序，保证前端重排结果落库
+        const keptOrderUpdates = screenshots
+          .map((shot, index) => ({ keepId: shot.keepId, index }))
+          .filter((entry): entry is { keepId: string; index: number } =>
+            typeof entry.keepId === 'string' && keptIdSet.has(entry.keepId)
+          )
+        for (const entry of keptOrderUpdates) {
+          await tx.screenshot.update({ where: { id: entry.keepId }, data: { order: entry.index } })
         }
       }
 
@@ -2456,89 +2507,95 @@ export async function importBookmarks(
     const parsed = parseChromeBookmarks(html)
     // 书签导入归属当前后台选中的工作区
     const workspace = await getAdminWorkspace()
+    const { slugify } = require('transliteration') as { slugify: (s: string) => string }
 
-    // 覆盖模式：仅清空当前工作区的数据
-    if (mode === 'overwrite') {
-      const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
-      if (workspaceCategoryIds.length > 0) {
-        await prisma.site.deleteMany({
-          where: { categoryId: { in: workspaceCategoryIds } },
-        })
-        await prisma.category.deleteMany({
+    // 整体事务化：overwrite 的清空与后续导入同成败，
+    // 中途失败（slug 冲突、连接抖动等）不再留下「旧数据已删、新数据只导一半」的不可逆状态
+    const { importedCategories, skippedSites } = await prisma.$transaction(async (tx) => {
+      // 覆盖模式：仅清空当前工作区的数据
+      if (mode === 'overwrite') {
+        const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
+        if (workspaceCategoryIds.length > 0) {
+          await tx.site.deleteMany({
+            where: { categoryId: { in: workspaceCategoryIds } },
+          })
+          await tx.category.deleteMany({
+            where: { workspaceId: workspace.id },
+          })
+        }
+      }
+
+      // 追加模式：保留现有数据，只添加新的（限定当前工作区）
+      let currentMaxOrder = 0
+      if (mode === 'append') {
+        const maxOrderCategory = await tx.category.findFirst({
           where: { workspaceId: workspace.id },
-        })
-      }
-    }
-
-    // 追加模式：保留现有数据，只添加新的（限定当前工作区）
-    let currentMaxOrder = 0
-    if (mode === 'append') {
-      const maxOrderCategory = await prisma.category.findFirst({
-        where: { workspaceId: workspace.id },
-        orderBy: { order: 'desc' },
-        select: { order: true },
-      })
-      currentMaxOrder = maxOrderCategory?.order || 0
-    }
-
-    // 导入分类和网站
-    let skippedSites = 0
-    for (const categoryData of parsed.categories) {
-      // 生成分类 slug（使用 transliteration 将中文转换为拼音）
-      const transliteration = require('transliteration')
-      const slug = transliteration.slugify(categoryData.name)
-
-      // 检查分类是否已存在（追加模式，限定当前工作区）
-      let category
-      if (mode === 'append') {
-        category = await prisma.category.findFirst({
-          where: { slug, workspaceId: workspace.id },
-        })
-      }
-
-      if (!category) {
-        currentMaxOrder++
-        category = await prisma.category.create({
-          data: {
-            name: categoryData.name,
-            slug,
-            order: currentMaxOrder,
-            workspaceId: workspace.id,
-          },
-        })
-      }
-
-      // 导入网站
-      let currentSiteOrder = 0
-      if (mode === 'append') {
-        const maxOrderSite = await prisma.site.findFirst({
-          where: { categoryId: category.id },
           orderBy: { order: 'desc' },
           select: { order: true },
         })
-        currentSiteOrder = maxOrderSite?.order || 0
+        currentMaxOrder = maxOrderCategory?.order || 0
       }
 
-      for (const siteData of categoryData.sites) {
-        // 跳过非 http/https 的非法 URL，防止存储型 XSS
-        if (!isSafeSiteUrl(siteData.url)) {
-          skippedSites++
-          continue
+      // 导入分类和网站
+      let skipped = 0
+      for (const categoryData of parsed.categories) {
+        // 生成分类 slug（中文转拼音）
+        const slug = slugify(categoryData.name)
+
+        // 检查分类是否已存在（追加模式，限定当前工作区）
+        let category
+        if (mode === 'append') {
+          category = await tx.category.findFirst({
+            where: { slug, workspaceId: workspace.id },
+          })
         }
-        currentSiteOrder++
-        await prisma.site.create({
-          data: {
-            name: siteData.name,
-            url: siteData.url,
-            description: siteData.url, // 使用URL作为描述
-            iconUrl: siteData.icon || null,
-            categoryId: category.id,
-            order: currentSiteOrder,
-            isPublished: true,
-          },
-        })
+
+        if (!category) {
+          currentMaxOrder++
+          category = await tx.category.create({
+            data: {
+              name: categoryData.name,
+              slug,
+              order: currentMaxOrder,
+              workspaceId: workspace.id,
+            },
+          })
+        }
+
+        // 导入网站
+        let currentSiteOrder = 0
+        if (mode === 'append') {
+          const maxOrderSite = await tx.site.findFirst({
+            where: { categoryId: category.id },
+            orderBy: { order: 'desc' },
+            select: { order: true },
+          })
+          currentSiteOrder = maxOrderSite?.order || 0
+        }
+
+        for (const siteData of categoryData.sites) {
+          // 跳过非 http/https 的非法 URL，防止存储型 XSS
+          if (!isSafeSiteUrl(siteData.url)) {
+            skipped++
+            continue
+          }
+          currentSiteOrder++
+          await tx.site.create({
+            data: {
+              name: siteData.name,
+              url: siteData.url,
+              description: siteData.url, // 使用URL作为描述
+              iconUrl: siteData.icon || null,
+              categoryId: category.id,
+              order: currentSiteOrder,
+              isPublished: true,
+            },
+          })
+        }
       }
-    }
+
+      return { importedCategories: parsed.categories.length, skippedSites: skipped }
+    })
 
     // 重新验证缓存
     revalidatePath('/', 'layout')
@@ -2548,9 +2605,9 @@ export async function importBookmarks(
     return {
       success: true,
       message: (mode === 'overwrite'
-        ? `成功导入 ${parsed.categories.length} 个分类`
-        : `成功追加 ${parsed.categories.length} 个分类`) + bookmarkSkippedNote,
-      importedCount: parsed.categories.length,
+        ? `成功导入 ${importedCategories} 个分类`
+        : `成功追加 ${importedCategories} 个分类`) + bookmarkSkippedNote,
+      importedCount: importedCategories,
     }
   } catch (error) {
     console.error("Error importing bookmarks:", error)
