@@ -48,3 +48,8 @@ next-env.d.ts
 # claude
 CLAUDE.md
 .claude/settings.local.json
+
+# AI tool artifacts
+.mimosa/
+.monkeycode/
+.zcode/

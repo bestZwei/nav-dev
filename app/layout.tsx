@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster as SonnerToaster } from "sonner"
 import { ThemeProvider } from "@/components/theme-provider/theme-provider"
 import { getDisplaySettings } from "@/lib/actions"
+import { getCurrentWorkspace } from "@/lib/workspace"
 import { NextIntlClientProvider } from "next-intl"
 import { getLocale, getTranslations } from "next-intl/server"
 import { htmlLang } from "@/lib/i18n"
@@ -23,6 +24,12 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: settings?.favicon || "/apple-touch-icon.png",
     },
   }
+}
+
+// 当前请求对应的工作区 slug，输出为 meta 标记；解析失败时无标记（探测侧按不可达处理）
+async function WorkspaceMarker() {
+  const workspace = await getCurrentWorkspace()
+  return <meta name="workspace" content={workspace.slug} />
 }
 
 export default async function RootLayout({
@@ -48,6 +55,8 @@ export default async function RootLayout({
             __html: 'window.__name=window.__name||function(f){return f};',
           }}
         />
+        {/* 当前请求渲染的工作区标识（机器可读），供管理后台域名反向探测比对 */}
+        <WorkspaceMarker />
       </head>
       <body className={inter.className}>
         {/* 资源提示：提前建立第三方连接，降低图标与诗词接口的首字节延迟 */}

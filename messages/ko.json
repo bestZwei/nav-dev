@@ -622,7 +622,13 @@
       "addDomain": "바인딩",
       "domainAdded": "도메인 {host}이(가) 바인딩되었습니다",
       "domainRemoved": "도메인 바인딩이 해제되었습니다",
-      "removeDomain": "도메인 바인딩 해제"
+      "removeDomain": "도메인 바인딩 해제",
+      "verifyDomain": "도메인 상태 확인",
+      "verifyOk": "도메인이 활성화되어 이 워크스페이스를 표시하고 있습니다",
+      "verifyFallback": "도메인에 접근 가능하지만 현재 기본 워크스페이스가 표시됩니다. 게시 스위치, DNS, 프록시의 Host 전달을 확인하세요",
+      "verifyUnreachable": "도메인에 접근할 수 없거나 예상치 못한 응답이 반환되었습니다. DNS, HTTPS 인증서, 방화벽 설정을 확인하세요",
+      "verifyFailed": "확인에 실패했습니다. 잠시 후 다시 시도하세요",
+      "verifyAt": "마지막 확인: {time}"
     },
     "workspaceForm": {
       "createTitle": "새 워크스페이스",

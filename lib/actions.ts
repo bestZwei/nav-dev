@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { isLocale, type Locale } from "./i18n"
 import { getAdminSession } from "./api-auth"
+import { verifyDomainHost } from "./domain-verify"
 import {
   getCurrentWorkspace,
   getAdminWorkspace,
@@ -401,6 +402,43 @@ export async function removeWorkspaceDomain(domainId: string) {
   } catch (error) {
     console.error("Error removing workspace domain:", error)
     return { success: false, error: "Failed to remove domain" }
+  }
+}
+
+// 域名反向探测：以服务端身份访问绑定的域名，比对页面工作区标记，
+// 结果持久化到 Domain 供管理页常驻展示（三态：ok / fallback / unreachable）
+export async function verifyWorkspaceDomain(domainId: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    const domain = await prisma.domain.findUnique({ where: { id: domainId } })
+    if (!domain) {
+      return { success: false, error: "域名不存在" }
+    }
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: domain.workspaceId },
+    })
+    if (!workspace) {
+      return { success: false, error: "工作区不存在" }
+    }
+
+    const result = await verifyDomainHost(domain.host, workspace.slug)
+    const verifiedAt = new Date()
+    await prisma.domain.update({
+      where: { id: domainId },
+      data: {
+        lastVerifiedStatus: result.status,
+        lastVerifiedAt: verifiedAt,
+      },
+    })
+    revalidatePath("/admin/workspaces")
+    return {
+      success: true,
+      data: { status: result.status, detail: result.detail, verifiedAt },
+    }
+  } catch (error) {
+    console.error("Error verifying workspace domain:", error)
+    return { success: false, error: "Failed to verify domain" }
   }
 }
 

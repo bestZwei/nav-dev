@@ -41,6 +41,9 @@ model Domain {
   isPrimary   Boolean   @default(false) @map("is_primary")
   workspaceId String    @map("workspace_id")
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  // 最近一次反向探测结果：ok=渲染了本工作区 fallback=渲染了其他工作区 unreachable=不可达/非本应用
+  lastVerifiedStatus String?   @map("last_verified_status")
+  lastVerifiedAt     DateTime? @map("last_verified_at")
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId])

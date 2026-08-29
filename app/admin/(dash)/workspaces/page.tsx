@@ -38,6 +38,7 @@ import {
   Link2,
   X,
   Info,
+  RefreshCw,
 } from "lucide-react"
 import { WorkspaceFormDialog } from "@/components/admin/workspace-form-dialog"
 import {
@@ -46,6 +47,7 @@ import {
   setPrimaryWorkspace,
   addWorkspaceDomain,
   removeWorkspaceDomain,
+  verifyWorkspaceDomain,
 } from "@/lib/actions"
 import { toast } from "sonner"
 import { useTranslations } from "next-intl"
@@ -55,6 +57,8 @@ interface DomainItem {
   host: string
   isPrimary: boolean
   workspaceId: string
+  lastVerifiedStatus?: string | null
+  lastVerifiedAt?: string | Date | null
 }
 
 interface Workspace {
@@ -88,6 +92,8 @@ export default function AdminWorkspacesPage() {
   // 域名管理：记录正在操作的工作区与输入中的 host
   const [domainInput, setDomainInput] = useState<Record<string, string>>({})
   const [domainBusy, setDomainBusy] = useState<Record<string, boolean>>({})
+  // 域名反向探测进行中标记（按域名 id）
+  const [verifyBusy, setVerifyBusy] = useState<Record<string, boolean>>({})
   const loadRef = useRef(loadWorkspaces)
 
   async function loadWorkspaces() {
@@ -146,6 +152,11 @@ export default function AdminWorkspacesPage() {
         setDomainInput(prev => ({ ...prev, [ws.id]: "" }))
         toast.success(t("domainAdded", { host: raw }))
         loadRef.current()
+        // 绑定成功后立即探测一次，当场回答「生效了没有」
+        const createdId = (result.data as { id?: string } | undefined)?.id
+        if (createdId) {
+          void applyDomainVerify(createdId)
+        }
       } else {
         toast.error(result.error || t("actionFailed"))
       }
@@ -162,6 +173,67 @@ export default function AdminWorkspacesPage() {
     } else {
       toast.error(result.error || t("actionFailed"))
     }
+  }
+
+  // 探测指定域名并同步结果到本地状态与 toast 提示
+  async function applyDomainVerify(domainId: string) {
+    setVerifyBusy(prev => ({ ...prev, [domainId]: true }))
+    try {
+      const result = await verifyWorkspaceDomain(domainId)
+      if (result.success && result.data) {
+        const { status, verifiedAt } = result.data as {
+          status: string
+          verifiedAt: string | Date
+        }
+        setWorkspaces(prev =>
+          prev.map(ws => ({
+            ...ws,
+            domains: ws.domains.map(d =>
+              d.id === domainId
+                ? { ...d, lastVerifiedStatus: status, lastVerifiedAt: verifiedAt }
+                : d
+            ),
+          }))
+        )
+        if (status === "ok") {
+          toast.success(t("verifyOk"))
+        } else if (status === "fallback") {
+          toast.warning(t("verifyFallback"))
+        } else {
+          toast.error(t("verifyUnreachable"))
+        }
+      } else {
+        toast.error(t("verifyFailed"))
+      }
+    } catch {
+      toast.error(t("verifyFailed"))
+    } finally {
+      setVerifyBusy(prev => ({ ...prev, [domainId]: false }))
+    }
+  }
+
+  // 探测结果的状态点颜色；未知状态不渲染
+  function verifyDotClass(status: string | null | undefined) {
+    if (status === "ok") return "bg-emerald-500"
+    if (status === "fallback") return "bg-amber-500"
+    if (status === "unreachable") return "bg-red-500"
+    return ""
+  }
+
+  function verifyStatusText(domain: DomainItem) {
+    const statusMap: Record<string, string> = {
+      ok: t("verifyOk"),
+      fallback: t("verifyFallback"),
+      unreachable: t("verifyUnreachable"),
+    }
+    const text =
+      (domain.lastVerifiedStatus && statusMap[domain.lastVerifiedStatus]) || ""
+    if (text && domain.lastVerifiedAt) {
+      return `${text}（${t("verifyAt", {
+        time: new Date(domain.lastVerifiedAt).toLocaleString(),
+      })}）`
+    }
+    return text
   }
 
   return (
@@ -273,18 +345,41 @@ export default function AdminWorkspacesPage() {
                       {ws.domains.length === 0 && (
                         <span className="text-xs text-muted-foreground">{t("noDomains")}</span>
                       )}
-                      {ws.domains.map(d => (
-                        <Badge key={d.id} variant="secondary" className="gap-1 font-mono">
-                          {d.host}
-                          <button
-                            className="ml-0.5 rounded-full hover:text-destructive"
-                            onClick={() => handleRemoveDomain(d)}
-                            aria-label={t("removeDomain")}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
+                      {ws.domains.map(d => {
+                        const statusText = verifyStatusText(d)
+                        return (
+                          <Badge key={d.id} variant="secondary" className="gap-1 font-mono">
+                            {/* 探测状态点：绿=生效 黄=回退默认 红=不可达；悬停显示说明与时间 */}
+                            {(verifyDotClass(d.lastVerifiedStatus) || statusText) && (
+                              <span
+                                className={`h-2 w-2 rounded-full shrink-0 ${verifyDotClass(d.lastVerifiedStatus) || "bg-muted-foreground/50"}`}
+                                title={statusText || undefined}
+                              />
+                            )}
+                            {d.host}
+                            <button
+                              className="ml-0.5 rounded-full hover:text-primary"
+                              disabled={verifyBusy[d.id]}
+                              onClick={() => applyDomainVerify(d.id)}
+                              aria-label={t("verifyDomain")}
+                              title={t("verifyDomain")}
+                            >
+                              {verifyBusy[d.id] ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-3 w-3" />
+                              )}
+                            </button>
+                            <button
+                              className="rounded-full hover:text-destructive"
+                              onClick={() => handleRemoveDomain(d)}
+                              aria-label={t("removeDomain")}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        )
+                      })}
                       <span className="ml-auto flex items-center gap-2">
                         <Input
                           className="h-8 w-56 font-mono text-xs"

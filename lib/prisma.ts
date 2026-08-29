@@ -32,6 +32,9 @@ export interface DomainItem {
   host: string
   isPrimary: boolean
   workspaceId: string
+  // 反向探测结果（见 lib/domain-verify.ts）
+  lastVerifiedStatus?: string | null
+  lastVerifiedAt?: Date | string | null
   createdAt: Date
 }
 
@@ -425,6 +428,13 @@ class InMemoryDatabase {
         result = result.filter(d => d.workspaceId === args.where!.workspaceId)
       }
       return result.map(d => ({ ...d }))
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<DomainItem> }): Promise<DomainItem> => {
+      const idx = this.domains.findIndex(d => d.id === args.where.id)
+      if (idx === -1) throw new Error('Domain not found')
+      this.domains[idx] = { ...this.domains[idx], ...args.data }
+      return { ...this.domains[idx] }
     },
 
     create: async (args: { data: Partial<DomainItem> }): Promise<DomainItem> => {

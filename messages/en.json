@@ -622,7 +622,13 @@
       "addDomain": "Bind",
       "domainAdded": "Domain {host} bound",
       "domainRemoved": "Domain unbound",
-      "removeDomain": "Unbind domain"
+      "removeDomain": "Unbind domain",
+      "verifyDomain": "Verify domain status",
+      "verifyOk": "Domain is live and rendering this workspace",
+      "verifyFallback": "Domain is reachable but rendering the default workspace. Check the publish switch, DNS records, and that your proxy forwards the Host header",
+      "verifyUnreachable": "The domain is unreachable or returned an unexpected response. Check DNS records, HTTPS certificate, and firewall settings",
+      "verifyFailed": "Verification failed, please try again later",
+      "verifyAt": "Last verified: {time}"
     },
     "workspaceForm": {
       "createTitle": "New Workspace",

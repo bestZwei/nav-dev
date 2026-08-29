@@ -622,7 +622,13 @@
       "addDomain": "バインド",
       "domainAdded": "ドメイン {host} をバインドしました",
       "domainRemoved": "ドメインのバインドを解除しました",
-      "removeDomain": "ドメインのバインド解除"
+      "removeDomain": "ドメインのバインド解除",
+      "verifyDomain": "ドメインの有効性を確認",
+      "verifyOk": "ドメインが有効で、このワークスペースを表示しています",
+      "verifyFallback": "ドメインにはアクセスできますが、現在はデフォルトのワークスペースが表示されています。公開スイッチ・DNS・プロキシの Host 転送を確認してください",
+      "verifyUnreachable": "ドメインにアクセスできないか、予期しない応答がありました。DNS・HTTPS 証明書・ファイアウォール設定を確認してください",
+      "verifyFailed": "検証に失敗しました。後でもう一度お試しください",
+      "verifyAt": "最終確認：{time}"
     },
     "workspaceForm": {
       "createTitle": "新規ワークスペース",
