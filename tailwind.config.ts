@@ -7,6 +7,10 @@ const config: Config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    // 插件系统：插件 UI 与注入点渲染器在独立目录，漏扫会导致其 Tailwind 类
+    // 不生成（cn/twMerge 还会删掉 Dialog 默认的 max-w 等，最终样式整体失效）
+    './plugins/**/*.{ts,tsx}',
+    './lib/**/*.{ts,tsx}',
   ],
   prefix: "",
   theme: {
