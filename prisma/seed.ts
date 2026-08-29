@@ -188,7 +188,6 @@ async function main() {
           { name: 'GitHub', url: 'https://github.com/kenanlabs/nav' }
         ],
         showAdminLink: true,
-        enableVisitTracking: true,
         githubUrl: 'https://github.com/kenanlabs/nav',
       },
     })

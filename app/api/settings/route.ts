@@ -14,6 +14,8 @@ export async function GET() {
       aboutContent: _aboutContent,
       enabledPlugins: _enabledPlugins,
       pluginConfigs: _pluginConfigs,
+      customHeadCode: _customHeadCode,
+      customBodyCode: _customBodyCode,
       ...publicSettings
     } = merged as Record<string, unknown> & { id?: string }
     return NextResponse.json({ ...defaultSettings, ...publicSettings, plugins })
