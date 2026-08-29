@@ -113,7 +113,8 @@
         "unavailable": "版本检查不可用",
         "dev": "开发版本"
       },
-      "workspaces": "工作区管理"
+      "workspaces": "工作区管理",
+      "plugins": "插件管理"
     },
     "login": {
       "subtitle": "登录以管理您的导航站点",
@@ -265,7 +266,13 @@
       "checkAllDoneDesc": "{up} 个在线，{down} 个失效，{suspicious} 个疑似受限",
       "checkUpDesc": "网站可正常访问",
       "checkDownDesc": "网站无法访问或已失效",
-      "checkSuspiciousDesc": "网站有响应但拒绝探测（多为 CDN/WAF 防护），建议手动核实"
+      "checkSuspiciousDesc": "网站有响应但拒绝探测（多为 CDN/WAF 防护），建议手动核实",
+      "filterSource": "来源",
+      "filterSourceAll": "全部来源",
+      "sourceUser": "用户提交",
+      "sourceAdminCreated": "管理员创建",
+      "sourceAdmin": "管理员",
+      "thSource": "来源"
     },
     "siteForm": {
       "createTitle": "新增网站",
@@ -660,5 +667,82 @@
     "retry": "重试",
     "emptyHint": "暂无详细介绍内容",
     "noScreenshots": "暂无截图"
+  },
+  "plugins": {
+    "registry": {
+      "uploadTitle": "上传插件",
+      "uploadDescription": "上传声明式插件清单（manifest.json）。上传后默认禁用，可随时启用或删除；系统仅执行清单声明，不运行上传内容中的任何代码。",
+      "uploadButton": "选择 manifest.json",
+      "uploadSuccess": "插件上传成功",
+      "uploadFailed": "插件上传失败",
+      "empty": "暂无已安装插件",
+      "sourceBuiltin": "内置",
+      "sourceUploaded": "上传",
+      "delete": "删除插件",
+      "deleteConfirmTitle": "确认删除该插件？",
+      "deleteConfirmDescription": "将移除「{name}」的清单与启停状态，插件产生的业务数据会保留。",
+      "cancel": "取消",
+      "saveConfig": "保存配置",
+      "enableSuccess": "插件已启用",
+      "disableSuccess": "插件已禁用",
+      "configSaved": "配置已保存",
+      "updateFailed": "操作失败，请重试",
+      "deleteSuccess": "插件已删除"
+    },
+    "siteSubmission": {
+      "name": "网站收录",
+      "description": "填写网站信息，管理员审核通过后会发布到导航站",
+      "config": {
+        "maxPerDay": "每 IP 每日投稿上限"
+      },
+      "trigger": "提交网站",
+      "title": "提交网站收录",
+      "nameLabel": "网站名称 *",
+      "namePlaceholder": "例如：GitHub",
+      "nameRequired": "网站名称不能为空",
+      "nameMax": "网站名称不能超过50个字符",
+      "urlLabel": "网站链接 *",
+      "urlRequired": "网站链接不能为空",
+      "urlInvalid": "请输入有效的URL",
+      "descLabel": "网站描述 *",
+      "descPlaceholder": "简要描述网站的功能和特点",
+      "descRequired": "网站描述不能为空",
+      "descMax": "描述不能超过200个字符",
+      "charCount": "{count}/200 字符",
+      "categoryLabel": "分类 *",
+      "categoryPlaceholder": "选择分类",
+      "categoryRequired": "请选择分类",
+      "contactLabel": "联系方式（可选）",
+      "contactPlaceholder": "邮箱或微信，方便审核联系",
+      "contactHint": "管理员审核时可能需要联系您",
+      "contactMax": "联系方式不能超过100个字符",
+      "cancel": "取消",
+      "submit": "提交审核",
+      "success": "提交成功！我们会尽快审核，感谢您的贡献",
+      "failed": "提交失败",
+      "retry": "提交失败，请稍后重试",
+      "errors": {
+        "PLUGIN_DISABLED": "网站收录功能未启用",
+        "INVALID_URL": "网站链接无效，仅支持 http/https",
+        "RATE_LIMITED": "提交太频繁啦！24小时内最多 {count} 次，请明天再试",
+        "SUBMIT_FAILED": "提交失败，请稍后重试"
+      }
+    },
+    "poetryCard": {
+      "name": "今日诗词",
+      "description": "在首页右上角展示诗词卡片，用户可在页头工具栏控制显隐"
+    },
+    "visitTracking": {
+      "name": "访问统计",
+      "description": "记录站点访问并生成后台统计：访问排行、频次图表、今日环比"
+    },
+    "siteDetail": {
+      "name": "站点详情弹窗",
+      "description": "为站点卡片提供二级详情弹窗，展示图文与截图"
+    },
+    "aboutPage": {
+      "name": "关于页面",
+      "description": "启用后前台出现「关于」页面入口（页脚链接与 sitemap）；内容在系统设置的关于页面区块维护"
+    }
   }
 }

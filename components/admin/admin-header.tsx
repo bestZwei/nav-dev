@@ -12,7 +12,7 @@ import { WorkspaceSwitcher } from "./workspace-switcher"
 import { cn } from "@/lib/utils"
 
 // 路径到标题 key 的映射（文案位于 admin.sidebar 命名空间）
-type PageTitleKey = "dashboard" | "sites" | "categories" | "workspaces" | "data" | "settings"
+type PageTitleKey = "dashboard" | "sites" | "categories" | "workspaces" | "data" | "settings" | "plugins"
 
 const pageTitleKeyMap: Record<string, PageTitleKey> = {
   "/admin/dashboard": "dashboard",
@@ -21,6 +21,7 @@ const pageTitleKeyMap: Record<string, PageTitleKey> = {
   "/admin/workspaces": "workspaces",
   "/admin/data": "data",
   "/admin/users": "settings",
+  "/admin/plugins": "plugins",
 }
 
 // 导出供内容区使用的页面标题 hook

@@ -34,7 +34,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         flatSites={flatSites}
         siteName={settings?.siteName}
         currentCategory={slug}
-        enableSiteDetail={(settings as any)?.enableSiteDetail}
       >
       <div className="mb-6">
         <div className="flex items-center gap-3">

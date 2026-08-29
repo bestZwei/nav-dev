@@ -5,7 +5,12 @@ Updated: 2026-08-28
 
 ## Description
 
-在现有 Next.js 15 App Router 单体架构内实现轻量插件机制：插件以代码级注册表声明、以 `SystemSettings` 持久化启停状态、以 UI 注入点与后端守卫接入核心。第一期将「网站收录」整体迁移为内置插件 `site-submission`，核心代码中不再出现该功能的专有逻辑分支。设计目标是后续新增可选功能时，仅新增插件目录与注册表一行登记。
+在现有 Next.js 15 App Router 单体架构内实现轻量插件机制，插件分双源：
+
+- **内置插件（Builtin）**：实现 `PluginDefinition` 接口的代码级插件，在注册表数组登记，启停状态存 `SystemSettings.enabledPlugins`。首个内置插件为「网站收录」`site-submission`。
+- **上传插件（Uploaded）**：站长在管理后台上传的声明式 manifest 包，存 `Plugin` 表，自带 enabled 状态。UI 能力限定为按钮、链接、iframe 弹窗、Markdown 区块四种声明形态，后端交互限定为 manifest 声明的 HTTP(S) webhook 端点，运行时零任意代码执行。
+
+核心代码通过统一的注入点与运行时合并视图消费两类插件。设计目标：新增内置插件仅新增目录与注册表一行；接入第三方扩展仅需上传 manifest，均无需修改核心代码。
 
 ## Architecture
 
@@ -13,21 +18,22 @@ Updated: 2026-08-28
 graph TD
     A["核心层：layout / header / footer / admin pages"] --> B["注入点组件 PluginSlot（client）"]
     A --> C["Server 守卫 assertPluginEnabled"]
-    B --> D["插件注册表 lib/plugins/registry.ts"]
+    B --> D["运行时合并视图 getMergedPlugins"]
     C --> D
-    D --> E["插件 site-submission"]
-    E --> F["header-slot：投稿按钮 + 弹窗"]
-    E --> G["actions：submitSite + 每日限额"]
-    E --> H["配置：submissionMaxPerDay"]
-    D --> I["SystemSettings.enabledPlugins / pluginConfigs（Prisma）"]
-    I --> J["client-settings 下发启用状态到浏览器"]
+    D --> E["内置源：registry.ts + SystemSettings.enabledPlugins"]
+    D --> F["上传源：Plugin 表（manifest + enabled）"]
+    E --> G["内置插件 site-submission：header-slot / actions / 配置"]
+    F --> H["ManifestPluginRenderer：button / link / iframe / markdown"]
+    F --> I["上传校验：zod manifest schema + 协议白名单 + 沙箱属性"]
+    D --> J["client-settings 下发启用状态到浏览器"]
 ```
 
 设计原则：
 
-1. **声明式注册**：插件是满足 `PluginDefinition` 接口的 TypeScript 对象，在注册表数组中登记，编译期可校验唯一性与接口完整性。
+1. **声明式注册**：内置插件是满足 `PluginDefinition` 接口的 TypeScript 对象，在注册表数组中登记，编译期可校验唯一性与接口完整性。
 2. **单向依赖**：插件可以 import 核心库（prisma、i18n、ui 组件）；核心与插件之间的引用只经过 `lib/plugins` 的类型与运行时工具，核心页面零插件 import。
-3. **逻辑开关而非动态装载**：Next.js 构建产物固定，插件代码始终在 bundle 内；「禁用」是运行时行为开关（UI 隐藏 + 后端拒绝），schema 与迁移始终存在。这是单体 Prisma 部署下的现实约束，也满足「禁用保留数据、启用即恢复」的需求。
+3. **逻辑开关而非动态装载**：Next.js 构建产物固定，内置插件代码始终在 bundle 内；「禁用」是运行时行为开关（UI 隐藏 + 后端拒绝），schema 与迁移始终存在。这是单体 Prisma 部署下的现实约束，也满足「禁用保留数据、启用即恢复」的需求。
+4. **上传插件零代码执行**：manifest 是纯声明数据（zod 校验后的 JSON），UI 由通用渲染器 `ManifestPluginRenderer` 按声明渲染，服务端交互仅限对 manifest 声明端点的受限 HTTP 转发；iframe 注入强制 `sandbox` 与协议白名单。
 
 ## Components and Interfaces
 
@@ -35,10 +41,11 @@ graph TD
 
 ```
 lib/plugins/
-  types.ts        # PluginDefinition 类型
-  registry.ts     # 内置插件清单
-  server.ts       # 服务端运行时工具
-  client.tsx      # 注入点组件（"use client"）
+  types.ts            # PluginDefinition / PluginConfigField / ManifestTypes 类型
+  manifest-schema.ts  # 上传插件 manifest 的 zod schema 与校验
+  registry.ts         # 内置插件清单（dev 断言 ID 唯一）
+  server.ts           # 服务端运行时：双源合并、守卫、配置读取、上传/删除
+  client.tsx          # 注入点组件（"use client"）+ ManifestPluginRenderer
 plugins/
   site-submission/
     index.ts          # 插件定义（元数据 + slot + 配置声明）
@@ -84,11 +91,36 @@ export const pluginRegistry: PluginDefinition[] = [siteSubmissionPlugin]
 
 ### 2. 服务端运行时（lib/plugins/server.ts）
 
-- `getPluginState(): Promise<Record<string, boolean>>`：读取 `SystemSettings.enabledPlugins`，与注册表 `defaultEnabled` 合并（缺省键取默认值）。
-- `isPluginEnabled(id: string): Promise<boolean>`：注册表中未登记的 ID 一律视为禁用（向前兼容脏数据）。
+- `getMergedPlugins(): Promise<MergedPlugin[]>`：内置注册表（状态取 `SystemSettings.enabledPlugins`）与上传插件（`Plugin` 表）双源合并，产出统一视图（id、名称、描述、版本、来源、enabled、configFields、slots）。
+- `isPluginEnabled(id: string): Promise<boolean>`：合并视图中不存在或处于禁用状态均返回 false。
 - `assertPluginEnabled(id: string): Promise<void>`：守卫函数，禁用时抛出 `PluginDisabledError`，action 层捕获后返回统一的 `{ ok: false, code: "PLUGIN_DISABLED" }` 响应。
-- `getPluginConfig<T>(id: string): Promise<T>`：读取 `pluginConfigs`，缺失键回退 `configFields` 的 `defaultValue`。
-- `setPluginEnabled(id, enabled)` 与 `updatePluginConfig(id, patch)`：管理后台调用的 server action，写库后 `revalidatePath("/", "layout")`。
+- `getPluginConfig<T>(id: string): Promise<T>`：内置插件读 `pluginConfigs`，缺失键回退 `configFields` 的 `defaultValue`；上传插件读 `Plugin.configs`，回退 manifest `configFields` 默认值。
+- `setPluginEnabled(id, enabled)` 与 `updatePluginConfig(id, patch)`：管理后台 server action，双源自适应（内置写 SystemSettings，上传写 Plugin 表），写库后 `revalidatePath("/", "layout")`。
+- `uploadPluginManifest(json)`：admin 专用，zod 校验 manifest（ID 格式 `[a-z0-9-]`、与内置插件 ID 冲突检测、URL 协议白名单 http/https、manifest ≤ 64KB），通过后以 `enabled=false` 写入 Plugin 表。
+- `deleteUploadedPlugin(id)`：仅允许删除上传源插件；内置插件 ID 一律拒绝。
+
+### 2a. Manifest 插件（上传插件）
+
+```ts
+// lib/plugins/manifest-schema.ts（zod 摘要）
+const manifestSchema = z.object({
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]{1,63}$/),
+  name: z.string().min(1).max(64),
+  description: z.string().max(256).optional(),
+  version: z.string().max(32),
+  author: z.string().max(64).optional(),
+  icon: z.string().url().max(2048).optional(),
+  slots: z.object({
+    header: slotSchema,   // button | link | iframe | markdown 四种形态之一
+    footer: slotSchema,
+  }).partial().optional(),
+  webhooks: z.record(z.string().url().regex(/^https?:\/\//)).optional(),
+  configFields: z.array(configFieldSchema).max(20).optional(),
+})
+```
+
+- **通用渲染器** `ManifestPluginRenderer`（lib/plugins/client.tsx 内）：按 slot 声明渲染四种形态。`button`：点击打开链接或 iframe 弹窗；`link`：文字链接；`iframe`：受控弹窗（`sandbox="allow-scripts allow-forms allow-popups"`，禁 `allow-same-origin`，强制 https）；`markdown`：复用 `MarkdownContent` 渲染 manifest 内嵌文案（长度上限 8KB）。
+- **webhook 约定**：核心仅在明确的扩展点触发（第一期：`siteSubmitted`，投稿成功后 POST 插件端点，携带站点名称/URL/描述摘要，超时 5s、失败仅记录日志不阻塞投稿）。上传插件无核心 server action 能力。
 
 ### 3. 客户端注入点（lib/plugins/client.tsx）
 
@@ -104,7 +136,10 @@ header.tsx 原「网站收录按钮」位置替换为 `<PluginHeaderSlot />`，�
 
 ### 4. 管理后台
 
-- 新页面 `app/admin/(dash)/plugins/page.tsx`：卡片列表展示注册表插件（名称、描述、图标、版本），每卡一个启用 Switch；启用状态为 ON 的插件在卡片下方渲染其 `configFields` 表单。
+- 新页面 `app/admin/(dash)/plugins/page.tsx`：
+  - 「已安装插件」卡片列表：合并视图（内置 + 上传），展示名称、描述、图标、版本、来源标记（内置 / 上传）；每卡一个启用 Switch；启用状态为 ON 的插件在卡片下方渲染其 `configFields` 表单。
+  - 「上传插件」区：文件选择仅接受 `.json`，客户端先做基础校验，提交走 `uploadPluginManifest`；展示上传结果与失败原因。
+  - 上传插件卡片提供「删除」操作（需确认），内置插件卡片隐藏删除。
 - 侧边栏导航新增「插件管理」项。
 - `app/admin/(dash)/sites/page.tsx`：「来源」列与按来源筛选包裹在 `isPluginEnabled("site-submission")` 条件渲染内（该字段属于核心 `Site` 模型，此处为显式标注的最小耦合点，注释注明归属插件）。
 
@@ -117,9 +152,20 @@ header.tsx 原「网站收录按钮」位置替换为 `<PluginHeaderSlot />`，�
 ```prisma
 model SystemSettings {
   // ... 既有字段
-  enabledPlugins Json @default("[]") @map("enabled_plugins")   // 启用的插件 ID 数组
+  enabledPlugins Json @default("[]") @map("enabled_plugins")   // 内置插件启用 ID 数组
   pluginConfigs  Json @default("{}") @map("plugin_configs")    // { "site-submission": { submissionMaxPerDay: 3 } }
   // 废弃并删除：enableSubmission、submissionMaxPerDay（迁移时先写代码再删列）
+}
+
+model Plugin {
+  id        String   @id                 // manifest.id，全局唯一且与内置注册表冲突检测
+  manifest  Json                         // 校验通过的完整 manifest
+  enabled   Boolean  @default(false)     // 上传插件独立启停（内置插件状态存 SystemSettings）
+  configs   Json     @default("{}")      // 上传插件配置项值
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("Plugin")
 }
 ```
 
@@ -127,8 +173,9 @@ model SystemSettings {
 
 1. `ALTER TABLE "SystemSettings" ADD COLUMN "enabled_plugins" JSONB NOT NULL DEFAULT '[]'`
 2. `ALTER TABLE "SystemSettings" ADD COLUMN "plugin_configs" JSONB NOT NULL DEFAULT '{}'`
-3. `ALTER TABLE "SystemSettings" DROP COLUMN IF EXISTS "enable_submission"`
-4. `ALTER TABLE "SystemSettings" DROP COLUMN IF EXISTS "submission_max_per_day"`
+3. `CREATE TABLE "Plugin" (...)`（含 id / manifest / enabled / configs / 时间戳）
+4. `ALTER TABLE "Site" ADD COLUMN IF NOT EXISTS "submitter_contact" TEXT`、`"submitter_ip" TEXT`（PR #9 已删除这两列，随插件化恢复）
+5. `ALTER TABLE "SystemSettings" DROP COLUMN IF EXISTS "enable_submission"`、`"submission_max_per_day"`（IF EXISTS 兼容两种基线）
 
 依既定决策，存量 `enableSubmission=true` 的系统升级后收录插件同为禁用，站长在插件页手动开启；发布说明中明确提示。
 
@@ -142,14 +189,20 @@ model SystemSettings {
 4. 禁用与启用操作对 `Site` 投稿数据零删除、零改写。
 5. `pluginConfigs` 缺失任一 `configFields` 键时，读取结果与 `defaultValue` 一致。
 6. 前台任一渲染路径（首页、分类页、About 页）在插件禁用时均无收录入口 DOM。
+7. `Plugin.id` 与内置注册表任一 ID 冲突时，上传被拒绝且零写库。
+8. manifest 中任何 URL 均为 http/https 协议；iframe 注入渲染结果必含 `sandbox` 属性且缺省排除 `allow-same-origin`。
+9. `deleteUploadedPlugin` 对内置插件 ID 必定拒绝；删除上传插件零触碰 `SystemSettings` 与 `Site`。
 
 ## Error Handling
 
 | 场景 | 处理 |
 |------|------|
 | 访客调用已禁用插件的 action | 捕获 `PluginDisabledError`，返回 `{ ok: false, code: "PLUGIN_DISABLED" }`，前端 toast 提示「功能未启用」 |
-| `enabledPlugins` JSON 损坏 / 非数组 | `getPluginState` 捕获解析异常，回退为全部禁用并记录 `logger.warn` |
+| `enabledPlugins` JSON 损坏 / 非数组 | `getMergedPlugins` 捕获解析异常，回退为全部禁用并记录 `logger.warn` |
 | `pluginConfigs` 中值越界（超出 min/max） | 读取时 clamp 到边界；写入时 zod 校验拒绝 |
+| manifest 校验失败 | 逐字段错误信息返回上传界面展示；零写库 |
+| manifest 超过 64KB / 含非白名单协议 URL | 直接拒绝上传 |
+| webhook 请求超时或失败 | 记录日志、不阻塞主流程（投稿仍成功） |
 | 注册表 ID 重复 | 开发期为运行时断言（`registry.ts` 顶部 dev check），构建期 fail-fast |
 | 插件配置保存时插件处于禁用状态 | 允许保存（配置与状态独立持久化），启用后即生效 |
 

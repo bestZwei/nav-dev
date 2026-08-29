@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Plus, Trash2, Info, Zap, Link2, PanelBottom, TriangleAlert, Layers, FileText } from "lucide-react"
+import { Loader2, Plus, Trash2, Info, Link2, PanelBottom, Layers, FileText } from "lucide-react"
 import {
   getSystemSettings,
   updateSystemSettings,
@@ -17,6 +17,7 @@ import {
 } from "@/lib/actions"
 import { useTranslations } from "next-intl"
 import { locales, localeNames, isLocale, type Locale } from "@/lib/i18n"
+import { fetchPublicSettings } from "@/lib/client-settings"
 import {
   Select,
   SelectContent,
@@ -43,10 +44,6 @@ interface SystemSettingsData {
   footerCopyright: string
   footerLinks: Array<{ name: string; url: string }>
   showAdminLink: boolean
-  enableVisitTracking: boolean
-  enableSiteDetail: boolean
-  enablePoetry: boolean
-  enableAboutPage: boolean
   aboutContent: string | undefined
   // 非默认工作区上下文时，全局设置的回退值（提示用）
   aboutContentFallback?: string | null
@@ -59,10 +56,9 @@ interface SystemSettingsData {
 
 const sections = [
   { id: "basic", titleKey: "secBasic", icon: Info },
-  { id: "features", titleKey: "secFeatures", icon: Zap },
-  { id: "about", titleKey: "secAbout", icon: FileText },
   { id: "links", titleKey: "secLinks", icon: Link2 },
   { id: "footer", titleKey: "secFooter", icon: PanelBottom },
+  { id: "about", titleKey: "secAbout", icon: FileText },
 ] as const
 
 type SectionId = (typeof sections)[number]["id"]
@@ -81,10 +77,6 @@ export default function AdminSettingsPage() {
     footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
     footerLinks: [],
     showAdminLink: true,
-    enableVisitTracking: true,
-    enableSiteDetail: false,
-    enablePoetry: true,
-    enableAboutPage: false,
     aboutContent: undefined,
     githubUrl: undefined,
     showIcp: false,
@@ -96,6 +88,8 @@ export default function AdminSettingsPage() {
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
   const [memoryMode, setMemoryMode] = useState(false)
   const [aboutPreview, setAboutPreview] = useState(false)
+  // about-page 内置插件启用状态：「关于页面」区块仅在其启用时展示
+  const [aboutEnabled, setAboutEnabled] = useState(false)
   // 当前设置页生效的工作区上下文（基本信息区块按其读写）
   const [workspaceCtx, setWorkspaceCtx] = useState<{
     id: string
@@ -108,6 +102,14 @@ export default function AdminSettingsPage() {
     loadSettings()
     isMemoryMode().then((result) => {
       if (result.success) setMemoryMode(result.data)
+    })
+    fetchPublicSettings().then((settings) => {
+      const enabled = settings.plugins?.builtinEnabledIds?.includes("about-page") ?? false
+      setAboutEnabled(enabled)
+      // 插件禁用后「关于页面」区块不可用，避免停留在失效区块上
+      if (!enabled) {
+        setActiveSection((current) => (current === "about" ? "basic" : current))
+      }
     })
   }, [])
 
@@ -152,14 +154,11 @@ export default function AdminSettingsPage() {
         faviconFallback: global.favicon,
         aboutContent: (display ? display.display.aboutContent : global.aboutContent) || undefined,
         aboutContentFallback: global.aboutContent,
-        enableAboutPage: global.enableAboutPage ?? false,
         footerLinks: (global.footerLinks as Array<{ name: string; url: string }>) || [],
         githubUrl: global.githubUrl || undefined,
         showIcp: global.showIcp || false,
         icpNumber: global.icpNumber || undefined,
         icpLink: global.icpLink || undefined,
-        enableSiteDetail: global.enableSiteDetail ?? false,
-        enablePoetry: global.enablePoetry ?? true,
         defaultLanguage: isLocale(global.defaultLanguage) ? global.defaultLanguage : "zh",
       }))
     }
@@ -240,7 +239,6 @@ export default function AdminSettingsPage() {
 
   const sectionMeta: Record<SectionId, { title: string; description: string }> = {
     basic: { title: t("secBasic"), description: t("secBasicDesc") },
-    features: { title: t("secFeatures"), description: t("secFeaturesDesc") },
     about: { title: t("secAbout"), description: t("secAboutDesc") },
     links: { title: t("secLinks"), description: t("secLinksDesc") },
     footer: { title: t("secFooter"), description: t("secFooterDesc") },
@@ -268,7 +266,8 @@ export default function AdminSettingsPage() {
         {/* 左侧选项导航 */}
         <nav className="shrink-0 lg:w-48" aria-label={t("navLabel")}>
           <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
-            {sections.map((section) => (
+            {/* about-page 插件禁用时隐藏「关于页面」区块（数据保留，重新启用即恢复） */}
+            {sections.filter((s) => s.id !== "about" || aboutEnabled).map((section) => (
               <li key={section.id}>
                 <button
                   type="button"
@@ -394,59 +393,8 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* 功能开关 */}
-            {activeSection === "features" && (
-              <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="enable-tracking">{t("trackingLabel")}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t("trackingHint")}
-                    </p>
-                  </div>
-                  <Switch
-                    id="enable-tracking"
-                    checked={settings.enableVisitTracking}
-                    onCheckedChange={(checked) => setSettings({ ...settings, enableVisitTracking: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="enable-site-detail">{t("siteDetailLabel")}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t("siteDetailHint")}
-                    </p>
-                    {memoryMode && (
-                      <p className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                        <TriangleAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                        <span>{t("siteDetailMemoryWarning")}</span>
-                      </p>
-                    )}
-                  </div>
-                  <Switch
-                    id="enable-site-detail"
-                    checked={settings.enableSiteDetail}
-                    onCheckedChange={(checked) => setSettings({ ...settings, enableSiteDetail: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="enable-poetry">{t("poetryLabel")}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t("poetryHint")}
-                    </p>
-                  </div>
-                  <Switch
-                    id="enable-poetry"
-                    checked={settings.enablePoetry}
-                    onCheckedChange={(checked) => setSettings({ ...settings, enablePoetry: checked })}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* 关于页面 */}
-            {activeSection === "about" && (
+            {aboutEnabled && activeSection === "about" && (
               <div className="space-y-8">
                 {/* 工作区上下文提示 */}
                 {workspaceCtx && (
@@ -465,19 +413,7 @@ export default function AdminSettingsPage() {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="enable-about-page">{t("aboutEnableLabel")}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t("aboutEnableHint")}
-                    </p>
-                  </div>
-                  <Switch
-                    id="enable-about-page"
-                    checked={settings.enableAboutPage}
-                    onCheckedChange={(checked) => setSettings({ ...settings, enableAboutPage: checked })}
-                  />
-                </div>
+                {/* 启停已由 about-page 插件管理（插件管理页），此处仅维护内容 */}
                 <div className="space-y-2">
                   <Tabs value={aboutPreview ? "preview" : "edit"} onValueChange={(v) => setAboutPreview(v === "preview")}>
                     <div className="flex items-center justify-between">

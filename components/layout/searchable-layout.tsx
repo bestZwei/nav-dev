@@ -6,11 +6,14 @@ import { pinyin } from "pinyin-pro"
 import { ScrollHeader } from "./scroll-header"
 import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
-import { JinrishiciCardWrapper } from "./jinrishici-card-wrapper"
 import { BackToTop } from "./back-to-top"
 import { SiteDetailProvider } from "./site-detail-provider"
 import { Badge } from "@/components/ui/badge"
-import { usePoetryToggle } from "@/hooks/use-poetry-toggle"
+import {
+  PluginSlot,
+  useHomeSideActive,
+  useHomeSideVisible,
+} from "@/lib/plugins/client"
 
 interface Site {
   id: string
@@ -36,7 +39,6 @@ interface SearchableLayoutProps {
   siteName?: string
   currentCategory?: string
   useAnchorLinks?: boolean
-  enableSiteDetail?: boolean
   children: React.ReactNode
 }
 
@@ -46,12 +48,14 @@ export function SearchableLayout({
   siteName,
   currentCategory,
   useAnchorLinks,
-  enableSiteDetail,
   children,
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isHomePath, setIsHomePath] = useState(false)
-  const { isVisible: isPoetryVisible, mounted: poetryMounted } = usePoetryToggle()
+  // homeSide 插件（如今日诗词）启用且用户未隐藏时，为右侧侧栏预留空间
+  const homeSideActive = useHomeSideActive()
+  const { visible: homeSideVisible, mounted: homeSideMounted } =
+    useHomeSideVisible(homeSideActive)
   const t = useTranslations("search")
 
   useEffect(() => {
@@ -98,10 +102,10 @@ export function SearchableLayout({
   }, [searchQuery, flatSites, pinyinMap])
 
   const isSearching = searchQuery.trim().length > 0
-  const hasPoetryRightSpace = poetryMounted && isPoetryVisible
+  const hasHomeSideSpace = homeSideMounted && homeSideVisible
 
   return (
-    <SiteDetailProvider initialEnableSiteDetail={enableSiteDetail}>
+    <SiteDetailProvider>
       <div className="min-h-screen flex flex-col">
       <ScrollHeader
         categories={allCategories}
@@ -114,11 +118,11 @@ export function SearchableLayout({
 
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
         <div className="mx-auto max-w-[1600px] w-full">
-          {/* 今日诗词 - 固定在右上角 */}
-          <JinrishiciCardWrapper />
+          {/* 插件 homeSide 槽位 - 固定在右上角（如今日诗词卡片） */}
+          <PluginSlot position="homeSide" />
 
-          {/* 内容区域：为诗词卡片预留右侧空间 */}
-          <div className="lg:pr-36 lg:pl-2">
+          {/* 内容区域：为右侧侧栏插件预留空间 */}
+          <div className={hasHomeSideSpace ? "lg:pr-36 lg:pl-2" : "lg:pl-2"}>
             {isSearching ? (
               // 搜索结果
               <div className="animate-fade-in">

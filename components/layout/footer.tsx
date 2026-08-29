@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { Separator } from "@/components/ui/separator"
 import { fetchPublicSettings, type PublicSettings } from "@/lib/client-settings"
+import { PluginFooterSlot, useBuiltinPluginEnabled } from "@/lib/plugins/client"
 
 // 获取动态版权信息
 function getDefaultCopyright(): string {
@@ -14,6 +15,7 @@ function getDefaultCopyright(): string {
 
 export function Footer() {
   const [settings, setSettings] = useState<PublicSettings | null>(null)
+  const aboutEnabled = useBuiltinPluginEnabled("about-page")
   const t = useTranslations("footer")
 
   useEffect(() => {
@@ -90,8 +92,8 @@ export function Footer() {
                   <Separator orientation="vertical" className="h-4" />
                 </>
               )}
-              {/* 关于页面 - 根据设置显示或隐藏 */}
-              {settings?.enableAboutPage && (
+              {/* 关于页面 - about-page 插件启用时显示 */}
+              {aboutEnabled && (
                 <>
                   <Link
                     href="/about"
@@ -111,6 +113,8 @@ export function Footer() {
                   {t("admin")}
                 </a>
               )}
+              {/* 插件注入点：启用的插件在此渲染 footer 链接/内容 */}
+              <PluginFooterSlot />
             </div>
           </div>
         </div>

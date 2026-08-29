@@ -64,9 +64,23 @@ Updated: 2026-08-28
 #### Acceptance Criteria
 
 1. THE 核心代码 SHALL 通过插件注册表与注入点渲染插件内容，核心模块 SHALL 与任何具体插件解耦。
-2. WHEN 新增一个插件，贡献者 SHALL 仅需：在注册表登记元数据、实现插件接口（UI 注入、后端能力、配置项、i18n 文案），核心代码保持不变。
+2. WHEN 新增一个内置插件，贡献者 SHALL 仅需：在注册表登记元数据、实现插件接口（UI 注入、后端能力、配置项、i18n 文案），核心代码保持不变。
 3. THE 插件接口 SHALL 覆盖以下挂载能力：前台 header 注入点、footer 注入点、管理后台设置区块、server action / API 能力声明。
 4. WHEN 插件声明了配置项，THE 插件管理页 SHALL 渲染对应配置控件并随启用状态一并持久化。
+
+### Requirement 5: 用户上传插件
+
+**User Story:** AS 站长, I want 在管理后台上传第三方插件包并自行决定是否启用, so that 我能按需引入社区扩展而无需修改或重新部署系统。
+
+#### Acceptance Criteria
+
+1. THE 系统 SHALL 支持站长上传声明式插件包（manifest 文件），manifest 描述插件元数据、UI 注入声明、webhook 端点与配置项。
+2. WHEN 站长上传的 manifest 通过格式校验，THE 系统 SHALL 将其持久化存储，初始状态为禁用。
+3. IF manifest 校验失败（字段缺失、ID 非法、URL 协议不合规、超出大小限制），THE 系统 SHALL 拒绝上传并向站长展示明确的失败原因。
+4. THE 上传插件 SHALL 仅以声明式能力运行：UI 注入限定为按钮、链接、iframe 弹窗、Markdown 区块四种形态；后端交互限定为对 manifest 中声明的 HTTP(S) 端点发起请求。
+5. THE 系统 SHALL 以沙箱方式渲染上传插件的 iframe 内容（sandbox 属性 + 协议白名单），THE 系统 SHALL 禁止执行上传包中的任何可执行代码。
+6. WHEN 上传插件处于启用状态，THE 系统 SHALL 按其 manifest 注入声明将其渲染到对应注入点。
+7. WHEN 站长删除某上传插件，THE 系统 SHALL 移除其存储的 manifest 与状态；内置插件 SHALL 不可删除、仅可启停。
 
 ## 已确认决策
 

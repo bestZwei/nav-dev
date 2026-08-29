@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LocaleToggle } from "@/components/locale-toggle"
-import { PoetryToggle } from "@/components/poetry-toggle"
 import { FaviconServiceToggle } from "@/components/favicon-service-toggle"
 import { CardDensityToggle } from "@/components/card-density-toggle"
 import {
@@ -21,6 +20,7 @@ import {
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { Search, X } from "lucide-react"
 import { fetchPublicSettings } from "@/lib/client-settings"
+import { PluginHeaderSlot, PluginSlot } from "@/lib/plugins/client"
 import { CategoryIcon, CategoryIconBadge } from "@/components/category-icon"
 
 interface HeaderProps {
@@ -90,6 +90,61 @@ export function Header({
   const getCategoryHref = (slug: string) =>
     useAnchorLinks ? `#category-${slug}` : `/category/${slug}`
 
+  // 滚动代际：新点击立即作废旧循环的等待与滚动，避免多个重试循环
+  // 先后执行滚动互相打断（表现为页面连续跳动、落点错乱）
+  const scrollGenerationRef = useRef(0)
+
+  // 单次滚动尝试：vaul 抽屉关闭动画期间 body 带 data-scroll-locked（滚动锁定态），
+  // 此时滚动指令会被吞掉，返回 false 交给重试循环。
+  // 使用瞬时滚动（无动画）：不受移动端浏览器对 smooth 支持差异影响，执行即完成
+  const tryScrollToCategory = (slug: string): boolean => {
+    if (document.body.hasAttribute("data-scroll-locked")) return false
+    const target = document.getElementById(`category-${slug}`)
+    if (!target) return false
+    const headerOffset = 80
+    const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
+    window.scrollTo(0, top)
+    return true
+  }
+
+  // 立即尝试一次；失败（滚动锁未释放/目标未渲染）则以 100ms 间隔重试至多 2s。
+  // 每次执行前校验代际：仅当前最新一次点击的循环允许真正滚动。
+  // 成功后在 350/800/1200ms 追加确认滚动（幂等 + 代际保护）：
+  // vaul 关闭时恢复「打开抽屉前的滚动位置」的时刻在慢设备上可能晚至动画结束，
+  // 拉长补枪窗口保证我们是滚动竞争中最后出手的一方
+  const scrollToCategory = (slug: string) => {
+    const generation = ++scrollGenerationRef.current
+    const isStale = () => generation !== scrollGenerationRef.current
+    const confirmScroll = (delay: number) => {
+      window.setTimeout(() => {
+        if (!isStale()) tryScrollToCategory(slug)
+      }, delay)
+    }
+
+    if (tryScrollToCategory(slug)) {
+      confirmScroll(350)
+      confirmScroll(800)
+      confirmScroll(1200)
+      return
+    }
+
+    let attempts = 0
+    const retry = () => {
+      if (isStale()) return
+      attempts += 1
+      if (tryScrollToCategory(slug)) {
+        confirmScroll(350)
+        confirmScroll(800)
+        confirmScroll(1200)
+        return
+      }
+      if (attempts < 20) {
+        window.setTimeout(retry, 100)
+      }
+    }
+    window.setTimeout(retry, 100)
+  }
+
   const handleAnchorClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     slug: string
@@ -98,12 +153,7 @@ export function Header({
     e.preventDefault()
     setMobileMenuOpen(false)
     onCategoryClick?.(slug)
-    const target = document.getElementById(`category-${slug}`)
-    if (target) {
-      const headerOffset = 80
-      const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
-      window.scrollTo({ top, behavior: "smooth" })
-    }
+    scrollToCategory(slug)
   }
 
   // 快捷键支持：按 '/' 或 'Cmd+K / Ctrl+K' 聚焦搜索输入框
@@ -273,9 +323,12 @@ export function Header({
               )}
             </div>
 
+            {/* 插件注入点：启用的插件在此渲染前台入口（如网站收录按钮） */}
+            <PluginHeaderSlot />
             <CardDensityToggle />
             <FaviconServiceToggle />
-            <PoetryToggle />
+            {/* 插件工具按钮槽（如诗词显隐切换） */}
+            <PluginSlot position="headerTools" />
             <LocaleToggle />
             <ThemeToggle />
           </div>

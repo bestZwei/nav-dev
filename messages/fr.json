@@ -113,7 +113,8 @@
         "unavailable": "Vérification de mise à jour indisponible",
         "dev": "dev"
       },
-      "workspaces": "Espaces de travail"
+      "workspaces": "Espaces de travail",
+      "plugins": "Extensions"
     },
     "login": {
       "subtitle": "Connectez-vous pour gérer votre navigation",
@@ -265,7 +266,13 @@
       "checkAllDoneDesc": "{up} en ligne, {down} hors ligne, {suspicious} possiblement restreints",
       "checkUpDesc": "Le site est accessible normalement",
       "checkDownDesc": "Le site est inaccessible ou hors ligne",
-      "checkSuspiciousDesc": "Le site a répondu mais rejette la vérification (souvent une protection CDN/WAF) ; vérification manuelle recommandée"
+      "checkSuspiciousDesc": "Le site a répondu mais rejette la vérification (souvent une protection CDN/WAF) ; vérification manuelle recommandée",
+      "filterSource": "Source",
+      "filterSourceAll": "Toutes les sources",
+      "sourceUser": "Soumis par un utilisateur",
+      "sourceAdminCreated": "Créé par l'admin",
+      "sourceAdmin": "Admin",
+      "thSource": "Source"
     },
     "siteForm": {
       "createTitle": "Ajouter un site",
@@ -660,5 +667,82 @@
     "retry": "Réessayer",
     "emptyHint": "Pas encore de présentation détaillée",
     "noScreenshots": "Aucune capture d'écran pour l'instant"
+  },
+  "plugins": {
+    "registry": {
+      "uploadTitle": "Téléverser une extension",
+      "uploadDescription": "Téléversez un manifeste déclaratif (manifest.json). Les extensions téléversées sont désactivées par défaut et peuvent être activées ou supprimées à tout moment. Seules les déclarations sont exécutées, jamais le code téléversé.",
+      "uploadButton": "Choisir manifest.json",
+      "uploadSuccess": "Extension téléversée",
+      "uploadFailed": "Échec du téléversement de l'extension",
+      "empty": "Aucune extension installée",
+      "sourceBuiltin": "Intégrée",
+      "sourceUploaded": "Téléversée",
+      "delete": "Supprimer l'extension",
+      "deleteConfirmTitle": "Supprimer cette extension ?",
+      "deleteConfirmDescription": "Le manifeste et l'état de « {name} » seront supprimés. Les données produites par l'extension sont conservées.",
+      "cancel": "Annuler",
+      "saveConfig": "Enregistrer la configuration",
+      "enableSuccess": "Extension activée",
+      "disableSuccess": "Extension désactivée",
+      "configSaved": "Configuration enregistrée",
+      "updateFailed": "Échec de l'opération, veuillez réessayer",
+      "deleteSuccess": "Extension supprimée"
+    },
+    "siteSubmission": {
+      "name": "Soumission de sites",
+      "description": "Remplissez les informations du site ; il sera publié après validation par l'administrateur",
+      "config": {
+        "maxPerDay": "Soumissions max par IP et par jour"
+      },
+      "trigger": "Proposer un site",
+      "title": "Proposer un site",
+      "nameLabel": "Nom du site *",
+      "namePlaceholder": "ex. GitHub",
+      "nameRequired": "Le nom est requis",
+      "nameMax": "Le nom doit faire au plus 50 caractères",
+      "urlLabel": "URL *",
+      "urlRequired": "L'URL est requise",
+      "urlInvalid": "Veuillez saisir une URL valide",
+      "descLabel": "Description *",
+      "descPlaceholder": "Décrivez brièvement le site",
+      "descRequired": "La description est requise",
+      "descMax": "La description doit faire au plus 200 caractères",
+      "charCount": "{count}/200 caractères",
+      "categoryLabel": "Catégorie *",
+      "categoryPlaceholder": "Sélectionner une catégorie",
+      "categoryRequired": "Veuillez sélectionner une catégorie",
+      "contactLabel": "Contact (facultatif)",
+      "contactPlaceholder": "E-mail ou WeChat pour la vérification",
+      "contactHint": "L'administrateur peut vous contacter pendant la vérification",
+      "contactMax": "Le contact doit faire au plus 100 caractères",
+      "cancel": "Annuler",
+      "submit": "Soumettre",
+      "success": "Soumis ! Nous vérifierons rapidement. Merci de votre contribution",
+      "failed": "Échec de la soumission",
+      "retry": "Échec de la soumission, veuillez réessayer plus tard",
+      "errors": {
+        "PLUGIN_DISABLED": "La soumission de sites n'est pas activée",
+        "INVALID_URL": "URL invalide, seuls http/https sont pris en charge",
+        "RATE_LIMITED": "Trop de soumissions ! Maximum {count} par 24 heures, réessayez demain",
+        "SUBMIT_FAILED": "Échec de la soumission, veuillez réessayer plus tard"
+      }
+    },
+    "poetryCard": {
+      "name": "Poème du jour",
+      "description": "Affiche une carte de poème en haut à droite de la page d'accueil, avec un bouton dans la barre d'outils"
+    },
+    "visitTracking": {
+      "name": "Statistiques de visite",
+      "description": "Enregistre les visites et alimente les statistiques : classement, graphique de fréquence, comparaison du jour"
+    },
+    "siteDetail": {
+      "name": "Fenêtre de détails du site",
+      "description": "Ajoute une fenêtre de détails aux cartes de sites avec texte enrichi et captures d'écran"
+    },
+    "aboutPage": {
+      "name": "Page À propos",
+      "description": "Ajoute une entrée « À propos » au frontend (lien de pied de page et sitemap) ; le contenu se gère dans les paramètres système"
+    }
   }
 }

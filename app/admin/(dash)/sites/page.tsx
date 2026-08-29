@@ -46,6 +46,7 @@ import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalL
 import { Input } from "@/components/ui/input"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
 import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter, checkSiteHealth, getSiteIdsForHealthCheck } from "@/lib/actions"
+import { fetchPublicSettings } from "@/lib/client-settings"
 import { toast } from "sonner"
 
 interface Site {
@@ -54,6 +55,9 @@ interface Site {
   url: string
   description: string
   iconUrl: string | null
+  // site-submission 插件字段（管理员创建时为空）
+  submitterContact?: string | null
+  submitterIp?: string | null
   categoryId: string
   isPublished: boolean
   isPinned?: boolean
@@ -93,6 +97,9 @@ export default function AdminSitesPage() {
   // 筛选状态
   const [filterCategory, setFilterCategory] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  // site-submission 插件：来源筛选（仅插件启用时显示）
+  const [filterSubmitter, setFilterSubmitter] = useState<string>("all")
+  const [submissionEnabled, setSubmissionEnabled] = useState(false)
 
   // 排序状态：默认=置顶优先+手动 order；health=测活异常优先；createdAt=添加时间
   const [sortBy, setSortBy] = useState<"default" | "health" | "createdAt">("default")
@@ -118,7 +125,7 @@ export default function AdminSitesPage() {
         search: searchKeyword.trim() || undefined,
         categoryId: filterCategory !== "all" ? filterCategory : undefined,
         isPublished: filterStatus !== "all" ? (filterStatus === "true") : undefined,
-
+        submitterIp: submissionEnabled && filterSubmitter !== "all" ? filterSubmitter : undefined,
         sortBy,
         sortDir,
       })
@@ -164,6 +171,12 @@ export default function AdminSitesPage() {
   useEffect(() => {
     loadSitesRef.current(1)
     loadCategoriesRef.current()
+    // site-submission 插件启用状态决定来源筛选/来源列是否显示
+    fetchPublicSettings().then((settings) => {
+      setSubmissionEnabled(
+        settings.plugins?.builtinEnabledIds?.includes("site-submission") ?? false
+      )
+    })
   }, [])
 
   // 顶栏切换工作区后重新加载当前工作区的网址与分类筛选列表
@@ -183,6 +196,7 @@ export default function AdminSitesPage() {
   const handleResetFilters = () => {
     setFilterCategory("all")
     setFilterStatus("all")
+    setFilterSubmitter("all")
     setSortBy("default")
     setSearchKeyword("")
     setPage(1)
@@ -202,7 +216,7 @@ export default function AdminSitesPage() {
   // 筛选条件改变时重新加载
   useEffect(() => {
     loadSitesRef.current(1)
-  }, [filterCategory, filterStatus, sortBy, sortDir])
+  }, [filterCategory, filterStatus, filterSubmitter, sortBy, sortDir])
 
   // 搜索防抖，300ms 后重新加载
   useEffect(() => {
@@ -472,6 +486,23 @@ export default function AdminSitesPage() {
             </Select>
           </Field>
 
+          {/* 来源筛选 - site-submission 插件启用时显示 */}
+          {submissionEnabled && (
+            <Field orientation="horizontal" className="w-auto">
+              <FieldLabel>{t("filterSource")}</FieldLabel>
+              <Select value={filterSubmitter} onValueChange={setFilterSubmitter}>
+                <SelectTrigger className="w-auto min-w-[130px]">
+                  <SelectValue placeholder={t("filterSourceAll")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("filterSourceAll")}</SelectItem>
+                  <SelectItem value="true">{t("sourceUser")}</SelectItem>
+                  <SelectItem value="false">{t("sourceAdminCreated")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
+
           {/* 排序 */}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel>{t("sortBy")}</FieldLabel>
@@ -507,7 +538,7 @@ export default function AdminSitesPage() {
           </Field>
 
           {/* 重置按钮 */}
-          {(filterCategory !== "all" || filterStatus !== "all" || sortBy !== "default") && (
+          {(filterCategory !== "all" || filterStatus !== "all" || (submissionEnabled && filterSubmitter !== "all") || sortBy !== "default") && (
                           <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -608,6 +639,9 @@ export default function AdminSitesPage() {
                     <TableHead className="w-24 text-center whitespace-nowrap">{t("thPinned")}</TableHead>
                     <TableHead className="w-24 text-center whitespace-nowrap">{t("thStatus")}</TableHead>
                     <TableHead className="w-24 text-center whitespace-nowrap">{t("thHealth")}</TableHead>
+                    {submissionEnabled && (
+                      <TableHead className="w-28 text-center whitespace-nowrap">{t("thSource")}</TableHead>
+                    )}
                     <TableHead className="text-right w-44 whitespace-nowrap">{t("thActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -750,6 +784,17 @@ export default function AdminSitesPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
+
+                      {/* 来源 - site-submission 插件启用时显示 */}
+                      {submissionEnabled && (
+                        <TableCell className="text-center text-muted-foreground">
+                          {site.submitterIp ? (
+                            <span className="text-xs font-mono text-muted-foreground">{t("sourceUser")}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/70">{t("sourceAdmin")}</span>
+                          )}
+                        </TableCell>
+                      )}
 
                       {/* 操作 */}
                       <TableCell className="text-right">

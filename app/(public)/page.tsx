@@ -23,14 +23,13 @@ export default async function HomePage() {
         allCategories={allCategories || []}
         flatSites={flatSites}
         siteName={settings?.siteName}
-        enableSiteDetail={(settings as any)?.enableSiteDetail}
       >
       <div className="space-y-8">
         {/* 分类内容 */}
         {categories && categories.length > 0 ? (
           <>
             {categories.map((category, index) => (
-            <section key={category.id} id={`category-${category.slug}`}>
+            <section key={category.id} id={`category-${category.slug}`} className="scroll-mt-20">
               <div className="flex items-center justify-between mb-3.5">
                 <div className="flex items-center gap-2.5">
                   {category.icon && (

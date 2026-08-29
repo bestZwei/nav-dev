@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { isLocale, type Locale } from "./i18n"
 import { getAdminSession } from "./api-auth"
+import { isPluginEnabled, firePluginWebhook } from "./plugins/runtime"
 import {
   getCurrentWorkspace,
   getAdminWorkspace,
@@ -683,6 +684,8 @@ export async function getSitesWithPagination(params: {
   categoryId?: string
   search?: string
   isPublished?: boolean
+  // site-submission 插件：按来源筛选（"true"=仅投稿，"false"=仅管理员创建）
+  submitterIp?: string
   sortBy?: "default" | "health" | "createdAt"
   sortDir?: "asc" | "desc"
 }) {
@@ -722,6 +725,13 @@ export async function getSitesWithPagination(params: {
 
     if (params.isPublished !== undefined) {
       where.isPublished = params.isPublished
+    }
+
+    // site-submission 插件：来源筛选（投稿记录带 submitterIp，管理员创建为空）
+    if (params.submitterIp === "true") {
+      where.submitterIp = { not: null }
+    } else if (params.submitterIp === "false") {
+      where.submitterIp = null
     }
 
     // 排序规则：默认置顶优先 + 手动 order；
@@ -1040,6 +1050,17 @@ export async function createSite(data: {
     revalidatePath("/admin/sites")
     revalidatePath("/")
     revalidatePath(`/category/${site.category?.slug || ''}`)
+
+    // 事件总线：以发布状态创建时通知订阅插件
+    if (site.isPublished) {
+      await firePluginWebhook("sitePublished", {
+        siteId: site.id,
+        name: site.name,
+        url: site.url,
+        description: site.description,
+      })
+    }
+
     return { success: true, data: site }
   } catch (error) {
     console.error("Error creating site:", error)
@@ -1075,6 +1096,10 @@ export async function updateSite(id: string, data: {
     if (validationError) {
       return { success: false, error: validationError }
     }
+
+    const publishedBefore = data.isPublished !== undefined
+      ? (await prisma.site.findUnique({ where: { id }, select: { isPublished: true } }))?.isPublished ?? null
+      : null
 
     const site = await prisma.$transaction(async (tx) => {
       const updateData: Prisma.SiteUpdateInput = {}
@@ -1129,6 +1154,17 @@ export async function updateSite(id: string, data: {
     revalidatePath("/admin/sites")
     revalidatePath("/")
     revalidatePath(`/category/${site.category?.slug || ''}`)
+
+    // 事件总线：发布状态变化时通知订阅插件（false→true 发布 / true→false 下架）
+    if (publishedBefore !== null && site.isPublished !== publishedBefore) {
+      await firePluginWebhook(site.isPublished ? "sitePublished" : "siteUnpublished", {
+        siteId: site.id,
+        name: site.name,
+        url: site.url,
+        description: site.description,
+      })
+    }
+
     return { success: true, data: site }
   } catch (error) {
     console.error("Error updating site:", error)
@@ -1170,6 +1206,15 @@ export async function deleteSite(id: string) {
     revalidatePath("/admin/sites")
     revalidatePath("/")
     revalidatePath(`/category/${site.category?.slug || ''}`)
+
+    // 事件总线：删除站点时通知订阅插件
+    await firePluginWebhook("siteDeleted", {
+      siteId: site.id,
+      name: site.name,
+      url: site.url,
+      description: site.description,
+    })
+
     return { success: true }
   } catch (error) {
     console.error("Error deleting site:", error)
@@ -1199,6 +1244,15 @@ export async function toggleSitePublish(id: string) {
     })
     revalidatePath("/admin/sites")
     revalidatePath("/")
+
+    // 事件总线：发布状态翻转时通知订阅插件
+    await firePluginWebhook(site.isPublished ? "sitePublished" : "siteUnpublished", {
+      siteId: site.id,
+      name: site.name,
+      url: site.url,
+      description: site.description,
+    })
+
     return { success: true, data: site }
   } catch (error) {
     console.error("Error toggling site publish status:", error)
@@ -1596,14 +1650,18 @@ export async function getDisplaySettings() {
   }
 }
 
-// About 页数据：总开关取全局 SystemSettings，内容按工作区覆盖、空则回退全局。
-// 仅供 /about 页服务端调用，避免整篇 Markdown 进入公开设置接口
+// About 页数据：总开关取 about-page 内置插件的启用状态，
+// 内容按工作区覆盖、空则回退全局。仅供 /about 页与 sitemap 服务端调用，
+// 避免整篇 Markdown 进入公开设置接口
 export async function getAboutPage() {
-  const workspace = await getCurrentWorkspace()
-  const result = await getSystemSettings()
-  const settings = result.success && result.data ? result.data : null
+  const [workspace, settingsResult, aboutEnabled] = await Promise.all([
+    getCurrentWorkspace(),
+    getSystemSettings(),
+    isPluginEnabled("about-page"),
+  ])
+  const settings = settingsResult.success && settingsResult.data ? settingsResult.data : null
   return {
-    enabled: settings?.enableAboutPage ?? false,
+    enabled: aboutEnabled,
     siteName:
       workspace.siteName || (settings?.siteName ?? "Conan Nav"),
     content: workspace.aboutContent || settings?.aboutContent || "",
@@ -1624,10 +1682,6 @@ const ALLOWED_SETTINGS_FIELDS = [
   "showIcp",
   "icpNumber",
   "icpLink",
-  "enableVisitTracking",
-  "enableSiteDetail",
-  "enablePoetry",
-  "enableAboutPage",
   "aboutContent",
   "githubUrl",
   "defaultLanguage",
@@ -1646,10 +1700,6 @@ export async function updateSystemSettings(data: {
   showIcp?: boolean
   icpNumber?: string | null
   icpLink?: string | null
-  enableVisitTracking?: boolean
-  enableSiteDetail?: boolean
-  enablePoetry?: boolean
-  enableAboutPage?: boolean
   aboutContent?: string | null
   githubUrl?: string
   defaultLanguage?: Locale
@@ -1701,157 +1751,7 @@ export async function updateSystemSettings(data: {
 }
 
 // ==================== Visit Tracking ====================
-
-export async function recordVisit(siteId: string, request?: Request) {
-  try {
-    // 仅对存在且已发布的站点记录访问，防止伪造 siteId 污染统计
-    const site = await prisma.site.findUnique({
-      where: { id: siteId },
-      select: { id: true, isPublished: true },
-    })
-    if (!site || !site.isPublished) {
-      return { success: false, error: "Site not found" }
-    }
-
-    // 获取系统设置，检查是否启用访问统计
-    const settingsResult = await getSystemSettings()
-    if (!settingsResult.success || !settingsResult.data?.enableVisitTracking) {
-      return { success: true }
-    }
-
-    let ipAddress = null
-    let userAgent = null
-    let referer = null
-
-    if (request) {
-      // x-forwarded-for 可能为逗号分隔的 IP 链，取首段作为客户端 IP
-      ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-                  request.headers.get('x-real-ip') ||
-                  null
-      userAgent = request.headers.get('user-agent') || null
-      referer = request.headers.get('referer') || null
-    }
-
-    const visit = await prisma.visit.create({
-      data: {
-        siteId,
-        ipAddress,
-        userAgent,
-        referer,
-      },
-    })
-
-    return { success: true, data: visit }
-  } catch (error) {
-    console.error("Error recording visit:", error)
-    return { success: false, error: "Failed to record visit" }
-  }
-}
-
-export async function getVisitStats(days: number = 30, limit: number = 10) {
-  const unauthorized = await requireAdmin()
-  if (unauthorized) return unauthorized
-  try {
-    const topSites = await prisma.visit.groupBy({
-      by: ['siteId'],
-      where: days > 0 ? {
-        visitedAt: {
-          gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
-        },
-      } : undefined,
-      _count: {
-        id: true,
-      },
-      orderBy: {
-        _count: {
-          id: 'desc',
-        },
-      },
-      take: limit === 0 ? undefined : limit,
-    })
-
-    const siteIds = topSites.map(s => s.siteId)
-    const sites = await prisma.site.findMany({
-      where: {
-        id: { in: siteIds },
-      },
-      include: {
-        category: true,
-      },
-    })
-
-    const topSitesWithDetails = topSites.map(stat => {
-      const site = sites.find(s => s.id === stat.siteId)
-      return {
-        ...site,
-        visitCount: stat._count.id,
-      }
-    })
-
-    const totalVisits = await prisma.visit.count({
-      where: days > 0 ? {
-        visitedAt: {
-          gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
-        },
-      } : undefined,
-    })
-
-    return {
-      success: true,
-      data: {
-        topSites: topSitesWithDetails,
-        totalVisits,
-      },
-    }
-  } catch (error) {
-    console.error("Error fetching visit stats:", error)
-    return { success: false, error: "Failed to fetch visit stats" }
-  }
-}
-
-export async function getVisitFrequency(days: number = 30) {
-  const unauthorized = await requireAdmin()
-  if (unauthorized) return unauthorized
-  try {
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-
-    const visits = await prisma.visit.findMany({
-      where: days > 0 ? {
-        visitedAt: {
-          gte: startDate,
-        },
-      } : undefined,
-      select: {
-        visitedAt: true,
-      },
-      orderBy: {
-        visitedAt: 'asc',
-      },
-    })
-
-    // 按日期分组统计
-    const visitsByDate = visits.reduce((acc, visit) => {
-      const date = new Date(visit.visitedAt)
-      const dateKey = date.toISOString().split('T')[0] // YYYY-MM-DD
-      acc[dateKey] = (acc[dateKey] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-
-    // 转换为数组格式
-    const frequencyData = Object.entries(visitsByDate).map(([date, count]) => ({
-      date,
-      count,
-    }))
-
-    return {
-      success: true,
-      data: frequencyData,
-    }
-  } catch (error) {
-    console.error("Error fetching visit frequency:", error)
-    return { success: false, error: "Failed to fetch visit frequency" }
-  }
-}
+// 访问统计能力已迁移至内置插件 plugins/visit-tracking（装配层薄壳见 app/api/visit 等路由）
 
 // ==================== Data Import/Export ====================
 

@@ -56,6 +56,9 @@ export interface SiteItem {
   url: string
   description: string
   iconUrl: string | null
+  // site-submission 插件字段
+  submitterContact: string | null
+  submitterIp: string | null
   categoryId: string
   isPublished: boolean
   isPinned?: boolean
@@ -96,11 +99,10 @@ export interface SystemSettingsItem {
   showIcp: boolean
   icpNumber: string | null
   icpLink: string | null
-  enableVisitTracking: boolean
-  enableSiteDetail: boolean
-  enablePoetry: boolean
-  enableAboutPage: boolean
   aboutContent: string | null
+  // 插件系统：启用的插件 ID 列表与各插件配置（内存模式下的强类型近似）
+  enabledPlugins: string[]
+  pluginConfigs: Record<string, Record<string, number | string | boolean>>
   githubUrl: string | null
   defaultLanguage: string
   createdAt: Date
@@ -116,6 +118,16 @@ export interface ScreenshotItem {
   mimeType: string | null
   order: number
   createdAt: Date
+}
+
+// 上传插件（声明式 manifest 包）
+export interface PluginItem {
+  id: string
+  manifest: Record<string, unknown>
+  enabled: boolean
+  configs: Record<string, Record<string, number | string | boolean>>
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface VisitItem {
@@ -243,6 +255,8 @@ const initialSites: SiteItem[] = seedSitesData.map((s, idx) => {
     url: s.url,
     description: s.description,
     iconUrl: `https://www.google.com/s2/favicons?domain=${new URL(s.url).hostname}&sz=128`,
+    submitterContact: null,
+    submitterIp: null,
     categoryId: cat.id,
     isPublished: true,
     isPinned: Boolean(s.isPinned),
@@ -290,11 +304,9 @@ const initialSystemSettings: SystemSettingsItem = {
   showIcp: false,
   icpNumber: null,
   icpLink: null,
-  enableVisitTracking: true,
-  enableSiteDetail: false,
-  enablePoetry: true,
-  enableAboutPage: false,
   aboutContent: null,
+  enabledPlugins: [],
+  pluginConfigs: {},
   githubUrl: 'https://github.com/kenanlabs/nav',
   defaultLanguage: 'zh',
   createdAt: new Date(),
@@ -325,6 +337,7 @@ class InMemoryDatabase {
   systemSettingsItem: SystemSettingsItem = { ...initialSystemSettings }
   visits: VisitItem[] = [...initialVisits]
   screenshots: ScreenshotItem[] = []
+  plugins: PluginItem[] = []
 
   // Workspace methods（内存模式下的工作区存储）
   workspace = {
@@ -761,6 +774,17 @@ class InMemoryDatabase {
         if (args.where.isPinned !== undefined) {
           result = result.filter(s => s.isPinned === args.where.isPinned)
         }
+        // site-submission 插件：按来源过滤（true 或 { not: null }=仅投稿，false 或 null=仅管理员创建）
+        if (args.where.submitterIp !== undefined) {
+          const cond = args.where.submitterIp
+          if (cond === true || (typeof cond === 'object' && cond !== null && 'not' in cond)) {
+            result = result.filter(s => s.submitterIp !== null)
+          } else if (cond === false || cond === null) {
+            result = result.filter(s => s.submitterIp === null)
+          } else if (typeof cond === 'string') {
+            result = result.filter(s => s.submitterIp === cond)
+          }
+        }
         if (args.where.id?.in) {
           result = result.filter(s => args.where.id.in.includes(s.id))
         }
@@ -873,6 +897,8 @@ class InMemoryDatabase {
         url: args.data.url || '',
         description: args.data.description || '',
         iconUrl: icon || null,
+        submitterContact: args.data.submitterContact ?? null,
+        submitterIp: args.data.submitterIp ?? null,
         categoryId: args.data.categoryId || (this.categories[0]?.id ?? 'cat-1'),
         isPublished: args.data.isPublished ?? true,
         isPinned: args.data.isPinned ?? false,
@@ -1154,6 +1180,57 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
     },
 
     count: async () => 1,
+  }
+
+  // Plugin methods（上传插件）
+  plugin = {
+    findMany: async (args?: any): Promise<PluginItem[]> => {
+      let result = [...this.plugins]
+      if (args?.where?.enabled !== undefined) {
+        result = result.filter(p => p.enabled === args.where.enabled)
+      }
+      if (args?.where?.id?.in) {
+        const ids: string[] = args.where.id.in || []
+        result = result.filter(p => ids.includes(p.id))
+      }
+      return result.map(p => ({ ...p, manifest: { ...p.manifest }, configs: { ...p.configs } }))
+    },
+
+    findUnique: async (args: { where: { id: string } }): Promise<PluginItem | null> => {
+      const p = this.plugins.find(x => x.id === args.where.id)
+      return p ? { ...p, manifest: { ...p.manifest }, configs: { ...p.configs } } : null
+    },
+
+    create: async (args: { data: Partial<PluginItem> }): Promise<PluginItem> => {
+      const item: PluginItem = {
+        id: args.data.id || generateId(),
+        manifest: args.data.manifest || {},
+        enabled: args.data.enabled ?? false,
+        configs: args.data.configs || {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      this.plugins.push(item)
+      return { ...item, manifest: { ...item.manifest }, configs: { ...item.configs } }
+    },
+
+    update: async (args: { where: { id: string }; data: Partial<PluginItem> }): Promise<PluginItem> => {
+      const idx = this.plugins.findIndex(p => p.id === args.where.id)
+      if (idx === -1) throw new Error('Plugin not found')
+      this.plugins[idx] = {
+        ...this.plugins[idx],
+        ...this.stripUndefined(args.data),
+        updatedAt: new Date(),
+      }
+      const item = this.plugins[idx]
+      return { ...item, manifest: { ...item.manifest }, configs: { ...item.configs } }
+    },
+
+    delete: async (args: { where: { id: string } }): Promise<PluginItem> => {
+      const idx = this.plugins.findIndex(p => p.id === args.where.id)
+      if (idx === -1) throw new Error('Plugin not found')
+      return this.plugins.splice(idx, 1)[0]
+    },
   }
 
   // Visit tracking methods

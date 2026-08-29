@@ -1,7 +1,5 @@
 "use client"
 
-import * as React from "react"
-import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -10,14 +8,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { BookOpen } from "lucide-react"
-import { usePoetryToggle } from "@/hooks/use-poetry-toggle"
+import { useTranslations } from "next-intl"
+import { useHomeSideVisible, useBuiltinPluginEnabled } from "@/lib/plugins/client"
+import { PLUGIN_ID } from "./constants"
 
+// 诗词显隐工具按钮：卡片被用户隐藏后，从 header 工具栏重新打开。
+// 插件禁用或卡片已显示时不渲染（避免逻辑冲突）
 export function PoetryToggle() {
-  const { isVisible, toggle, mounted, isEnabled } = usePoetryToggle()
+  const enabled = useBuiltinPluginEnabled(PLUGIN_ID)
+  const { visible, mounted, setUserVisible } = useHomeSideVisible(enabled)
   const t = useTranslations("poetry")
 
-  // 后台总开关关闭或古诗词显示时，不显示按钮（避免逻辑冲突）
-  if (!mounted || !isEnabled || isVisible) {
+  if (!mounted || !enabled || visible) {
     return null
   }
 
@@ -28,7 +30,7 @@ export function PoetryToggle() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggle}
+            onClick={() => setUserVisible(true)}
           >
             <BookOpen className="h-[1.2rem] w-[1.2rem]" />
             <span className="sr-only">{t("show")}</span>
