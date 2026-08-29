@@ -345,15 +345,12 @@ export async function setPrimaryWorkspace(id: string) {
     if (!workspace) return { success: false, error: "Workspace not found" }
 
     await prisma.$transaction(async (tx: any) => {
-      const all = await tx.workspace.findMany({ where: { isDefault: true } })
-      for (const ws of all) {
-        if (ws.id !== id) {
-          await tx.workspace.update({
-            where: { id: ws.id },
-            data: { isDefault: false },
-          })
-        }
-      }
+      // 单条 updateMany 原子清除其他默认标记：先读后改的写法在并发下
+      // 可能都读到旧快照，最终留下两个 isDefault=true
+      await tx.workspace.updateMany({
+        where: { isDefault: true, id: { not: id } },
+        data: { isDefault: false },
+      })
       await tx.workspace.update({
         where: { id },
         data: { isDefault: true, isPublished: true },
@@ -655,6 +652,9 @@ export async function updateCategory(id: string, data: {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    if (!(await isCategoryInCurrentWorkspace(id))) {
+      return { success: false, error: "分类不属于当前工作区" }
+    }
     if (data.slug !== undefined) {
       // 工作区内 slug 查重（排除自身）
       const workspace = await getAdminWorkspace()
@@ -674,6 +674,7 @@ export async function updateCategory(id: string, data: {
     revalidatePath(`/category/${category.slug}`)
     return { success: true, data: category }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error updating category:", error)
     return { success: false, error: "Failed to update category" }
   }
@@ -683,16 +684,23 @@ export async function updateCategoriesOrder(items: { id: string; order: number }
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
-    for (const item of items) {
-      await prisma.category.update({
-        where: { id: item.id },
-        data: { order: item.order },
-      })
-    }
+    // 仅更新当前工作区的分类；事务化避免中途失败留下半新半旧的排序号
+    const workspace = await getAdminWorkspace()
+    const workspaceCategoryIds = new Set(await getWorkspaceCategoryIds(workspace.id))
+    const validItems = items.filter(item => workspaceCategoryIds.has(item.id))
+    await prisma.$transaction(async (tx) => {
+      for (const item of validItems) {
+        await tx.category.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        })
+      }
+    })
     revalidatePath("/admin/categories")
     revalidatePath("/")
     return { success: true }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error updating categories order:", error)
     return { success: false, error: "Failed to update categories order" }
   }
@@ -702,6 +710,17 @@ export async function deleteCategory(id: string) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    if (!(await isCategoryInCurrentWorkspace(id))) {
+      return { success: false, error: "分类不属于当前工作区" }
+    }
+    // 级联删除会连带销毁分类下全部站点与访问记录，显式预检阻断而非静默清空
+    const siteCount = await prisma.site.count({ where: { categoryId: id } })
+    if (siteCount > 0) {
+      return {
+        success: false,
+        error: `该分类下仍有 ${siteCount} 个站点，请先移除或转移这些站点后再删除分类`,
+      }
+    }
     await prisma.category.delete({
       where: { id },
     })
@@ -709,6 +728,7 @@ export async function deleteCategory(id: string) {
     revalidatePath("/")
     return { success: true }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error deleting category:", error)
     return { success: false, error: "Failed to delete category" }
   }
@@ -960,6 +980,26 @@ function buildScreenshotCreateMany(siteId: string, screenshots: ScreenshotInput[
   }))
 }
 
+// 后台写操作的工作区归属校验：目标必须属于当前选中的工作区。
+// 与 getSitesWithPagination 的交集防护对齐，防止客户端构造调用跨工作区改/删数据
+async function isCategoryInCurrentWorkspace(categoryId: string): Promise<boolean> {
+  const workspace = await getAdminWorkspace()
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+    select: { workspaceId: true },
+  })
+  return Boolean(category && category.workspaceId === workspace.id)
+}
+
+async function isSiteInCurrentWorkspace(siteId: string): Promise<boolean> {
+  const site = await prisma.site.findUnique({
+    where: { id: siteId },
+    select: { categoryId: true },
+  })
+  if (!site) return false
+  return isCategoryInCurrentWorkspace(site.categoryId)
+}
+
 // 获取站点详情（弹窗渲染与管理编辑回填共用）
 // 仅返回截图元数据与展示地址，不返回 base64 大字段
 export async function getSiteDetail(siteId: string) {
@@ -1082,6 +1122,11 @@ export async function createSite(data: {
     }
     const hasDetail = computeHasDetail(detailContent, screenshots.length)
 
+    // 归属校验：目标分类必须属于当前选中的工作区
+    if (!(await isCategoryInCurrentWorkspace(data.categoryId))) {
+      return { success: false, error: "目标分类不属于当前工作区" }
+    }
+
     const site = await prisma.$transaction(async (tx) => {
       const created = await tx.site.create({
         data: {
@@ -1144,6 +1189,13 @@ export async function updateSite(id: string, data: {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    // 归属校验：站点及其目标分类（如迁移）都必须属于当前选中的工作区
+    if (!(await isSiteInCurrentWorkspace(id))) {
+      return { success: false, error: "站点不属于当前工作区" }
+    }
+    if (data.categoryId !== undefined && !(await isCategoryInCurrentWorkspace(data.categoryId))) {
+      return { success: false, error: "目标分类不属于当前工作区" }
+    }
     if (data.url !== undefined && !isSafeSiteUrl(data.url)) {
       return { success: false, error: "站点 URL 必须使用 http 或 https 协议" }
     }
@@ -1237,6 +1289,9 @@ export async function toggleSitePin(id: string) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    if (!(await isSiteInCurrentWorkspace(id))) {
+      return { success: false, error: "站点不属于当前工作区" }
+    }
     const existing = await prisma.site.findUnique({ where: { id } })
     if (!existing) return { success: false, error: "Site not found" }
     const updated = await prisma.site.update({
@@ -1258,6 +1313,9 @@ export async function deleteSite(id: string) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    if (!(await isSiteInCurrentWorkspace(id))) {
+      return { success: false, error: "站点不属于当前工作区" }
+    }
     const site = await prisma.site.delete({
       where: { id },
       include: {
@@ -1287,6 +1345,9 @@ export async function toggleSitePublish(id: string) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
   try {
+    if (!(await isSiteInCurrentWorkspace(id))) {
+      return { success: false, error: "站点不属于当前工作区" }
+    }
     const currentSite = await prisma.site.findUnique({
       where: { id },
       select: { isPublished: true },
@@ -1781,6 +1842,18 @@ export async function updateSystemSettings(data: {
       return { success: false, error: "Invalid defaultLanguage" }
     }
 
+    // URL 类字段协议白名单：这些值会直接渲染为前台 <a href>，
+    // javascript: 等协议可成为存储型 XSS 载体（空串视为清除，放行）
+    const unsafeUrlField =
+      (allowed.footerLinks?.some(
+        link => typeof link?.url === 'string' && link.url !== '' && !isSafeSiteUrl(link.url)
+      ) && '友情链接') ||
+      (allowed.icpLink && !isSafeSiteUrl(allowed.icpLink) && '备案链接') ||
+      (allowed.githubUrl && !isSafeSiteUrl(allowed.githubUrl) && 'GitHub 链接')
+    if (unsafeUrlField) {
+      return { success: false, error: `${unsafeUrlField}的 URL 必须使用 http 或 https 协议` }
+    }
+
     // 获取第一条设置记录
     let settings = await prisma.systemSettings.findFirst()
 
@@ -1800,7 +1873,7 @@ export async function updateSystemSettings(data: {
       })
     }
 
-    revalidatePath("/admin/settings")
+    revalidatePath("/admin/users")
     revalidatePath("/")
     revalidatePath("/about")
     revalidatePath("/admin/dashboard")
@@ -1856,6 +1929,7 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
             siteDescription: ws.siteDescription,
             siteLogo: ws.siteLogo,
             favicon: ws.favicon,
+            aboutContent: ws.aboutContent,
             isDefault: ws.isDefault,
             isPublished: ws.isPublished,
             order: ws.order,
@@ -1868,6 +1942,7 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
               .map((category: any) => ({
                 name: category.name,
                 slug: category.slug,
+                icon: category.icon,
                 order: category.order,
                 sites: (category.sites || []).map((site: any) => ({
                   name: site.name,
@@ -1876,6 +1951,7 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
                   iconUrl: site.iconUrl,
                   order: site.order,
                   isPublished: site.isPublished,
+                  isPinned: site.isPinned,
                   detailContent: site.detailContent,
                   screenshots: (site.screenshots || []).map((shot: any) => ({
                     source: shot.source,
@@ -1909,10 +1985,11 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
       },
     })
 
-    // 导出完整数据（包含描述、排序、详情内容、截图等所有字段）
+    // 导出完整数据（包含描述、排序、图标、置顶、详情内容、截图等所有字段）
     const fullData = categories.map(category => ({
       name: category.name,
       slug: category.slug,
+      icon: category.icon,
       order: category.order,
       sites: (category.sites || []).map(site => ({
         name: site.name,
@@ -1921,6 +1998,7 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
         iconUrl: site.iconUrl,
         order: site.order,
         isPublished: site.isPublished,
+        isPinned: site.isPinned,
         detailContent: site.detailContent,
         screenshots: (site.screenshots || []).map(shot => ({
           source: shot.source,
@@ -1983,6 +2061,145 @@ export async function exportBookmarks() {
 // - 旧版/工作区格式（分类数组）→ 导入到当前后台选中的工作区
 // - 全量备份（{ format: "nav-full-backup", workspaces: [...] }）→ 按 slug
 //   upsert 工作区与域名，内容跟随各自工作区
+// 校验并规范化导入的分类/站点数据（importData 与 importFullBackup 共用）：
+// - 结构非法（缺 name/url、URL 非 http/https）的记录跳过并计数
+// - 截图校验失败（MIME 白名单 / 大小上限）视为整份文件不可信，直接拒绝
+// 校验必须发生在 overwrite 删除旧数据之前，避免脏数据导致"旧数据已删、新数据只导入一半"
+interface NormalizedImportSite {
+  name: string
+  url: string
+  description: string
+  iconUrl: string | null
+  order: number
+  isPublished: boolean
+  isPinned: boolean
+  detailContent: string | null
+  screenshots: ScreenshotInput[]
+}
+
+interface NormalizedImportCategory {
+  name: string
+  slug: string
+  icon: string | null
+  order?: number
+  sites: NormalizedImportSite[]
+}
+
+function normalizeImportCategories(
+  rawCategories: any[]
+): { error: string } | { categories: NormalizedImportCategory[]; skippedSites: number } {
+  const transliteration = require('transliteration')
+  const categories: NormalizedImportCategory[] = []
+  let skippedSites = 0
+
+  for (const categoryData of rawCategories) {
+    if (
+      !categoryData || typeof categoryData !== 'object' ||
+      typeof categoryData.name !== 'string' || !categoryData.name.trim()
+    ) continue
+    const slug =
+      (typeof categoryData.slug === 'string' && categoryData.slug.trim()) ||
+      transliteration.slugify(categoryData.name)
+
+    const sites: NormalizedImportSite[] = []
+    for (const siteData of Array.isArray(categoryData.sites) ? categoryData.sites : []) {
+      if (
+        !siteData || typeof siteData !== 'object' ||
+        typeof siteData.name !== 'string' || !siteData.name.trim() ||
+        typeof siteData.url !== 'string' || !isSafeSiteUrl(siteData.url)
+      ) {
+        skippedSites++
+        continue
+      }
+      const screenshots: ScreenshotInput[] = Array.isArray(siteData.screenshots)
+        ? siteData.screenshots.filter((shot: any) => shot && typeof shot === 'object')
+        : []
+      const screenshotError = validateScreenshots(screenshots)
+      if (screenshotError) {
+        return {
+          error: `站点「${siteData.name}」的截图数据未通过校验（${screenshotError}）。为避免覆盖后数据丢失，本次导入未执行。`,
+        }
+      }
+      const detailContent = normalizeDetailContent(siteData.detailContent)
+      sites.push({
+        name: siteData.name,
+        url: siteData.url,
+        description: typeof siteData.description === 'string' ? siteData.description : '',
+        iconUrl: typeof siteData.iconUrl === 'string' && siteData.iconUrl ? siteData.iconUrl : null,
+        order: typeof siteData.order === 'number' ? siteData.order : 0,
+        isPublished: siteData.isPublished !== undefined ? Boolean(siteData.isPublished) : true,
+        isPinned: Boolean(siteData.isPinned),
+        detailContent,
+        screenshots,
+      })
+    }
+
+    categories.push({
+      name: categoryData.name,
+      slug,
+      icon: typeof categoryData.icon === 'string' && categoryData.icon ? categoryData.icon : null,
+      order: typeof categoryData.order === 'number' ? categoryData.order : undefined,
+      sites,
+    })
+  }
+
+  return { categories, skippedSites }
+}
+
+// 批量写入一个分类下的站点（含截图）。append 模式按 url 去重：
+// 跳过库内已存在与本批次已写入的 url，避免重复导入产生成倍冗余。
+async function importCategorySites(
+  tx: any,
+  categoryId: string,
+  sites: NormalizedImportSite[],
+  mode: 'overwrite' | 'append',
+  onSkipped: () => void
+) {
+  const existingUrls = new Set<string>()
+  if (mode === 'append') {
+    const existingSites = await tx.site.findMany({
+      where: { categoryId },
+      select: { url: true },
+    })
+    for (const s of existingSites) existingUrls.add(s.url)
+  }
+
+  for (const siteData of sites) {
+    if (existingUrls.has(siteData.url)) {
+      onSkipped()
+      continue
+    }
+    existingUrls.add(siteData.url)
+
+    const createdSite = await tx.site.create({
+      data: {
+        name: siteData.name,
+        url: siteData.url,
+        description: siteData.description,
+        iconUrl: siteData.iconUrl,
+        categoryId,
+        order: siteData.order,
+        isPublished: siteData.isPublished,
+        isPinned: siteData.isPinned,
+        detailContent: siteData.detailContent,
+        hasDetail: computeHasDetail(siteData.detailContent, siteData.screenshots.length),
+      },
+    })
+    if (siteData.screenshots.length > 0) {
+      await tx.screenshot.createMany({
+        data: siteData.screenshots.map((shot, index) => ({
+          siteId: createdSite.id,
+          source: shot.source,
+          url: shot.source === 'URL' ? shot.url || null : null,
+          data: shot.source === 'UPLOAD' ? shot.data || null : null,
+          mimeType: shot.source === 'UPLOAD' ? shot.mimeType || null : null,
+          order: shot.order !== undefined ? shot.order : index,
+        })),
+      })
+    }
+  }
+}
+
 export async function importData(
   jsonData: any,
   mode: 'overwrite' | 'append'
@@ -2000,113 +2217,85 @@ export async function importData(
       return { success: false, error: "Invalid data format" }
     }
 
+    // 先整体校验/规范化，再动库
+    const normalized = normalizeImportCategories(jsonData)
+    if ('error' in normalized) {
+      return { success: false, error: normalized.error }
+    }
+    const importCategories = normalized.categories
+    let skippedSites = normalized.skippedSites
+
     const workspace = await getAdminWorkspace()
 
-    // 覆盖模式：仅清空当前工作区的分类与网址（不影响其他工作区）
-    if (mode === 'overwrite') {
-      const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
-      if (workspaceCategoryIds.length > 0) {
-        await prisma.site.deleteMany({
-          where: { categoryId: { in: workspaceCategoryIds } },
-        })
-        await prisma.category.deleteMany({
-          where: { workspaceId: workspace.id },
-        })
-      }
-    }
-
-    // 追加模式：获取当前工作区最大排序值
-    let currentMaxOrder = 0
-    if (mode === 'append') {
-      const maxOrderCategory = await prisma.category.findFirst({
-        where: { workspaceId: workspace.id },
-        orderBy: { order: 'desc' },
-        select: { order: true },
-      })
-      currentMaxOrder = maxOrderCategory?.order || 0
-    }
-
-    // 导入分类和网站
-    let skippedSites = 0
-    for (const categoryData of jsonData) {
-      // 生成分类 slug
-      const transliteration = require('transliteration')
-      const slug = categoryData.slug || transliteration.slugify(categoryData.name)
-
-      // 检查分类是否已存在（追加模式，限定当前工作区）
-      let category
-      if (mode === 'append') {
-        category = await prisma.category.findFirst({
-          where: { slug, workspaceId: workspace.id },
-        })
-      }
-
-      if (!category) {
-        currentMaxOrder++
-        category = await prisma.category.create({
-          data: {
-            name: categoryData.name,
-            slug,
-            order: categoryData.order !== undefined ? categoryData.order : currentMaxOrder,
-            workspaceId: workspace.id,
-          },
-        })
-      }
-
-      // 导入网站（跳过非 http/https 的非法 URL，防止存储型 XSS）
-      for (const siteData of categoryData.sites) {
-        if (!isSafeSiteUrl(siteData.url)) {
-          skippedSites++
-          continue
-        }
-        const detailContent = normalizeDetailContent(siteData.detailContent)
-        const screenshots = Array.isArray(siteData.screenshots)
-          ? siteData.screenshots.filter((shot: ScreenshotInput) =>
-              shot && (shot.source === 'UPLOAD' || (shot.source === 'URL' && isSafeSiteUrl(shot.url))))
-          : []
-        const hasDetail = computeHasDetail(detailContent, screenshots.length)
-
-        const createdSite = await prisma.site.create({
-          data: {
-            name: siteData.name,
-            url: siteData.url,
-            description: siteData.description || '',
-            iconUrl: siteData.iconUrl || null,
-            categoryId: category.id,
-            order: siteData.order || 0,
-            isPublished: siteData.isPublished !== undefined ? siteData.isPublished : true,
-            detailContent,
-            hasDetail,
-          },
-        })
-        if (screenshots.length > 0) {
-          await prisma.screenshot.createMany({
-            data: screenshots.map((shot: ScreenshotInput, index: number) => ({
-              siteId: createdSite.id,
-              source: shot.source,
-              url: shot.source === 'URL' ? shot.url || null : null,
-              data: shot.source === 'UPLOAD' ? shot.data || null : null,
-              mimeType: shot.source === 'UPLOAD' ? shot.mimeType || null : null,
-              order: shot.order !== undefined ? shot.order : index,
-            })),
+    // 事务化：overwrite 的"清空 + 重写"同成败，脏数据不再造成不可逆丢失
+    await prisma.$transaction(async (tx: any) => {
+      // 覆盖模式：仅清空当前工作区的分类与网址（不影响其他工作区）
+      if (mode === 'overwrite') {
+        const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
+        if (workspaceCategoryIds.length > 0) {
+          await tx.site.deleteMany({
+            where: { categoryId: { in: workspaceCategoryIds } },
+          })
+          await tx.category.deleteMany({
+            where: { workspaceId: workspace.id },
           })
         }
       }
-    }
+
+      // 追加模式：获取当前工作区最大排序值
+      let currentMaxOrder = 0
+      if (mode === 'append') {
+        const maxOrderCategory = await tx.category.findFirst({
+          where: { workspaceId: workspace.id },
+          orderBy: { order: 'desc' },
+          select: { order: true },
+        })
+        currentMaxOrder = maxOrderCategory?.order || 0
+      }
+
+      // 导入分类和网站
+      for (const categoryData of importCategories) {
+        // 检查分类是否已存在（追加模式，限定当前工作区）
+        let category
+        if (mode === 'append') {
+          category = await tx.category.findFirst({
+            where: { slug: categoryData.slug, workspaceId: workspace.id },
+          })
+        }
+
+        if (!category) {
+          currentMaxOrder++
+          category = await tx.category.create({
+            data: {
+              name: categoryData.name,
+              slug: categoryData.slug,
+              icon: categoryData.icon,
+              order: categoryData.order !== undefined ? categoryData.order : currentMaxOrder,
+              workspaceId: workspace.id,
+            },
+          })
+        }
+
+        await importCategorySites(tx, category.id, categoryData.sites, mode, () => {
+          skippedSites++
+        })
+      }
+    })
 
     // 重新验证缓存
     revalidatePath('/', 'layout')
     revalidatePath('/category/[slug]', 'page')
 
-    const skippedNote = skippedSites > 0 ? `，已跳过 ${skippedSites} 条非法URL记录` : ''
+    const skippedNote = skippedSites > 0 ? `，已跳过 ${skippedSites} 条非法或重复URL记录` : ''
     return {
       success: true,
       message: (mode === 'overwrite'
-        ? `成功导入 ${jsonData.length} 个分类`
-        : `成功追加 ${jsonData.length} 个分类`) + skippedNote,
-      importedCount: jsonData.length,
+        ? `成功导入 ${importCategories.length} 个分类`
+        : `成功追加 ${importCategories.length} 个分类`) + skippedNote,
+      importedCount: importCategories.length,
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error importing data:", error)
     return { success: false, error: "Failed to import data" }
   }
@@ -2119,9 +2308,18 @@ async function importFullBackup(
 ) {
   let importedWorkspaces = 0
   let skippedDomains = 0
+  let skippedSites = 0
 
   for (const wsData of backup.workspaces) {
     if (!wsData.slug || !isValidWorkspaceSlug(wsData.slug)) continue
+
+    // 先校验/规范化该工作区的内容数据，再动库（overwrite 会先清空该工作区）
+    const normalized = normalizeImportCategories(
+      Array.isArray(wsData.categories) ? wsData.categories : []
+    )
+    if ('error' in normalized) {
+      return { success: false, error: `工作区「${wsData.slug}」：${normalized.error}` }
+    }
 
     let workspace = await prisma.workspace.findUnique({
       where: { slug: wsData.slug },
@@ -2136,6 +2334,7 @@ async function importFullBackup(
           siteDescription: wsData.siteDescription || null,
           siteLogo: wsData.siteLogo || null,
           favicon: wsData.favicon || null,
+          aboutContent: wsData.aboutContent || null,
           isPublished: Boolean(wsData.isPublished),
           order: wsData.order ?? 0,
         },
@@ -2150,12 +2349,14 @@ async function importFullBackup(
           siteDescription: wsData.siteDescription || null,
           siteLogo: wsData.siteLogo || null,
           favicon: wsData.favicon || null,
+          aboutContent: wsData.aboutContent || null,
           isPublished: Boolean(wsData.isPublished),
           order: wsData.order ?? workspace.order,
         },
       })
     }
     importedWorkspaces++
+    const wsId = workspace.id
 
     // 域名绑定：冲突项跳过
     for (const domainData of wsData.domains || []) {
@@ -2163,78 +2364,53 @@ async function importFullBackup(
       if (!host) continue
       const existing = await prisma.domain.findUnique({ where: { host } })
       if (existing) {
-        if (existing.workspaceId !== workspace.id) skippedDomains++
+        if (existing.workspaceId !== wsId) skippedDomains++
         continue
       }
       await prisma.domain.create({
-        data: { host, isPrimary: Boolean(domainData.isPrimary), workspaceId: workspace.id },
+        data: { host, isPrimary: Boolean(domainData.isPrimary), workspaceId: wsId },
       })
     }
 
-    // 分类与网址：overwrite 模式先清空该工作区内容
-    if (mode === 'overwrite') {
-      const catIds = await getWorkspaceCategoryIds(workspace.id)
-      if (catIds.length > 0) {
-        await prisma.site.deleteMany({
-          where: { categoryId: { in: catIds } },
-        })
-        await prisma.category.deleteMany({
-          where: { workspaceId: workspace.id },
-        })
-      }
-    }
-
-    let order = 0
-    for (const categoryData of wsData.categories || []) {
-      order++
-      const existingCategory = await prisma.category.findFirst({
-        where: { slug: categoryData.slug, workspaceId: workspace.id },
-      })
-      let category = existingCategory
-      if (!category) {
-        category = await prisma.category.create({
-          data: {
-            name: categoryData.name,
-            slug: categoryData.slug,
-            order: categoryData.order ?? order,
-            workspaceId: workspace.id,
-          },
-        })
-      }
-      for (const siteData of categoryData.sites || []) {
-        if (!isSafeSiteUrl(siteData.url)) continue
-        const detailContent = normalizeDetailContent(siteData.detailContent)
-        const screenshots = Array.isArray(siteData.screenshots)
-          ? siteData.screenshots.filter((shot: ScreenshotInput) =>
-              shot && (shot.source === 'UPLOAD' || (shot.source === 'URL' && isSafeSiteUrl(shot.url))))
-          : []
-        const createdSite = await prisma.site.create({
-          data: {
-            name: siteData.name,
-            url: siteData.url,
-            description: siteData.description || '',
-            iconUrl: siteData.iconUrl || null,
-            categoryId: category.id,
-            order: siteData.order || 0,
-            isPublished: siteData.isPublished !== undefined ? siteData.isPublished : true,
-            detailContent,
-            hasDetail: computeHasDetail(detailContent, screenshots.length),
-          },
-        })
-        if (screenshots.length > 0) {
-          await prisma.screenshot.createMany({
-            data: screenshots.map((shot: ScreenshotInput, index: number) => ({
-              siteId: createdSite.id,
-              source: shot.source,
-              url: shot.source === 'URL' ? shot.url || null : null,
-              data: shot.source === 'UPLOAD' ? shot.data || null : null,
-              mimeType: shot.source === 'UPLOAD' ? shot.mimeType || null : null,
-              order: shot.order !== undefined ? shot.order : index,
-            })),
+    // 分类与网址：overwrite 模式先清空该工作区内容；事务化保证删与写同成败
+    await prisma.$transaction(async (tx: any) => {
+      if (mode === 'overwrite') {
+        const catIds = await getWorkspaceCategoryIds(wsId)
+        if (catIds.length > 0) {
+          await tx.site.deleteMany({
+            where: { categoryId: { in: catIds } },
+          })
+          await tx.category.deleteMany({
+            where: { workspaceId: wsId },
           })
         }
       }
-    }
+
+      let order = 0
+      for (const categoryData of normalized.categories) {
+        order++
+        const existingCategory = mode === 'append'
+          ? await tx.category.findFirst({
+              where: { slug: categoryData.slug, workspaceId: wsId },
+            })
+          : null
+        let category = existingCategory
+        if (!category) {
+          category = await tx.category.create({
+            data: {
+              name: categoryData.name,
+              slug: categoryData.slug,
+              icon: categoryData.icon,
+              order: categoryData.order ?? order,
+              workspaceId: wsId,
+            },
+          })
+        }
+        await importCategorySites(tx, category.id, categoryData.sites, mode, () => {
+          skippedSites++
+        })
+      }
+    })
   }
 
   // 备份中的默认工作区标记恢复：清掉多默认
@@ -2261,9 +2437,10 @@ async function importFullBackup(
   revalidatePath('/category/[slug]', 'page')
 
   const domainNote = skippedDomains > 0 ? `，跳过 ${skippedDomains} 个冲突域名` : ''
+  const siteNote = skippedSites > 0 ? `，跳过 ${skippedSites} 条非法或重复站点` : ''
   return {
     success: true,
-    message: `全量备份导入完成：${importedWorkspaces} 个工作区${domainNote}`,
+    message: `全量备份导入完成：${importedWorkspaces} 个工作区${domainNote}${siteNote}`,
     importedCount: importedWorkspaces,
   }
 }

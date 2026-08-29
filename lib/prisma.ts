@@ -308,7 +308,7 @@ const initialSystemSettings: SystemSettingsItem = {
   icpNumber: null,
   icpLink: null,
   aboutContent: null,
-  enabledPlugins: [],
+  enabledPlugins: ['visit-tracking', 'poetry-card'],
   pluginConfigs: {},
   githubUrl: 'https://github.com/kenanlabs/nav',
   defaultLanguage: 'zh',
@@ -409,6 +409,26 @@ class InMemoryDatabase {
         updatedAt: new Date(),
       }
       return { ...this.workspaces[idx] }
+    },
+
+    updateMany: async (args: { where?: { isDefault?: boolean; id?: { not?: string } }; data: Partial<WorkspaceItem> }): Promise<{ count: number }> => {
+      const targets = this.workspaces.filter(w => {
+        if (args.where?.isDefault !== undefined && w.isDefault !== args.where.isDefault) return false
+        if (args.where?.id?.not && w.id === args.where.id.not) return false
+        return true
+      })
+      for (const w of targets) {
+        await this.workspace.update({ where: { id: w.id }, data: args.data })
+      }
+      return { count: targets.length }
+    },
+
+    upsert: async (args: { where: { slug?: string; id?: string }; update: Partial<WorkspaceItem>; create: Partial<WorkspaceItem> }): Promise<WorkspaceItem> => {
+      const existing = await this.workspace.findUnique({ where: args.where })
+      if (existing) {
+        return this.workspace.update({ where: args.where, data: args.update })
+      }
+      return this.workspace.create({ data: args.create })
     },
 
     delete: async (args: { where: { id: string } }): Promise<WorkspaceItem> => {
@@ -910,7 +930,8 @@ class InMemoryDatabase {
         submitterContact: args.data.submitterContact ?? null,
         submitterIp: args.data.submitterIp ?? null,
         categoryId: args.data.categoryId || (this.categories[0]?.id ?? 'cat-1'),
-        isPublished: args.data.isPublished ?? true,
+        // 与 schema 的 @default(false) 对齐，避免内存/数据库两种模式行为漂移
+        isPublished: args.data.isPublished ?? false,
         isPinned: args.data.isPinned ?? false,
         order: args.data.order ?? this.sites.length + 1,
         detailContent: args.data.detailContent ?? null,
@@ -1095,6 +1116,13 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       }
       return { ...shot }
     },
+
+    count: async (args?: { where?: { siteId?: string; id?: string } }): Promise<number> => {
+      let result = this.screenshots
+      if (args?.where?.siteId) result = result.filter(s => s.siteId === args.where!.siteId)
+      if (args?.where?.id) result = result.filter(s => s.id === args.where!.id)
+      return result.length
+    },
   }
 
   // User methods
@@ -1199,6 +1227,13 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       return { ...this.systemSettingsItem }
     },
 
+    upsert: async (args: { where: { id: string }; update: Partial<SystemSettingsItem>; create: Partial<SystemSettingsItem> }): Promise<SystemSettingsItem> => {
+      if (this.systemSettingsItem.id === args.where.id) {
+        return this.systemSettings.update({ where: { id: args.where.id }, data: args.update })
+      }
+      return this.systemSettings.create({ data: { ...args.create, id: args.where.id } })
+    },
+
     count: async () => 1,
   }
 
@@ -1255,7 +1290,7 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
 
   // Visit tracking methods
   visit = {
-    findMany: async (args?: any): Promise<VisitItem[]> => {
+    findMany: async (args?: any): Promise<any[]> => {
       let result = [...this.visits]
       if (args?.where?.visitedAt?.gte) {
         result = result.filter(v => v.visitedAt >= args.where.visitedAt.gte)
@@ -1263,12 +1298,35 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
       if (args?.where?.visitedAt?.lt) {
         result = result.filter(v => v.visitedAt < args.where.visitedAt.lt)
       }
+      // Prisma 的 { not: null } 语义：过滤掉 null 值（独立访客数按 IP 统计前使用）
+      if (args?.where?.ipAddress?.not === null) {
+        result = result.filter(v => v.ipAddress !== null)
+      }
+      // distinct：按指定字段去重（保留首条）
+      if (Array.isArray(args?.distinct) && args.distinct.length > 0) {
+        const seen = new Set<string>()
+        result = result.filter(v => {
+          const key = args.distinct.map((k: string) => String((v as any)[k])).join('|')
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+      }
       if (args?.orderBy?.visitedAt) {
         const dir = args.orderBy.visitedAt
         result.sort((a, b) => {
           if (a.visitedAt < b.visitedAt) return dir === 'desc' ? 1 : -1
           if (a.visitedAt > b.visitedAt) return dir === 'desc' ? -1 : 1
           return 0
+        })
+      }
+      if (args?.select) {
+        return result.map(v => {
+          const out: any = {}
+          for (const key of Object.keys(args.select)) {
+            if (args.select[key]) out[key] = (v as any)[key]
+          }
+          return out
         })
       }
       return result
@@ -1281,7 +1339,7 @@ groups.sort((a, b) => dir === 'desc' ? b._count.id - a._count.id : a._count.id -
         ipAddress: args.data.ipAddress || null,
         userAgent: args.data.userAgent || null,
         referer: args.data.referer || null,
-        visitedAt: new Date(),
+        visitedAt: args.data.visitedAt || new Date(),
       }
       this.visits.push(newVisit)
       return newVisit

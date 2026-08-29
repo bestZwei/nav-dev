@@ -189,6 +189,9 @@ async function main() {
         ],
         showAdminLink: true,
         githubUrl: 'https://github.com/kenanlabs/nav',
+        // 历史默认开启的功能开关（enable_visit_tracking / enable_poetry 均为 default true）
+        // 对应的内置插件随新部署默认启用，保持升级前后体验一致
+        enabledPlugins: ['visit-tracking', 'poetry-card'],
       },
     })
     console.log('  ✓ 系统设置已初始化')

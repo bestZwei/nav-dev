@@ -49,6 +49,14 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
     const startDate = new Date(today)
     startDate.setDate(today.getDate() - timeRange + 1)
 
+    // 本地时区日期键：与后端分组的日界口径一致（toISOString 为 UTC 日界，非 UTC 机器会错位一格）
+    const localDateKey = (date: Date) => {
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const d = String(date.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
+    }
+
     // 创建日期映射
     const dateMap = new Map<string, number>()
     data.forEach(item => {
@@ -61,7 +69,7 @@ export function VisitFrequencyChart({ data, timeRange, onTimeRangeChange }: Visi
     for (let i = 0; i < timeRange; i++) {
       const date = new Date(startDate)
       date.setDate(startDate.getDate() + i)
-      const dateKey = date.toISOString().split('T')[0]
+      const dateKey = localDateKey(date)
       filledData.push({
         date: dateKey,
         count: dateMap.get(dateKey) || 0

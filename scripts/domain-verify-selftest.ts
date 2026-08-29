@@ -45,6 +45,8 @@ assert(
   "case insensitive + other metas"
 )
 assert(extractWorkspaceSlug("<html><body>no marker</body></html>") === null, "no marker")
-assert(extractWorkspaceSlug('<meta name="workspace">') === "", "empty content")
+// 无 content / 空 content 的标记按无效处理，走 noMarker 而非误报 fallback
+assert(extractWorkspaceSlug('<meta name="workspace">') === null, "missing content")
+assert(extractWorkspaceSlug('<meta name="workspace" content="">') === null, "empty content")
 
 console.log("all domain-verify behavior tests passed")

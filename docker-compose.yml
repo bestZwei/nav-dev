@@ -34,6 +34,9 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NODE_ENV: production
+    volumes:
+      # 会话密钥兜底文件持久化：未配置 SESSION_SECRET 时，重启/换镜像不会导致全部会话失效
+      - nav-session-data:/app/.session-data
     depends_on:
       postgresql:
         condition: service_healthy
@@ -48,6 +51,8 @@ services:
 
 volumes:
   postgresql-data:
+    driver: local
+  nav-session-data:
     driver: local
 
 networks:

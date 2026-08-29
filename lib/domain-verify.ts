@@ -92,25 +92,27 @@ async function resolveHostAddresses(host: string): Promise<string[] | null> {
   }
 }
 
-// 字面量 + 解析结果双重校验；抛出 "private" 表示命中内网地址
+// 字面量 + 解析结果双重校验；抛出 "private" 表示命中内网地址。
+// 解析结果含任一私网地址即拒绝：公网域名不会解析出内网地址，
+// 混合记录（公网+私网）可借轮询把请求导向内网，不能只拒绝"全部为私网"的情况
 async function assertPublicHost(host: string): Promise<void> {
   if (!isPublicHostLiteral(host)) {
     throw new Error("private")
   }
   const addresses = await resolveHostAddresses(host)
   if (addresses && addresses.length > 0) {
-    const allPrivate = addresses.every(addr => {
+    const hasPrivate = addresses.some(addr => {
       const ipv4 = parseIPv4(addr)
       if (ipv4) return isPrivateIPv4(ipv4)
       return isPrivateIPv6Literal(addr)
     })
-    if (allPrivate) throw new Error("private")
+    if (hasPrivate) throw new Error("private")
   }
 }
 
 // ---- 页面标记解析 ----
 
-// 提取 <meta name="workspace" content="..."> 的 content 值；未找到标记返回 null
+// 提取 <meta name="workspace" content="..."> 的 content 值；未找到有效标记返回 null
 export function extractWorkspaceSlug(html: string): string | null {
   const tags = html.match(/<meta\b[^>]*>/gi)
   if (!tags) return null
@@ -120,8 +122,10 @@ export function extractWorkspaceSlug(html: string): string | null {
     const nameValue = (name[1] ?? name[2] ?? name[3] ?? "").toLowerCase()
     if (nameValue !== "workspace") continue
     const content = tag.match(/\scontent\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i)
-    if (!content) return ""
-    return content[1] ?? content[2] ?? content[3] ?? ""
+    // 无 content / 空 content 的标记视为无效，走 noMarker 分支而非误判为"渲染了其他工作区"
+    if (!content) return null
+    const value = content[1] ?? content[2] ?? content[3] ?? ""
+    return value || null
   }
   return null
 }
@@ -168,7 +172,12 @@ async function probeOnce(scheme: string, host: string): Promise<ProbeOutcome> {
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location")
       if (!location || hop === MAX_REDIRECTS) return { slug: null, detail: "httpError" }
-      url = new URL(location, next).toString()
+      // 畸形 Location 解析失败按响应异常处理，不让 TypeError 逸出循环丢失 detail
+      try {
+        url = new URL(location, next).toString()
+      } catch {
+        return { slug: null, detail: "httpError" }
+      }
       continue
     }
 

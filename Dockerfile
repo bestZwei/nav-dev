@@ -21,6 +21,9 @@ RUN npm ci && \
 COPY . .
 
 # 构建
+# SKIP_OPEN_NEXT_BUILD：Docker 只需要 Next standalone 产物，
+# postbuild 钩子的 OpenNext（Cloudflare Workers）打包在此属双倍构建时间
+ENV SKIP_OPEN_NEXT_BUILD=1
 RUN npm run build
 
 
@@ -70,6 +73,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # 复制启动脚本
 COPY --from=builder --chown=nextjs:nodejs /app/entrypoint.sh ./entrypoint.sh
+
+# 会话密钥兜底文件目录（entrypoint.sh 未配置 SESSION_SECRET 时生成并持久化）：
+# /app 属 root 而进程以 nextjs 运行，必须预建可写目录，否则重启重新生成密钥、全部会话失效
+RUN mkdir -p /app/.session-data && chown -R nextjs:nodejs /app/.session-data
+ENV SESSION_SECRET_FILE=/app/.session-data/.session-secret
 
 # 切换到非 root 用户
 USER nextjs
