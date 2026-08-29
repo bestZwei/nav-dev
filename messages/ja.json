@@ -566,7 +566,14 @@
       "aboutTabEdit": "編集",
       "aboutTabPreview": "プレビュー",
       "aboutEmptyPreview": "コンテンツがありません",
-      "aboutFallbackHint": "コンテンツが空のため、グローバルの既定コンテンツが表示されます"
+      "aboutFallbackHint": "コンテンツが空のため、グローバルの既定コンテンツが表示されます",
+      "secCustomCode": "カスタムコード",
+      "secCustomCodeDesc": "全ページにカスタム HTML/CSS/JS を注入します",
+      "customCodeWarning": "注入したコードはサイト全体でそのまま実行されます。出所不明のスクリプトを貼り付けないでください。不正なコードはフロントエンドを壊す可能性があります。復旧するには内容を空にしてください。",
+      "customHeadCodeLabel": "ヘッドコード",
+      "customHeadCodeHint": "body の先頭に注入され、読み込み早期に実行されます。アクセス解析、サイト認証スクリプト、カスタムスタイルに適しています。",
+      "customBodyCodeLabel": "フッターコード",
+      "customBodyCodeHint": "body の末尾に注入され、レンダリング後に実行されます。ページエフェクト、サードパーティウィジェット、チャット widget に適しています。"
     },
     "profile": {
       "admin": "管理者",

@@ -566,7 +566,14 @@
       "aboutTabEdit": "Bearbeiten",
       "aboutTabPreview": "Vorschau",
       "aboutEmptyPreview": "Noch kein Inhalt",
-      "aboutFallbackHint": "Der Inhalt ist leer; der globale Standardinhalt wird angezeigt"
+      "aboutFallbackHint": "Der Inhalt ist leer; der globale Standardinhalt wird angezeigt",
+      "secCustomCode": "Benutzerdefinierter Code",
+      "secCustomCodeDesc": "Eigene HTML/CSS/JS-Codes auf allen Seiten einbinden",
+      "customCodeWarning": "Eingefügter Code wird seitenweit unverändert ausgeführt. Fügen Sie keine Skripte aus unbekannten Quellen ein; fehlerhafter Code kann die Website beeinträchtigen — Feld leeren, um den Zustand wiederherzustellen.",
+      "customHeadCodeLabel": "Head-Code",
+      "customHeadCodeHint": "Wird am Anfang des body eingefügt und früh ausgeführt: ideal für Analytics, Website-Verifizierung und eigene Styles.",
+      "customBodyCodeLabel": "Footer-Code",
+      "customBodyCodeHint": "Wird am Ende des body eingefügt und nach dem Rendern ausgeführt: ideal für Seiteneffekte, Widgets und Live-Chat."
     },
     "profile": {
       "admin": "Admin",

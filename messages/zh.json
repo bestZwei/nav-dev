@@ -566,7 +566,14 @@
       "aboutTabEdit": "编辑",
       "aboutTabPreview": "预览",
       "aboutEmptyPreview": "暂无内容",
-      "aboutFallbackHint": "当前内容为空，前台将展示全局默认内容"
+      "aboutFallbackHint": "当前内容为空，前台将展示全局默认内容",
+      "secCustomCode": "自定义代码",
+      "secCustomCodeDesc": "向全站页面注入自定义 HTML/CSS/JS 代码",
+      "customCodeWarning": "代码将对全站所有页面生效并原样执行，请勿粘贴来源不明的脚本；填写错误可能导致前台异常，清空内容即可恢复。",
+      "customHeadCodeLabel": "头部代码",
+      "customHeadCodeHint": "注入在页面 body 起始处，页面加载早期执行：适合访问统计、站点验证脚本、自定义样式。",
+      "customBodyCodeLabel": "尾部代码",
+      "customBodyCodeHint": "注入在页面 body 结尾处，页面渲染后执行：适合页面特效、第三方挂件、在线客服。"
     },
     "profile": {
       "admin": "管理员",
