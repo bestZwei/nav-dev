@@ -38,6 +38,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale()
+  // 自定义代码注入依赖展示配置（工作区覆盖后的最终值）
+  const settings = await getDisplaySettings()
 
   return (
     <html lang={htmlLang(locale)} suppressHydrationWarning>
@@ -59,6 +61,14 @@ export default async function RootLayout({
         <WorkspaceMarker />
       </head>
       <body className={inter.className}>
+        {/* 管理员自定义代码（头部）：SSR 直出，页面加载早期执行（统计/验证脚本/自定义样式）。
+            容器无视觉样式；script 经 HTML 解析执行，style/meta 等标签同样按文档流生效 */}
+        {settings?.customHeadCode && (
+          <div
+            style={{ display: "none" }}
+            dangerouslySetInnerHTML={{ __html: settings.customHeadCode }}
+          />
+        )}
         {/* 资源提示：提前建立第三方连接，降低图标接口的首字节延迟（诗词接口 preconnect 随插件化移除） */}
         <link rel="dns-prefetch" href="https://favicon.im" />
         <link rel="dns-prefetch" href="https://www.google.com" />
@@ -73,6 +83,12 @@ export default async function RootLayout({
             <SonnerToaster position="bottom-right" richColors />
           </ThemeProvider>
         </NextIntlClientProvider>
+        {/* 管理员自定义代码（尾部）：SSR 直出于 body 结尾，适合页面特效、
+            第三方挂件、客服代码等不影响首屏的自定义内容；容器保持可见，
+            静态标签（iframe/挂件 DOM）可直接渲染 */}
+        {settings?.customBodyCode && (
+          <div dangerouslySetInnerHTML={{ __html: settings.customBodyCode }} />
+        )}
       </body>
     </html>
   );

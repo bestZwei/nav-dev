@@ -564,7 +564,14 @@
       "aboutTabEdit": "Modifier",
       "aboutTabPreview": "Aperçu",
       "aboutEmptyPreview": "Aucun contenu",
-      "aboutFallbackHint": "Le contenu est vide ; le contenu global par défaut sera affiché"
+      "aboutFallbackHint": "Le contenu est vide ; le contenu global par défaut sera affiché",
+      "secCustomCode": "Code personnalisé",
+      "secCustomCodeDesc": "Injecter du HTML/CSS/JS personnalisé sur toutes les pages",
+      "customCodeWarning": "Le code injecté s'exécute tel quel sur tout le site. Ne collez jamais de scripts d'origine inconnue ; un code défectueux peut casser l'affichage — videz le champ pour rétablir l'état normal.",
+      "customHeadCodeLabel": "Code d'en-tête",
+      "customHeadCodeHint": "Injecté au début du body, exécution précoce : idéal pour les statistiques, la vérification de site et les styles personnalisés.",
+      "customBodyCodeLabel": "Code de pied de page",
+      "customBodyCodeHint": "Injecté à la fin du body, exécution après le rendu : idéal pour les effets visuels, les widgets tiers et le chat en direct."
     },
     "profile": {
       "admin": "Admin",
