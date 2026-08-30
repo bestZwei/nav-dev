@@ -389,7 +389,7 @@
       "editCategory": "编辑分类",
       "deleteCategory": "删除分类",
       "deleteTitle": "确认删除分类",
-      "deleteDesc": "确定要删除这个分类吗？此操作将同时删除该分类下的所有网站，无法撤销。",
+      "deleteDesc": "确定要删除这个分类吗？仅可删除不含任何站点的分类，请先移除或转移该分类下的站点。",
       "deleteConfirm": "删除",
       "deleteSuccess": "删除成功",
       "deleteSuccessDesc": "分类已删除",

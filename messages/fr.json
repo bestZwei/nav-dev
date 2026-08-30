@@ -389,7 +389,7 @@
       "editCategory": "Modifier la catégorie",
       "deleteCategory": "Supprimer la catégorie",
       "deleteTitle": "Supprimer la catégorie",
-      "deleteDesc": "Voulez-vous vraiment supprimer cette catégorie ? Tous ses sites seront également supprimés. Action irréversible.",
+      "deleteDesc": "Voulez-vous vraiment supprimer cette catégorie ? Seules les catégories sans aucun site peuvent être supprimées. Veuillez d'abord déplacer ou supprimer ses sites.",
       "deleteConfirm": "Supprimer",
       "deleteSuccess": "Supprimée",
       "deleteSuccessDesc": "La catégorie a été supprimée",

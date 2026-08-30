@@ -389,7 +389,7 @@
       "editCategory": "Edit category",
       "deleteCategory": "Delete category",
       "deleteTitle": "Delete category",
-      "deleteDesc": "Are you sure you want to delete this category? All sites in it will also be deleted. This cannot be undone.",
+      "deleteDesc": "Are you sure you want to delete this category? Only categories without any sites can be deleted. Please remove or transfer its sites first.",
       "deleteConfirm": "Delete",
       "deleteSuccess": "Deleted",
       "deleteSuccessDesc": "The category has been deleted",

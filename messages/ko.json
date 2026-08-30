@@ -389,7 +389,7 @@
       "editCategory": "카테고리 편집",
       "deleteCategory": "카테고리 삭제",
       "deleteTitle": "카테고리 삭제",
-      "deleteDesc": "이 카테고리를 삭제하시겠습니까? 하위의 모든 사이트도 함께 삭제되며 되돌릴 수 없습니다.",
+      "deleteDesc": "이 카테고리를 삭제하시겠습니까? 사이트가 없는 카테고리만 삭제할 수 있습니다. 먼저 사이트를 이동하거나 삭제해 주세요.",
       "deleteConfirm": "삭제",
       "deleteSuccess": "삭제됨",
       "deleteSuccessDesc": "카테고리가 삭제되었습니다",

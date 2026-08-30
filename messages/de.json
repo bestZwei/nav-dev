@@ -389,7 +389,7 @@
       "editCategory": "Kategorie bearbeiten",
       "deleteCategory": "Kategorie löschen",
       "deleteTitle": "Kategorie löschen",
-      "deleteDesc": "Möchten Sie diese Kategorie wirklich löschen? Alle darin enthaltenen Seiten werden ebenfalls gelöscht. Dies kann nicht rückgängig gemacht werden.",
+      "deleteDesc": "Möchten Sie diese Kategorie wirklich löschen? Nur Kategorien ohne Seiten können gelöscht werden. Bitte verschieben oder löschen Sie die Seiten zuerst.",
       "deleteConfirm": "Löschen",
       "deleteSuccess": "Gelöscht",
       "deleteSuccessDesc": "Die Kategorie wurde gelöscht",

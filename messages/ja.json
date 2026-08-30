@@ -389,7 +389,7 @@
       "editCategory": "カテゴリーを編集",
       "deleteCategory": "カテゴリーを削除",
       "deleteTitle": "カテゴリーを削除",
-      "deleteDesc": "このカテゴリーを削除してもよろしいですか？配下のすべてのサイトも削除され、取り消せません。",
+      "deleteDesc": "このカテゴリーを削除してもよろしいですか？サイトが含まれていないカテゴリーのみ削除できます。先にサイトを移動または削除してください。",
       "deleteConfirm": "削除",
       "deleteSuccess": "削除しました",
       "deleteSuccessDesc": "カテゴリーを削除しました",
