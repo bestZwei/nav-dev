@@ -8,9 +8,14 @@ export async function GET() {
   if (!(await getAdminSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const result = await getTodayVisitStats()
-  if (!result.success) {
-    return NextResponse.json({ error: result.error }, { status: result.error === "Unauthorized" ? 401 : 500 })
+  try {
+    const result = await getTodayVisitStats()
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: result.error === "Unauthorized" ? 401 : 500 })
+    }
+    return NextResponse.json(result.data)
+  } catch (error) {
+    console.error("Error fetching today visit stats:", error)
+    return NextResponse.json({ error: "Failed to fetch today visit stats" }, { status: 500 })
   }
-  return NextResponse.json(result.data)
 }

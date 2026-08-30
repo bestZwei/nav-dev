@@ -283,10 +283,9 @@ pm2 save
 | Variable | Description | Example | Required |
 |----------|-------------|---------|----------|
 | `DATABASE_URL` | PostgreSQL connection string (**auto-generated for Docker**) | `postgresql://user:pass@localhost:5432/nav` | ❌ (Docker) / ✅ (local) |
-| `SESSION_SECRET` | Session signing key (HMAC), falls back to `NEXTAUTH_SECRET` | random string (`openssl rand -base64 32`) | ✅ (one of the two) |
-| `NEXTAUTH_SECRET` | Encryption key (also used as session signing fallback) | random string (`openssl rand -base64 32`) | ✅ |
-| `NEXTAUTH_URL` | Full app URL | `http://localhost:3000` or `https://your-domain.com` | ✅ |
-
+| `SESSION_SECRET` | Session signing key (HMAC), falls back to `NEXTAUTH_SECRET` | random string (`openssl rand -base64 32`) | ❌ (auto-generated per build if unset; set it to survive image rebuilds) |
+| `NEXTAUTH_SECRET` | Encryption key (also used as session signing fallback) | random string (`openssl rand -base64 32`) | ❌ (one of the two; Docker generates a fallback) |
+| `NEXTAUTH_URL` | Full app URL | `http://localhost:3000` or `https://your-domain.com` | ❌ (Docker default) |
 | `POSTGRES_PASSWORD` | PostgreSQL password for Docker Compose (containers will not start without it) | random long string | ✅ (Docker) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Initial admin account (first seed only) | email / strong password | ❌ |
 
@@ -373,19 +372,18 @@ npm run db:push
 
 1. **Via the admin dashboard** (recommended)
    - Add/modify sites or categories in the dashboard
-   - The frontend refreshes automatically within 10 seconds
+   - The frontend updates immediately (pages render dynamically and every write triggers cache revalidation)
    - ✅ **no service restart or rebuild needed**
 
 2. **Direct database access**
    - Modify the database directly with SQL, Prisma Studio, etc.
-   - The frontend will **not update immediately** (cache TTL is 10 seconds)
-   - ⚠️ **wait for the cache to expire (up to 10s) or clear it manually**
+   - The frontend has **no way to know** about such changes — pages are rendered from the database on each request, so reads take effect immediately, but aggregated fields (e.g. category counts) cached in the app may be stale until the next write via the app
+   - ⚠️ **avoid direct database access** unless you know what you are changing
 
 #### Best practices
 
 - ✅ **Prefer the admin dashboard** for all data operations
-- ✅ Avoid direct database access (except bulk import or advanced operations)
-- ✅ If you must touch the database, restart the service afterwards for immediate effect
+- ✅ Avoid direct database access (except bulk import via the built-in data tools)
 
 ### Why is there no user management in the system settings page?
 

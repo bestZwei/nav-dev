@@ -284,10 +284,9 @@ pm2 save
 | 变量名 | 说明 | 示例 | 必填 |
 |--------|------|------|------|
 | `DATABASE_URL` | PostgreSQL 连接字符串（**Docker 部署时自动生成**） | `postgresql://user:pass@localhost:5432/nav` | ❌（Docker）/ ✅（本地） |
-| `SESSION_SECRET` | 后台会话签名密钥（HMAC），未设置时回退 `NEXTAUTH_SECRET` | 随机字符串（`openssl rand -base64 32`） | ✅（二选一） |
-| `NEXTAUTH_SECRET` | 加密密钥（兼作会话签名回退密钥） | 随机字符串（`openssl rand -base64 32`） | ✅ |
-| `NEXTAUTH_URL` | 应用完整 URL | `http://localhost:3000` 或 `https://your-domain.com` | ✅ |
-
+| `SESSION_SECRET` | 后台会话签名密钥（HMAC），未设置时回退 `NEXTAUTH_SECRET` | 随机字符串（`openssl rand -base64 32`） | ❌（未设置时按构建自动生成；设置后镜像重建不丢会话） |
+| `NEXTAUTH_SECRET` | 加密密钥（兼作会话签名回退密钥） | 随机字符串（`openssl rand -base64 32`） | ❌（与 SESSION_SECRET 二选一；Docker 会生成兜底密钥） |
+| `NEXTAUTH_URL` | 应用完整 URL | `http://localhost:3000` 或 `https://your-domain.com` | ❌（Docker 有默认值） |
 | `POSTGRES_PASSWORD` | Docker Compose 的 PostgreSQL 密码（不提供容器无法启动） | 随机长字符串 | ✅（Docker） |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | 初始管理员账号（仅首次 seed 生效） | 邮箱 / 强口令 | ❌ |
 
@@ -375,19 +374,18 @@ npm run db:push
 
 1. **后台管理界面操作**（推荐）
    - 在后台添加/修改网站或分类
-   - 前台会在 10 秒内自动刷新
+   - 前台立即生效（页面动态渲染，每次写操作都会触发缓存失效）
    - ✅ **无需重启服务或重新构建**
 
 2. **直接操作数据库**
    - 使用 SQL、Prisma Studio 等工具直接修改数据库
-   - 前台**不会立即更新**（缓存有效期 10 秒）
-   - ⚠️ **需要等待缓存过期（最多 10 秒）或手动清除**
+   - 前台无法感知这类变更——页面每次请求都从数据库读取，读取类数据立即生效，但应用内缓存的聚合信息（如分类计数）可能滞后到下一次经后台写入
+   - ⚠️ **除非清楚自己在改什么，避免直接操作数据库**
 
 #### 最佳实践
 
 - ✅ **优先使用后台管理界面**进行所有数据操作
-- ✅ 避免直接操作数据库（除非进行批量导入或高级操作）
-- ✅ 如果必须直接操作数据库，操作后重启服务以立即生效
+- ✅ 避免直接操作数据库（批量导入请使用内置的数据导入工具）
 
 ### 系统管理页面为什么没有用户管理？
 

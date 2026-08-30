@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
-import { getSystemSettings } from "@/lib/actions"
+import { getSystemSettingsRecord } from "@/lib/settings"
 import { getTranslations } from "next-intl/server"
 
+// 管理端元数据（含登录页）：
+// 不能走 getSystemSettings server action——它在未认证时被拒绝，
+// 会让登录页丢失站点名/图标；这里用只读记录查询
 export async function generateMetadata(): Promise<Metadata> {
-  const result = await getSystemSettings()
-  const settings = result.success && result.data ? result.data : null
+  const settings = await getSystemSettingsRecord().catch(() => null)
   const t = await getTranslations("metadata")
 
   return {

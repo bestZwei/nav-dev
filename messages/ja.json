@@ -58,7 +58,8 @@
     "noDescription": "説明なし",
     "copied": "URL をコピーしました",
     "copy": "URL をコピー",
-    "iconAlt": "{name} のアイコン"
+    "iconAlt": "{name} のアイコン",
+    "copyFailed": "コピーに失敗しました。手動でコピーしてください。"
   },
   "search": {
     "resultsTitle": "検索結果",
@@ -614,7 +615,9 @@
       "passwordChangedDesc": "パスワードを更新しました",
       "changeFailed": "変更に失敗しました",
       "changeFailedDesc": "パスワードを変更できません。しばらくしてからもう一度お試しください",
-      "confirmChange": "変更する"
+      "confirmChange": "変更する",
+      "passwordSavedProfileFailed": "パスワードは変更されましたが、プロフィールの更新に失敗しました",
+      "passwordSavedProfileFailedDesc": "新しいパスワードは有効です。編集を開き直してプロフィールを更新してください（保存時の現在のパスワードには新しいパスワードを使用してください）。"
     },
     "workspaces": {
       "title": "ワークスペース管理",

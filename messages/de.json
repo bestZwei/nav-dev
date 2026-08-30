@@ -58,7 +58,8 @@
     "noDescription": "Keine Beschreibung",
     "copied": "URL kopiert",
     "copy": "URL kopieren",
-    "iconAlt": "{name}-Icon"
+    "iconAlt": "{name}-Icon",
+    "copyFailed": "Kopieren fehlgeschlagen. Bitte manuell kopieren."
   },
   "search": {
     "resultsTitle": "Suchergebnisse",
@@ -614,7 +615,9 @@
       "passwordChangedDesc": "Das Passwort wurde aktualisiert",
       "changeFailed": "Ändern fehlgeschlagen",
       "changeFailedDesc": "Passwort konnte nicht geändert werden, bitte später erneut versuchen",
-      "confirmChange": "Bestätigen"
+      "confirmChange": "Bestätigen",
+      "passwordSavedProfileFailed": "Passwort geändert, aber Profilaktualisierung fehlgeschlagen",
+      "passwordSavedProfileFailedDesc": "Ihr neues Passwort ist aktiv. Öffnen Sie den Editor erneut, um das Profil zu aktualisieren (verwenden Sie beim erneuten Speichern das neue Passwort als aktuelles Passwort)."
     },
     "workspaces": {
       "title": "Workspace-Verwaltung",

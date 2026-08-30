@@ -30,8 +30,13 @@ const workspacePreviewEnabled =
 // 会话 cookie 含 SameSite=None 分支（跨站 iframe 场景），会被跨站请求携带，
 // 而 Route Handler 不享受 Server Action 的内建 Origin 校验。
 // 浏览器对 POST/PUT/PATCH/DELETE 的 fetch 请求总是附带 Origin 头（含同源），
-// 与请求 Host（x-forwarded-host 优先，回退 host）比对即可识别跨站伪造；
-// Origin 缺失时放行：非浏览器客户端不构成 CSRF 风险，且保留 API 直连能力。
+// 与请求 Host 比对即可识别跨站伪造；Origin 缺失时放行：
+// 非浏览器客户端不构成 CSRF 风险，且保留 API 直连能力。
+// 只比对 Host 头：Host 属浏览器 forbidden header，跨站页面无法伪造；
+// x-forwarded-host 可被攻击者随意设置（非 forbidden header），
+// 若参与比对，跨站 fetch 同时带上 Origin: evil.com + X-Forwarded-Host: evil.com 即可绕过。
+// 部署要求：反向代理需将 Host 设为公开域名（Nginx `proxy_set_header Host $host`、
+// Caddy 默认行为均满足）。
 function isSameOriginApiRequest(request: NextRequest): boolean {
   if (
     request.method === "GET" ||
@@ -49,10 +54,7 @@ function isSameOriginApiRequest(request: NextRequest): boolean {
     return false
   }
   if (!originHost) return false
-  const requestHost =
-    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-    request.headers.get("host") ||
-    ""
+  const requestHost = request.headers.get("host")?.trim() || ""
   return requestHost.toLowerCase() === originHost.toLowerCase()
 }
 
@@ -62,7 +64,10 @@ function buildWorkspaceHeaders(request: NextRequest): Headers {
   const headers = new Headers(request.headers)
 
   // Host 提取：x-forwarded-host 优先（反代/Cloudflare 场景），回退 host；
-  // 去端口、转小写由应用层 normalizeHost 统一完成，这里保留原始值传递
+  // 去端口、转小写由应用层 normalizeHost 统一完成，这里保留原始值传递。
+  // 与 preview 头对称：先无条件删除客户端自带的同名头（HTTP 头可被伪造），
+  // 本端拿不到 Host 时不能放行客户端注入的值
+  headers.delete("x-workspace-host")
   const rawHost =
     request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
     request.headers.get("host") ||

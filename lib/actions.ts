@@ -324,8 +324,11 @@ export async function deleteWorkspace(id: string) {
       return { success: false, error: "工作区下仍有分类，请先删除或转移其内容" }
     }
 
-    await prisma.domain.deleteMany({ where: { workspaceId: id } })
-    await prisma.workspace.delete({ where: { id } })
+    // 事务化：清域名与删工作区同成败，第二步失败不再留下「域名已丢、工作区仍在」
+    await prisma.$transaction(async (tx) => {
+      await tx.domain.deleteMany({ where: { workspaceId: id } })
+      await tx.workspace.delete({ where: { id } })
+    })
     revalidatePath("/", "layout")
     revalidatePath("/admin/workspaces")
     return { success: true }
@@ -386,6 +389,15 @@ export async function addWorkspaceDomain(workspaceId: string, rawHost: string) {
         success: false,
         error: `该域名已绑定到工作区「${owner?.name || existing.workspaceId}」`,
       }
+    }
+
+    // 目标工作区必须存在：内存模式无外键约束，否则会创建指向不存在工作区的孤儿域名
+    const targetWorkspace = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { id: true },
+    })
+    if (!targetWorkspace) {
+      return { success: false, error: "工作区不存在或已被删除" }
     }
 
     const domain = await prisma.domain.create({
@@ -1037,6 +1049,11 @@ async function isSiteInCurrentWorkspace(siteId: string): Promise<boolean> {
 // 仅返回截图元数据与展示地址，不返回 base64 大字段
 export async function getSiteDetail(siteId: string) {
   try {
+    // 「禁用即收权」在数据源头收口：本函数位于 "use server" 文件，
+    // 是公开可调用的 RPC 端点，仅在 API 路由层检查插件开关防不住直连调用
+    if (!(await isPluginEnabled("site-detail"))) {
+      return { success: false, error: "Site not found" }
+    }
     const site = await prisma.site.findUnique({
       where: { id: siteId },
       select: {
@@ -1246,11 +1263,23 @@ export async function updateSite(id: string, data: {
       return { success: false, error: validationError }
     }
 
-    const publishedBefore = data.isPublished !== undefined
-      ? (await prisma.site.findUnique({ where: { id }, select: { isPublished: true } }))?.isPublished ?? null
-      : null
+    // 发布状态初值在事务内读取：与最终 update 同一快照，
+    // 并发 toggle 时不会基于过期状态漏发/双发 webhook
+    let publishedBefore: boolean | null = null
+    // 迁移分类时记录旧分类 slug：更新后新旧分类页缓存都要失效
+    let oldCategorySlug: string | null = null
 
     const site = await prisma.$transaction(async (tx) => {
+      if (data.isPublished !== undefined) {
+        publishedBefore = (await tx.site.findUnique({ where: { id }, select: { isPublished: true } }))?.isPublished ?? null
+      }
+      if (data.categoryId !== undefined) {
+        const oldSite = await tx.site.findUnique({
+          where: { id },
+          select: { category: { select: { slug: true } } },
+        })
+        oldCategorySlug = oldSite?.category?.slug ?? null
+      }
       const updateData: Prisma.SiteUpdateInput = {}
       if (data.name !== undefined) updateData.name = data.name
       if (data.url !== undefined) updateData.url = data.url
@@ -1265,29 +1294,9 @@ export async function updateSite(id: string, data: {
       // - 仅传 detailContent → 截图数取现值
       // - 仅传 screenshots  → 详情文本取现值
       // - 都传或都不传之外的情况按需补查
-      if (detailContent !== undefined || screenshotsProvided) {
-        const [currentContent, currentShotCount] = await Promise.all([
-          detailContent === undefined
-            ? tx.site.findUnique({ where: { id }, select: { detailContent: true } })
-            : null,
-          !screenshotsProvided
-            ? tx.screenshot.count({ where: { siteId: id } })
-            : null,
-        ])
-        const effectiveContent = detailContent !== undefined
-          ? detailContent
-          : normalizeDetailContent(currentContent?.detailContent)
-        const effectiveShotCount = screenshotsProvided ? screenshots.length : (currentShotCount ?? 0)
-        if (detailContent !== undefined) updateData.detailContent = detailContent
-        updateData.hasDetail = computeHasDetail(effectiveContent, effectiveShotCount)
-      }
-
-      const updated = await tx.site.update({
-        where: { id },
-        data: updateData,
-        include: { category: true },
-      })
-
+      // 截图增量 diff 先于 site.update 执行：hasDetail 需要用 diff 后的真实截图数
+      //（未命中的 keepId 条目会被丢弃，不能按提交列表长度计数）
+      let finalShotCount = 0
       if (screenshotsProvided) {
         // 增量 diff：keepId 命中站点现有截图的原样保留（含上传截图的二进制数据），
         // 其余删除；带 keepId 但未命中的条目直接丢弃（可能是并发已被删除的旧图，
@@ -1324,13 +1333,41 @@ export async function updateSite(id: string, data: {
         for (const entry of keptOrderUpdates) {
           await tx.screenshot.update({ where: { id: entry.keepId }, data: { order: entry.index } })
         }
+        finalShotCount = keptIdSet.size + newShotEntries.length
       }
+
+      if (detailContent !== undefined || screenshotsProvided) {
+        const [currentContent, currentShotCount] = await Promise.all([
+          detailContent === undefined
+            ? tx.site.findUnique({ where: { id }, select: { detailContent: true } })
+            : null,
+          !screenshotsProvided
+            ? tx.screenshot.count({ where: { siteId: id } })
+            : null,
+        ])
+        const effectiveContent = detailContent !== undefined
+          ? detailContent
+          : normalizeDetailContent(currentContent?.detailContent)
+        const effectiveShotCount = screenshotsProvided ? finalShotCount : (currentShotCount ?? 0)
+        if (detailContent !== undefined) updateData.detailContent = detailContent
+        updateData.hasDetail = computeHasDetail(effectiveContent, effectiveShotCount)
+      }
+
+      const updated = await tx.site.update({
+        where: { id },
+        data: updateData,
+        include: { category: true },
+      })
 
       return updated
     })
 
     revalidatePath("/admin/sites")
     revalidatePath("/")
+    // 分类迁移时新旧两个分类页都要失效（与 updateCategory 的 slug 变更口径一致）
+    if (oldCategorySlug && oldCategorySlug !== site.category?.slug) {
+      revalidatePath(`/category/${oldCategorySlug}`)
+    }
     revalidatePath(`/category/${site.category?.slug || ''}`)
 
     // 事件总线：发布状态变化时通知订阅插件（false→true 发布 / true→false 下架）
@@ -1431,6 +1468,7 @@ export async function toggleSitePublish(id: string) {
     })
     revalidatePath("/admin/sites")
     revalidatePath("/")
+    revalidatePath(`/category/${site.category?.slug || ''}`)
 
     // 事件总线：发布状态翻转时通知订阅插件
     await firePluginWebhook(site.isPublished ? "sitePublished" : "siteUnpublished", {
@@ -2178,15 +2216,25 @@ function normalizeImportCategories(
   const transliteration = require('transliteration')
   const categories: NormalizedImportCategory[] = []
   let skippedSites = 0
+  const batchSlugs = new Set<string>()
 
   for (const categoryData of rawCategories) {
     if (
       !categoryData || typeof categoryData !== 'object' ||
       typeof categoryData.name !== 'string' || !categoryData.name.trim()
     ) continue
-    const slug =
+    // 批内 slug 去重：与 importBookmarks 的 batchSlugs 后缀口径一致，
+    // 避免同 slug 分类撞 @@unique([workspaceId, slug]) 使整个导入事务回滚
+    const baseSlug =
       (typeof categoryData.slug === 'string' && categoryData.slug.trim()) ||
       transliteration.slugify(categoryData.name)
+    let slug = baseSlug
+    let suffix = 2
+    while (batchSlugs.has(slug)) {
+      slug = `${baseSlug}-${suffix}`
+      suffix++
+    }
+    batchSlugs.add(slug)
 
     const sites: NormalizedImportSite[] = []
     for (const siteData of Array.isArray(categoryData.sites) ? categoryData.sites : []) {
@@ -2198,8 +2246,11 @@ function normalizeImportCategories(
         skippedSites++
         continue
       }
+      // keepId 仅对 updateSite 的增量 diff 有意义；导入是纯新建，
+      // 带 keepId 的条目没有 url/data，剔除防止落库为 NULL 字段脏行
       const screenshots: ScreenshotInput[] = Array.isArray(siteData.screenshots)
-        ? siteData.screenshots.filter((shot: any) => shot && typeof shot === 'object')
+        ? siteData.screenshots
+            .filter((shot: any) => shot && typeof shot === 'object' && !shot.keepId)
         : []
       const screenshotError = validateScreenshots(screenshots)
       if (screenshotError) {
@@ -2312,9 +2363,10 @@ export async function importData(
     const importCategories = normalized.categories
     let skippedSites = normalized.skippedSites
 
-    // 覆盖导入的内容为空（空数组或全部非法被静默跳过）时拒绝执行：
+    // 覆盖导入的内容为空（空数组、全非法被静默跳过、或没有任何可导入站点）时拒绝执行：
     // 否则会先清空工作区再导入 0 条，造成不可逆数据丢失却报告成功
-    if (mode === 'overwrite' && importCategories.length === 0) {
+    const totalImportSites = importCategories.reduce((sum, c) => sum + c.sites.length, 0)
+    if (mode === 'overwrite' && (importCategories.length === 0 || totalImportSites === 0)) {
       return { success: false, error: "导入内容为空或全部非法，已取消覆盖导入以保护现有数据" }
     }
 
@@ -2373,7 +2425,7 @@ export async function importData(
           skippedSites++
         })
       }
-    })
+    }, { timeout: 30_000, maxWait: 10_000 })
 
     // 重新验证缓存
     revalidatePath('/', 'layout')
@@ -2468,21 +2520,26 @@ async function importFullBackup(
         })
       }
 
-      // 分类与网址：overwrite 模式先清空该工作区内容
+      // 分类与网址：overwrite 模式先清空该工作区内容。
+      // 该工作区没有任何可导入站点时不执行清空——防止备份中某个空/损坏工作区
+      // 借 overwrite 清空线上数据（全量备份的其余工作区正常导入）
       if (mode === 'overwrite') {
-        const catIds = (
-          await tx.category.findMany({
-            where: { workspaceId: wsId },
-            select: { id: true },
-          })
-        ).map((c: { id: string }) => c.id)
-        if (catIds.length > 0) {
-          await tx.site.deleteMany({
-            where: { categoryId: { in: catIds } },
-          })
-          await tx.category.deleteMany({
-            where: { workspaceId: wsId },
-          })
+        const hasImportableSites = normalized.categories.some((c) => c.sites.length > 0)
+        if (hasImportableSites) {
+          const catIds = (
+            await tx.category.findMany({
+              where: { workspaceId: wsId },
+              select: { id: true },
+            })
+          ).map((c: { id: string }) => c.id)
+          if (catIds.length > 0) {
+            await tx.site.deleteMany({
+              where: { categoryId: { in: catIds } },
+            })
+            await tx.category.deleteMany({
+              where: { workspaceId: wsId },
+            })
+          }
         }
       }
 
@@ -2554,9 +2611,11 @@ export async function importBookmarks(
   try {
     const { parseChromeBookmarks } = await import('./bookmarks')
     const parsed = parseChromeBookmarks(html)
-    // 覆盖导入的内容为空（如误传普通网页 HTML）时拒绝执行，防止清空工作区后导入 0 条
-    if (mode === 'overwrite' && parsed.categories.length === 0) {
-      return { success: false, error: "未从文件中解析出任何书签文件夹，已取消覆盖导入以保护现有数据" }
+    // 覆盖导入的内容为空（如误传普通网页 HTML，或文件夹里没有任何合法 URL）时拒绝执行，
+    // 防止清空工作区后导入 0 条——与 importData 的空内容保护口径一致
+    const totalBookmarkSites = parsed.categories.reduce((sum, c) => sum + c.sites.length, 0)
+    if (mode === 'overwrite' && (parsed.categories.length === 0 || totalBookmarkSites === 0)) {
+      return { success: false, error: "未从文件中解析出任何可导入的书签，已取消覆盖导入以保护现有数据" }
     }
     // 书签导入归属当前后台选中的工作区
     const workspace = await getAdminWorkspace()

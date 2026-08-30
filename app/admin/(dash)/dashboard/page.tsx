@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Loader2, BarChart3, TrendingUp, Globe, FolderKanban, Users, CalendarPlus, Sparkles } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -133,9 +133,12 @@ export default function AdminDashboardPage() {
   }
 
   // 加载统计数据
+  const loadGenerationRef = useRef(0)
   useEffect(() => {
     async function loadStats() {
       setLoadError(false)
+      // 乱序防护：快速切换时间范围/条数时，慢的旧响应不得覆盖新状态
+      const generation = ++loadGenerationRef.current
       try {
         const [
           sitesRes,
@@ -161,6 +164,22 @@ export default function AdminDashboardPage() {
           fetch("/api/admin/stats/content"),
           fetch("/api/admin/stats/category-distribution"),
         ])
+
+        // 非 2xx 响应必须显式呈现：safeJson 会把它们静默转为 null 再回退 0 值，
+        // 仅靠 catch 只能覆盖网络层异常，覆盖不了接口返回 4xx/5xx 的情况
+        const hasFailedResponse = [
+          sitesRes,
+          categoriesRes,
+          usersRes,
+          visitsRes,
+          frequencyRes,
+          todayRes,
+          contentRes,
+          distributionRes,
+        ].some((res) => res !== null && !res.ok)
+        if (hasFailedResponse) setLoadError(true)
+        // 旧请求晚到：丢弃本次全部结果，等待最新一代的响应
+        if (generation !== loadGenerationRef.current) return
 
         // 规范化各响应：字段缺失或类型不符时回退默认值，保证渲染层拿到的结构完整
         const sitesData = ((await safeJson(sitesRes)) ?? {}) as { total?: number }

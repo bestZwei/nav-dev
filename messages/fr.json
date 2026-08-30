@@ -58,7 +58,8 @@
     "noDescription": "Aucune description",
     "copied": "URL copiée",
     "copy": "Copier l'URL",
-    "iconAlt": "Icône de {name}"
+    "iconAlt": "Icône de {name}",
+    "copyFailed": "Échec de la copie. Veuillez copier manuellement."
   },
   "search": {
     "resultsTitle": "Résultats de recherche",
@@ -614,7 +615,9 @@
       "passwordChangedDesc": "Le mot de passe a été mis à jour",
       "changeFailed": "Échec du changement",
       "changeFailedDesc": "Impossible de changer le mot de passe, veuillez réessayer plus tard",
-      "confirmChange": "Confirmer"
+      "confirmChange": "Confirmer",
+      "passwordSavedProfileFailed": "Mot de passe modifié, mais la mise à jour du profil a échoué",
+      "passwordSavedProfileFailedDesc": "Votre nouveau mot de passe est actif. Rouvrez l’éditeur pour mettre à jour le profil (utilisez le nouveau mot de passe comme mot de passe actuel lors d’un nouvel enregistrement)."
     },
     "workspaces": {
       "title": "Gestion des espaces de travail",

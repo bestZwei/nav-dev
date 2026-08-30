@@ -8,14 +8,15 @@ export async function GET(request: NextRequest) {
   }
   try {
     const searchParams = request.nextUrl.searchParams
-    // clamp：NaN/负数会退化为全表扫描（1-365 天 / 1-100 条），action 内有二次兜底
-    const parseClamped = (raw: string | null, fallback: number, min: number, max: number) => {
+    // clamp：NaN/负数回退默认值，0 表示「不限」（前端"全部"选项），
+    // 上限防退化扫描（days ≤365 / limit ≤100），action 内有二次兜底
+    const parseClamped = (raw: string | null, fallback: number, max: number) => {
       const parsed = parseInt(raw || String(fallback), 10)
-      if (!Number.isFinite(parsed)) return fallback
-      return Math.min(Math.max(parsed, min), max)
+      if (!Number.isFinite(parsed) || parsed < 0) return fallback
+      return Math.min(parsed, max)
     }
-    const days = parseClamped(searchParams.get('days'), 30, 1, 365)
-    const limit = parseClamped(searchParams.get('limit'), 10, 1, 100)
+    const days = parseClamped(searchParams.get('days'), 30, 365)
+    const limit = parseClamped(searchParams.get('limit'), 10, 100)
 
     const result = await getVisitStats(days, limit)
 

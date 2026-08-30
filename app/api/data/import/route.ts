@@ -8,13 +8,22 @@ export async function POST(request: NextRequest) {
   }
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('file')
     const mode = (formData.get('mode') as string) === 'overwrite' ? 'overwrite' : 'append'
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json(
         { error: '未选择文件' },
         { status: 400 }
+      )
+    }
+
+    // 大小上限：文件会整体读入内存做 JSON.parse，超大文件可造成内存尖峰
+    const MAX_IMPORT_BYTES = 10 * 1024 * 1024
+    if (file.size > MAX_IMPORT_BYTES) {
+      return NextResponse.json(
+        { error: '文件过大（上限 10MB）' },
+        { status: 413 }
       )
     }
 

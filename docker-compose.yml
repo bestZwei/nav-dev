@@ -35,6 +35,10 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:-${NEXTAUTH_SECRET}}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      # 初始管理员账号（仅首次 seed 生效）：compose 的 .env 只做变量替换，
+      # 不注入容器环境，必须显式透传才能被容器内的 seed 脚本读到
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       NODE_ENV: production
     volumes:
       # 会话密钥兜底文件持久化：未配置 SESSION_SECRET 时，重启/换镜像不会导致全部会话失效

@@ -58,7 +58,8 @@
     "noDescription": "No description",
     "copied": "URL copied",
     "copy": "Copy URL",
-    "iconAlt": "{name} icon"
+    "iconAlt": "{name} icon",
+    "copyFailed": "Copy failed. Please copy manually."
   },
   "search": {
     "resultsTitle": "Search results",
@@ -614,7 +615,9 @@
       "passwordChangedDesc": "The password has been updated",
       "changeFailed": "Change failed",
       "changeFailedDesc": "Unable to change the password, please try again later",
-      "confirmChange": "Confirm"
+      "confirmChange": "Confirm",
+      "passwordSavedProfileFailed": "Password changed, but profile update failed",
+      "passwordSavedProfileFailedDesc": "Your new password is active. Reopen the editor to update the profile (use the new password as the current password when saving again)."
     },
     "workspaces": {
       "title": "Workspaces",

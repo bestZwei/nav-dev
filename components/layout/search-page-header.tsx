@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "./header"
 
@@ -26,6 +26,12 @@ export function SearchPageHeader({
 }: SearchPageHeaderProps) {
   const router = useRouter()
   const [query, setQuery] = useState(initialQuery)
+
+  // 浏览器前进/后退（或外链跳转）带来新的 ?q= 时同步输入框，
+  // 避免服务端结果与输入框关键词脱节
+  useEffect(() => {
+    setQuery(initialQuery)
+  }, [initialQuery])
 
   const handleSearchSubmit = (value: string) => {
     const trimmed = value.trim()
