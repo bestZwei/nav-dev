@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
   }
   try {
     const searchParams = request.nextUrl.searchParams
-    const days = parseInt(searchParams.get('days') || '30', 10)
+    // clamp：NaN/负数会退化为全表扫描（1-365 天），action 内有二次兜底
+    const parsed = parseInt(searchParams.get('days') || '30', 10)
+    const days = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 365) : 30
 
     const result = await getVisitFrequency(days)
 

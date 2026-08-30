@@ -8,8 +8,14 @@ export async function GET(request: NextRequest) {
   }
   try {
     const searchParams = request.nextUrl.searchParams
-    const days = parseInt(searchParams.get('days') || '30', 10)
-    const limit = parseInt(searchParams.get('limit') || '10', 10)
+    // clamp：NaN/负数会退化为全表扫描（1-365 天 / 1-100 条），action 内有二次兜底
+    const parseClamped = (raw: string | null, fallback: number, min: number, max: number) => {
+      const parsed = parseInt(raw || String(fallback), 10)
+      if (!Number.isFinite(parsed)) return fallback
+      return Math.min(Math.max(parsed, min), max)
+    }
+    const days = parseClamped(searchParams.get('days'), 30, 1, 365)
+    const limit = parseClamped(searchParams.get('limit'), 10, 1, 100)
 
     const result = await getVisitStats(days, limit)
 

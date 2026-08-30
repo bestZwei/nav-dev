@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { assertPublicHost } from "@/lib/domain-verify"
 import {
   PluginDisabledError,
   type PluginConfigField,
@@ -137,7 +138,15 @@ export async function firePluginWebhook(
   if (targets.length === 0) return
 
   await Promise.allSettled(
-    targets.map(({ id, endpoint }) => {
+    targets.map(async ({ id, endpoint }) => {
+      // 出站前校验目标非内网/元数据地址，与 domain-verify 的 SSRF 防护口径一致；
+      // webhook 端点来自管理员上传的 manifest，账号失陷后不得成为内网探测跳板
+      try {
+        await assertPublicHost(new URL(endpoint).hostname)
+      } catch {
+        logger.warn(`[plugins] webhook ${event} for ${id} blocked: endpoint host is not public`)
+        return
+      }
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 5000)
       return fetch(endpoint, {

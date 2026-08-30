@@ -68,7 +68,8 @@
     "notFoundTitle": "Aucun site correspondant",
     "notFoundDesc": "Aucun site ne correspond à « {query} ». Essayez d'autres mots-clés plus courts.",
     "foundResults": "{count} résultats trouvés",
-    "tryOtherKeywords": "Essayez d'autres mots-clés"
+    "tryOtherKeywords": "Essayez d'autres mots-clés",
+    "keywordLabel": "Mot-clé : "
   },
   "home": {
     "noSitesInCategory": "Aucun site",
@@ -169,7 +170,8 @@
       "rangeAll": "Tout l'historique",
       "range3months": "3 derniers mois",
       "range30days": "30 derniers jours",
-      "rangeDays": "{days} derniers jours"
+      "rangeDays": "{days} derniers jours",
+      "loadError": "Échec du chargement des statistiques. Veuillez réessayer plus tard."
     },
     "chart": {
       "frequencyTitle": "Fréquence des visites",

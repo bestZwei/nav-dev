@@ -36,7 +36,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight">{t("resultsTitle")}</h1>
             <p className="text-muted-foreground mt-2">
-              {t("keyword")}：<span className="font-semibold text-foreground">{t("quoted", { query })}</span>
+              {t("keywordLabel")}<span className="font-semibold text-foreground">{t("quoted", { query })}</span>
               {sites && (
                 <span className="ml-2">
                   {t("foundResults", { count: sites.length })}

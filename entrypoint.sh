@@ -31,6 +31,31 @@ fi
 
 echo "🔧 初始化数据库..."
 
+# 数据库就绪重试：迁移与探测前先确保可达。
+# 之前 DB 暂时不可达会让探测失败被误判为"schema 漂移"进而触发自动 db push，
+# 且 set -e 下任何一次失败都会让容器退出进入 crash loop
+DB_READY=0
+i=0
+while [ "$i" -lt 30 ]; do
+  i=$((i + 1))
+  if node -e "
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    prisma.\$queryRaw\`SELECT 1\`
+      .then(() => { console.log('ready'); process.exit(0); })
+      .catch(() => { process.exit(1); });
+  " 2>/dev/null; then
+    DB_READY=1
+    break
+  fi
+  echo "⏳ 数据库未就绪，10 秒后重试（$i/30）..."
+  sleep 10
+done
+if [ "$DB_READY" != "1" ]; then
+  echo "❌ 数据库在 5 分钟内未就绪，放弃启动。请检查 DATABASE_URL 与数据库状态。"
+  exit 1
+fi
+
 # 检查是否存在迁移文件夹
 if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; then
   echo "📦 检测到迁移文件，执行 Prisma Migrate..."
@@ -84,7 +109,9 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
 
     if [ "$TABLE_EXISTS" = "yes" ]; then
       echo "📊 检测到现有数据，同步数据库 schema..."
-      # 先用 db push 同步 schema（添加新字段）
+      # 一次性 legacy 升级路径（仅 _prisma_migrations 缺失的旧数据卷）：
+      # db push 需要删列丢数据时会拒绝执行，此时请人工介入：
+      #   npx prisma db push --accept-data-loss
       npx prisma db push --skip-generate
       echo "📊 Schema 同步完成，进行基线化（baseline）..."
       # 标记所有迁移为已应用（因为数据库结构已经是最新）
@@ -103,8 +130,9 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
     npx prisma migrate deploy
   fi
 
-  # 检测 schema 漂移：迁移记录显示"全部已应用"但数据库实际结构缺列/缺表时
-  # （P2022，常见于旧版本数据卷的 baseline 记录与真实结构不符），自动同步
+  # 漂移检测：只警告，不再自动 db push 修复。
+  # 自动修复在生产是破坏性/脆弱操作——需要删列时会因缺 --accept-data-loss 失败，
+  # set -e 下容器进入 crash loop；漂移修复应由人工评估后执行 migrate/db push
   echo "🔍 校验数据库结构与 schema 一致性..."
   if npx prisma migrate diff \
     --from-schema-datasource prisma/schema.prisma \
@@ -112,9 +140,9 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
     --exit-code > /dev/null 2>&1; then
     echo "✅ 数据库结构与 schema 一致"
   else
-    echo "⚠️  检测到数据库结构与 schema 不一致，自动同步（增量添加，不删除数据）..."
-    npx prisma db push --skip-generate
-    echo "✅ Schema 同步完成"
+    echo "❌ 警告：数据库结构与 schema 不一致！请人工评估后执行"
+    echo "    npx prisma migrate dev / npx prisma db push 修复漂移。"
+    echo "    本次启动将继续，但可能出现字段缺失的运行时错误（P2022）。"
   fi
 else
   echo "⚠️  未检测到迁移文件，使用 db push（开发模式）..."

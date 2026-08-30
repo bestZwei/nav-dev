@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { isLocale, type Locale } from "./i18n"
+import { getSystemSettingsRecord } from "./settings"
 import { getAdminSession } from "./api-auth"
 import { verifyDomainHost } from "./domain-verify"
 import { isPluginEnabled, firePluginWebhook } from "./plugins/runtime"
@@ -120,8 +121,7 @@ export async function getWorkspaceDisplaySettings() {
   if (unauthorized) return unauthorized
   try {
     const workspace = await getAdminWorkspace()
-    const result = await getSystemSettings()
-    const settings = result.success && result.data ? result.data : null
+    const settings = await getSystemSettingsRecord()
 
     if (workspace.isDefault) {
       return {
@@ -946,7 +946,7 @@ function validateScreenshots(screenshots: ScreenshotInput[]): string | null {
     return `Screenshots exceed the limit of ${MAX_SCREENSHOTS_PER_SITE}`
   }
   for (const shot of screenshots) {
-    // 保留型条目不携带 url/data，仅校验标识存在，归属校验在事务内做
+    // 保留型条目不携带 url/data，仅校验标识存在；未命中的条目由 updateSite 事务内丢弃
     if (shot.keepId !== undefined) {
       if (typeof shot.keepId !== 'string' || !shot.keepId) {
         return 'Kept screenshot requires a valid id'
@@ -995,16 +995,22 @@ function computeHasDetail(detailContent: string | null, screenshotCount: number)
   return detailContent !== null || screenshotCount > 0
 }
 
-// 替换式重写站点截图记录（事务内调用）
-function buildScreenshotCreateMany(siteId: string, screenshots: ScreenshotInput[]) {
-  return screenshots.map((shot, index) => ({
+// 单条截图入库行构造：order 由调用方显式传入（提交列表的全局下标），
+// 避免「保留旧图 + 新增新图」混排时保留项与新增项各自编号导致 order 错位
+function buildScreenshotRow(siteId: string, shot: ScreenshotInput, order: number) {
+  return {
     siteId,
     source: shot.source,
     url: shot.source === 'URL' ? shot.url! : null,
     data: shot.source === 'UPLOAD' ? shot.data! : null,
     mimeType: shot.source === 'UPLOAD' ? shot.mimeType! : null,
-    order: index,
-  }))
+    order,
+  }
+}
+
+// 替换式重写站点截图记录（事务内调用）：入参必须是已剔除 keepId 的纯新增列表
+function buildScreenshotCreateMany(siteId: string, screenshots: ScreenshotInput[]) {
+  return screenshots.map((shot, index) => buildScreenshotRow(siteId, shot, index))
 }
 
 // 后台写操作的工作区归属校验：目标必须属于当前选中的工作区。
@@ -1143,7 +1149,9 @@ export async function createSite(data: {
       return { success: false, error: "站点 URL 必须使用 http 或 https 协议" }
     }
     const detailContent = normalizeDetailContent(data.detailContent)
-    const screenshots = data.screenshots ?? []
+    // 新建场景不存在「已有截图」，带 keepId 的条目（无 url/data）一律剔除，
+    // 防止恶意构造的 keepId 绕过校验后落库为 NULL 字段脏行
+    const screenshots = (data.screenshots ?? []).filter((shot) => !shot.keepId)
     const validationError = validateScreenshots(screenshots)
     if (validationError) {
       return { success: false, error: validationError }
@@ -1282,23 +1290,29 @@ export async function updateSite(id: string, data: {
 
       if (screenshotsProvided) {
         // 增量 diff：keepId 命中站点现有截图的原样保留（含上传截图的二进制数据），
-        // 其余删除；未带 keepId 的条目按新建处理，keepId 未命中站点的条目直接丢弃
+        // 其余删除；带 keepId 但未命中的条目直接丢弃（可能是并发已被删除的旧图，
+        // 或恶意伪造的跨站点引用——它们没有 url/data，绝不能落入新建路径产生 NULL 脏行）
         const existingShots = await tx.screenshot.findMany({
           where: { siteId: id },
           select: { id: true },
         })
-        const keepIds = screenshots
-          .map((shot) => shot.keepId)
-          .filter((keepId): keepId is string => typeof keepId === 'string')
-        const keptIdSet = new Set(keepIds.filter((keepId) => existingShots.some((shot) => shot.id === keepId)))
+        const existingIdSet = new Set(existingShots.map((shot) => shot.id))
+        const keptIdSet = new Set(
+          screenshots
+            .map((shot) => shot.keepId)
+            .filter((keepId): keepId is string => typeof keepId === 'string' && existingIdSet.has(keepId))
+        )
         const deleteIds = existingShots.filter((shot) => !keptIdSet.has(shot.id)).map((shot) => shot.id)
         if (deleteIds.length > 0) {
           await tx.screenshot.deleteMany({ where: { id: { in: deleteIds } } })
         }
-        const newShots = screenshots.filter((shot) => !shot.keepId || !keptIdSet.has(shot.keepId))
-        if (newShots.length > 0) {
+        // 新增条目使用提交列表的全局下标作为 order，与保留项的排序同步口径一致
+        const newShotEntries = screenshots
+          .map((shot, index) => ({ shot, index }))
+          .filter(({ shot }) => !shot.keepId)
+        if (newShotEntries.length > 0) {
           await tx.screenshot.createMany({
-            data: buildScreenshotCreateMany(id, newShots),
+            data: newShotEntries.map(({ shot, index }) => buildScreenshotRow(id, shot, index)),
           })
         }
         // 保留截图按提交顺序同步排序，保证前端重排结果落库
@@ -1659,7 +1673,7 @@ export async function updateUser(
   id: string,
   data: {
     email?: string
-    name?: string
+    name?: string | null
     avatar?: string
   }
 ) {
@@ -1742,7 +1756,9 @@ export async function changePassword(
 
 export async function searchSites(query: string) {
   try {
-    if (!query || query.trim().length === 0) {
+    // trim：避免 ?q=%20foo 以含前导空格的串做精确 contains 搜索
+    const keyword = query.trim()
+    if (!keyword) {
       return { success: true, data: [] }
     }
 
@@ -1756,9 +1772,9 @@ export async function searchSites(query: string) {
           { categoryId: { in: categoryIds } },
           {
             OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { description: { contains: query, mode: "insensitive" } },
-              { url: { contains: query, mode: "insensitive" } },
+              { name: { contains: keyword, mode: "insensitive" } },
+              { description: { contains: keyword, mode: "insensitive" } },
+              { url: { contains: keyword, mode: "insensitive" } },
             ],
           },
         ],
@@ -1786,22 +1802,12 @@ export async function isMemoryMode() {
 }
 
 export async function getSystemSettings() {
+  // 管理员专用：完整设置行含 enabledPlugins/pluginConfigs 等敏感字段，
+  // 本文件所有导出函数皆可被客户端直接 RPC，无鉴权的读取等于公开泄露
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
   try {
-    // 系统设置只有一条记录，使用第一条
-    let settings = await prisma.systemSettings.findFirst()
-
-    // 如果不存在，创建默认设置
-    if (!settings) {
-      settings = await prisma.systemSettings.create({
-        data: {
-          id: "default",
-          footerCopyright: `© ${new Date().getFullYear()} Conan Nav. All rights reserved.`,
-        },
-      })
-      // 重新获取以确保使用数据库默认值（siteName 等）
-      settings = await prisma.systemSettings.findFirst()
-    }
-
+    const settings = await getSystemSettingsRecord()
     return { success: true, data: settings }
   } catch (error) {
     console.error("Error fetching system settings:", error)
@@ -1809,19 +1815,42 @@ export async function getSystemSettings() {
   }
 }
 
-// 前台展示配置：工作区覆盖项优先，未设置时回退全局 SystemSettings
+// 前台展示配置：工作区覆盖项优先，未设置时回退全局 SystemSettings。
+// 显式字段投影——本函数同样可被客户端直接调用，
+// 绝不能整行返回（aboutContent/enabledPlugins/pluginConfigs 不外泄）
+
 export async function getDisplaySettings() {
   const workspace = await getCurrentWorkspace()
-  const result = await getSystemSettings()
-  const settings = (result.success && result.data ? result.data : {}) as Record<string, unknown>
+  let settings: Record<string, unknown> = {}
+  try {
+    settings = ((await getSystemSettingsRecord()) ?? {}) as Record<string, unknown>
+  } catch (error) {
+    console.error("Error fetching display settings:", error)
+  }
+  const str = (v: unknown) => (typeof v === "string" ? v : undefined)
+  const bool = (v: unknown) => (typeof v === "boolean" ? v : undefined)
+  const num = (v: unknown) => (typeof v === "number" ? v : undefined)
+  // 显式字段投影——本函数同样可被客户端直接调用，
+  // 绝不能整行返回（aboutContent/enabledPlugins/pluginConfigs 不外泄）
   return {
-    ...settings,
-    siteName: workspace.siteName || (settings.siteName as string | undefined),
-    siteDescription:
-      workspace.siteDescription || (settings.siteDescription as string | undefined),
+    siteName: workspace.siteName || str(settings.siteName),
+    siteDescription: workspace.siteDescription || str(settings.siteDescription),
     siteLogo: workspace.siteLogo || (settings.siteLogo as string | null | undefined),
     favicon: workspace.favicon || (settings.favicon as string | null | undefined),
-    // 自定义代码为全局配置（不参与工作区覆盖），显式透传以保证类型可见
+    pageSize: num(settings.pageSize),
+    showFooter: bool(settings.showFooter),
+    footerCopyright: str(settings.footerCopyright),
+    footerLinks: Array.isArray(settings.footerLinks)
+      ? (settings.footerLinks as Array<{ name: string; url: string }>)
+      : undefined,
+    showAdminLink: bool(settings.showAdminLink),
+    showIcp: bool(settings.showIcp),
+    icpNumber: (settings.icpNumber as string | null | undefined) ?? undefined,
+    icpLink: (settings.icpLink as string | null | undefined) ?? undefined,
+    githubUrl: (settings.githubUrl as string | null | undefined) ?? undefined,
+    defaultLanguage: str(settings.defaultLanguage),
+    // 自定义代码为全局配置（不参与工作区覆盖），显式透传以保证类型可见；
+    // 公开接口 /api/settings 会在装配层剔除这两个字段，不外泄给客户端
     customHeadCode: settings.customHeadCode as string | null | undefined,
     customBodyCode: settings.customBodyCode as string | null | undefined,
   }
@@ -1831,12 +1860,12 @@ export async function getDisplaySettings() {
 // 内容按工作区覆盖、空则回退全局。仅供 /about 页与 sitemap 服务端调用，
 // 避免整篇 Markdown 进入公开设置接口
 export async function getAboutPage() {
-  const [workspace, settingsResult, aboutEnabled] = await Promise.all([
+  const [workspace, settingsRecord, aboutEnabled] = await Promise.all([
     getCurrentWorkspace(),
-    getSystemSettings(),
+    getSystemSettingsRecord().catch(() => null),
     isPluginEnabled("about-page"),
   ])
-  const settings = settingsResult.success && settingsResult.data ? settingsResult.data : null
+  const settings = settingsRecord
   return {
     enabled: aboutEnabled,
     siteName:
@@ -2283,6 +2312,12 @@ export async function importData(
     const importCategories = normalized.categories
     let skippedSites = normalized.skippedSites
 
+    // 覆盖导入的内容为空（空数组或全部非法被静默跳过）时拒绝执行：
+    // 否则会先清空工作区再导入 0 条，造成不可逆数据丢失却报告成功
+    if (mode === 'overwrite' && importCategories.length === 0) {
+      return { success: false, error: "导入内容为空或全部非法，已取消覆盖导入以保护现有数据" }
+    }
+
     const workspace = await getAdminWorkspace()
 
     // 事务化：overwrite 的"清空 + 重写"同成败，脏数据不再造成不可逆丢失
@@ -2379,61 +2414,68 @@ async function importFullBackup(
       return { success: false, error: `工作区「${wsData.slug}」：${normalized.error}` }
     }
 
-    let workspace = await prisma.workspace.findUnique({
-      where: { slug: wsData.slug },
-    })
-    if (!workspace) {
-      workspace = await prisma.workspace.create({
-        data: {
-          slug: wsData.slug,
-          name: wsData.name || wsData.slug,
-          description: wsData.description || null,
-          siteName: wsData.siteName || null,
-          siteDescription: wsData.siteDescription || null,
-          siteLogo: wsData.siteLogo || null,
-          favicon: wsData.favicon || null,
-          aboutContent: wsData.aboutContent || null,
-          isPublished: Boolean(wsData.isPublished),
-          order: wsData.order ?? 0,
-        },
-      })
-    } else if (mode === 'overwrite') {
-      workspace = await prisma.workspace.update({
-        where: { id: workspace.id },
-        data: {
-          name: wsData.name || workspace.name,
-          description: wsData.description || null,
-          siteName: wsData.siteName || null,
-          siteDescription: wsData.siteDescription || null,
-          siteLogo: wsData.siteLogo || null,
-          favicon: wsData.favicon || null,
-          aboutContent: wsData.aboutContent || null,
-          isPublished: Boolean(wsData.isPublished),
-          order: wsData.order ?? workspace.order,
-        },
-      })
-    }
-    importedWorkspaces++
-    const wsId = workspace.id
-
-    // 域名绑定：冲突项跳过
-    for (const domainData of wsData.domains || []) {
-      const host = normalizeHost(domainData.host)
-      if (!host) continue
-      const existing = await prisma.domain.findUnique({ where: { host } })
-      if (existing) {
-        if (existing.workspaceId !== wsId) skippedDomains++
-        continue
-      }
-      await prisma.domain.create({
-        data: { host, isPrimary: Boolean(domainData.isPrimary), workspaceId: wsId },
-      })
-    }
-
-    // 分类与网址：overwrite 模式先清空该工作区内容；事务化保证删与写同成败
+    // 每个工作区整体一个事务：元数据 upsert、域名绑定、清空与内容写入同成败。
+    // 之前元数据/域名在事务外，内容导入失败会留下「元数据已写入但内容为空」的半成品
     await prisma.$transaction(async (tx: any) => {
+      let workspace = await tx.workspace.findUnique({
+        where: { slug: wsData.slug },
+      })
+      if (!workspace) {
+        workspace = await tx.workspace.create({
+          data: {
+            slug: wsData.slug,
+            name: wsData.name || wsData.slug,
+            description: wsData.description || null,
+            siteName: wsData.siteName || null,
+            siteDescription: wsData.siteDescription || null,
+            siteLogo: wsData.siteLogo || null,
+            favicon: wsData.favicon || null,
+            aboutContent: wsData.aboutContent || null,
+            isPublished: Boolean(wsData.isPublished),
+            order: wsData.order ?? 0,
+          },
+        })
+      } else if (mode === 'overwrite') {
+        workspace = await tx.workspace.update({
+          where: { id: workspace.id },
+          data: {
+            name: wsData.name || workspace.name,
+            description: wsData.description || null,
+            siteName: wsData.siteName || null,
+            siteDescription: wsData.siteDescription || null,
+            siteLogo: wsData.siteLogo || null,
+            favicon: wsData.favicon || null,
+            aboutContent: wsData.aboutContent || null,
+            isPublished: Boolean(wsData.isPublished),
+            order: wsData.order ?? workspace.order,
+          },
+        })
+      }
+      importedWorkspaces++
+      const wsId = workspace.id
+
+      // 域名绑定：冲突项跳过
+      for (const domainData of wsData.domains || []) {
+        const host = normalizeHost(domainData.host)
+        if (!host) continue
+        const existing = await tx.domain.findUnique({ where: { host } })
+        if (existing) {
+          if (existing.workspaceId !== wsId) skippedDomains++
+          continue
+        }
+        await tx.domain.create({
+          data: { host, isPrimary: Boolean(domainData.isPrimary), workspaceId: wsId },
+        })
+      }
+
+      // 分类与网址：overwrite 模式先清空该工作区内容
       if (mode === 'overwrite') {
-        const catIds = await getWorkspaceCategoryIds(wsId)
+        const catIds = (
+          await tx.category.findMany({
+            where: { workspaceId: wsId },
+            select: { id: true },
+          })
+        ).map((c: { id: string }) => c.id)
         if (catIds.length > 0) {
           await tx.site.deleteMany({
             where: { categoryId: { in: catIds } },
@@ -2468,7 +2510,7 @@ async function importFullBackup(
           skippedSites++
         })
       }
-    })
+    }, { timeout: 30_000, maxWait: 10_000 })
   }
 
   // 备份中的默认工作区标记恢复：清掉多默认
@@ -2512,16 +2554,26 @@ export async function importBookmarks(
   try {
     const { parseChromeBookmarks } = await import('./bookmarks')
     const parsed = parseChromeBookmarks(html)
+    // 覆盖导入的内容为空（如误传普通网页 HTML）时拒绝执行，防止清空工作区后导入 0 条
+    if (mode === 'overwrite' && parsed.categories.length === 0) {
+      return { success: false, error: "未从文件中解析出任何书签文件夹，已取消覆盖导入以保护现有数据" }
+    }
     // 书签导入归属当前后台选中的工作区
     const workspace = await getAdminWorkspace()
     const { slugify } = require('transliteration') as { slugify: (s: string) => string }
 
     // 整体事务化：overwrite 的清空与后续导入同成败，
-    // 中途失败（slug 冲突、连接抖动等）不再留下「旧数据已删、新数据只导一半」的不可逆状态
+    // 中途失败（slug 冲突、连接抖动等）不再留下「旧数据已删、新数据只导一半」的不可逆状态。
+    // 大书签文件逐条写入耗时可观，显式放大默认 5s 的事务超时
     const { importedCategories, skippedSites } = await prisma.$transaction(async (tx) => {
-      // 覆盖模式：仅清空当前工作区的数据
+      // 覆盖模式：仅清空当前工作区的数据（事务内用 tx 查询，避免事务外读取漏删并发新增）
       if (mode === 'overwrite') {
-        const workspaceCategoryIds = await getWorkspaceCategoryIds(workspace.id)
+        const workspaceCategoryIds = (
+          await tx.category.findMany({
+            where: { workspaceId: workspace.id },
+            select: { id: true },
+          })
+        ).map((category) => category.id)
         if (workspaceCategoryIds.length > 0) {
           await tx.site.deleteMany({
             where: { categoryId: { in: workspaceCategoryIds } },
@@ -2545,9 +2597,20 @@ export async function importBookmarks(
 
       // 导入分类和网站
       let skipped = 0
+      const batchSlugs = new Set<string>()
+      // 批次内 URL 去重：书签文件中同一站点常出现在多个文件夹
+      const seenUrls = new Set<string>()
       for (const categoryData of parsed.categories) {
-        // 生成分类 slug（中文转拼音）
-        const slug = slugify(categoryData.name)
+        // 生成分类 slug（中文转拼音）；同名文件夹 slug 冲突时追加序号，
+        // 否则撞 workspaceId+slug 唯一约束会让整个导入事务回滚
+        const baseSlug = slugify(categoryData.name)
+        let slug = baseSlug
+        let suffix = 2
+        while (batchSlugs.has(slug)) {
+          slug = `${baseSlug}-${suffix}`
+          suffix++
+        }
+        batchSlugs.add(slug)
 
         // 检查分类是否已存在（追加模式，限定当前工作区）
         let category
@@ -2586,13 +2649,30 @@ export async function importBookmarks(
             skipped++
             continue
           }
+          // 去重：批次内已导入过、或 append 模式下该分类已有同 URL 站点时跳过
+          if (seenUrls.has(siteData.url)) {
+            skipped++
+            continue
+          }
+          if (mode === 'append') {
+            const dup = await tx.site.findFirst({
+              where: { url: siteData.url, categoryId: category.id },
+              select: { id: true },
+            })
+            if (dup) {
+              skipped++
+              continue
+            }
+          }
+          seenUrls.add(siteData.url)
           currentSiteOrder++
           await tx.site.create({
             data: {
               name: siteData.name,
               url: siteData.url,
               description: siteData.url, // 使用URL作为描述
-              iconUrl: siteData.icon || null,
+              // 图标地址仅接受 http/https，防止 javascript: 等协议入库
+              iconUrl: siteData.icon && isSafeSiteUrl(siteData.icon) ? siteData.icon : null,
               categoryId: category.id,
               order: currentSiteOrder,
               isPublished: true,
@@ -2602,7 +2682,7 @@ export async function importBookmarks(
       }
 
       return { importedCategories: parsed.categories.length, skippedSites: skipped }
-    })
+    }, { timeout: 30_000, maxWait: 10_000 })
 
     // 重新验证缓存
     revalidatePath('/', 'layout')

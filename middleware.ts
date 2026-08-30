@@ -7,6 +7,10 @@ import {
 } from "@/lib/session"
 
 // 定义受保护的路由
+// 精确匹配 /admin 本身与 /admin/ 子路径：避免把 /administrator 等无关前缀路径
+// 也重定向进登录页
+const isAdminPath = (pathname: string) =>
+  pathname === "/admin" || pathname.startsWith("/admin/")
 const protectedRoutes = ["/admin"]
 const authRoutes = ["/admin/login"]
 
@@ -67,7 +71,10 @@ function buildWorkspaceHeaders(request: NextRequest): Headers {
     headers.set("x-workspace-host", rawHost.toLowerCase())
   }
 
-  // 开发/预览模式：?__workspace=slug 模拟子域名访问指定工作区
+  // 开发/预览模式：?__workspace=slug 模拟子域名访问指定工作区。
+  // 无论如何先删除客户端自带的同名头（HTTP 头可被任意伪造）：生产环境预览关闭时
+  // 若不删除，伪造该头即可绕过域名绑定查看任意已发布工作区的内容
+  headers.delete("x-workspace-preview")
   if (workspacePreviewEnabled) {
     const previewSlug = request.nextUrl.searchParams.get("__workspace")
     if (previewSlug) {
@@ -113,10 +120,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ---- 页面路由 ----
-  // 检查是否是受保护的路由
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  )
+  const isProtectedRoute = isAdminPath(pathname)
 
   // 检查是否是认证路由（登录页）
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))

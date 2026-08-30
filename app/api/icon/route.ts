@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { mkdir, readFile, writeFile } from "fs/promises"
+import { mkdir, readdir, readFile, rm, writeFile } from "fs/promises"
 import path from "path"
 import crypto from "crypto"
 
@@ -109,6 +109,72 @@ async function writeDiskCache(hash: string, entry: CacheEntry) {
   }
 }
 
+// 磁盘缓存上限守护：该端点公开且每个新 key 都会写一对文件，无清理时磁盘会被
+// 恶意枚举请求慢慢写满。策略：每 N 次写入触发一次异步扫描，删除已过期条目；
+// 超出硬上限时按过期时间从新到旧直接淘汰（近似 LRU——读命中会续命 expires）
+let diskWritesSinceSweep = 0
+let diskSweepRunning = false
+const DISK_SWEEP_INTERVAL = 200
+const DISK_CACHE_MAX_ENTRIES = 20_000
+
+async function sweepDiskCache(force = false): Promise<void> {
+  if (diskSweepRunning) return
+  diskSweepRunning = true
+  try {
+    const files = await readdir(CACHE_DIR)
+    const now = Date.now()
+    const metas = files.filter((f) => f.endsWith(".json"))
+    const expired: string[] = []
+    const survivors: Array<{ hash: string; expires: number }> = []
+    await Promise.all(
+      metas.map(async (file) => {
+        try {
+          const meta = JSON.parse(await readFile(path.join(CACHE_DIR, file), "utf-8")) as { expires: number; ok: boolean }
+          const hash = file.slice(0, -".json".length)
+          if (meta.expires <= now) {
+            expired.push(hash)
+          } else {
+            survivors.push({ hash, expires: meta.expires })
+          }
+        } catch {
+          expired.push(file.slice(0, -".json".length))
+        }
+      })
+    )
+    // 超出硬上限：按过期时间升序（最先过期的先淘汰）裁剪到上限以内
+    let evicted = expired
+    if (survivors.length > DISK_CACHE_MAX_ENTRIES) {
+      survivors.sort((a, b) => a.expires - b.expires)
+      const excess = survivors.slice(0, survivors.length - DISK_CACHE_MAX_ENTRIES)
+      evicted = expired.concat(excess.map((s) => s.hash))
+    }
+    await Promise.all(
+      evicted.map(async (hash) => {
+        await rm(path.join(CACHE_DIR, `${hash}.bin`), { force: true })
+        await rm(path.join(CACHE_DIR, `${hash}.json`), { force: true })
+      })
+    )
+    // 顺带清理孤儿 .bin（无对应 .json 元数据）
+    if (force) {
+      const metaSet = new Set(files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length)))
+      const orphanBins = files.filter((f) => f.endsWith(".bin") && !metaSet.has(f.slice(0, -".bin".length)))
+      await Promise.all(orphanBins.map((f) => rm(path.join(CACHE_DIR, f), { force: true })))
+    }
+  } catch {
+    // 清理失败不影响主流程
+  } finally {
+    diskSweepRunning = false
+  }
+}
+
+function scheduleDiskSweep() {
+  diskWritesSinceSweep += 1
+  if (diskWritesSinceSweep >= DISK_SWEEP_INTERVAL) {
+    diskWritesSinceSweep = 0
+    void sweepDiskCache()
+  }
+}
+
 function failureEntry(): CacheEntry {
   return {
     body: new Uint8Array(0),
@@ -134,6 +200,8 @@ async function fetchUpstream(url: string): Promise<{ body: Uint8Array<ArrayBuffe
 
     const contentType = res.headers.get("content-type") || "image/png"
     if (!contentType.startsWith("image/") && !contentType.includes("octet-stream")) return null
+    // SVG 可内嵌脚本：以本站同源回显会造成存储型 XSS，上游抓到一律拒绝
+    if (contentType.includes("svg")) return null
 
     const buffer = new Uint8Array(await res.arrayBuffer())
     if (buffer.byteLength === 0) return null
@@ -190,6 +258,7 @@ async function getEntry(rawKey: string, resolver: () => Promise<CacheEntry>): Pr
       if (entry.ok || Math.random() < 0.5) {
         // 成功必写盘, 失败按概率写盘做负缓存
         await writeDiskCache(rawKey, entry)
+        scheduleDiskSweep()
       }
       return entry
     })
@@ -215,6 +284,7 @@ function toResponse(entry: CacheEntry): NextResponse {
       "Content-Type": entry.contentType,
       "Cache-Control": "public, max-age=2592000, immutable",
       ETag: `"${entry.etag}"`,
+      "X-Content-Type-Options": "nosniff",
     },
   })
 }

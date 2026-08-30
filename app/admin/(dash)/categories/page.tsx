@@ -98,6 +98,17 @@ export default function AdminCategoriesPage() {
     try {
       const result = await getCategoriesWithPagination({ page: currentPage, pageSize: 20 })
       if (result.success && result.data) {
+        // 删除末页最后一条后页码越界：clamp 回最后一个有效页重新拉取，
+        // 避免「空列表 + 分页控件隐藏」的死端
+        if (
+          result.data.length === 0 &&
+          result.pagination &&
+          result.pagination.totalPages >= 1 &&
+          currentPage > result.pagination.totalPages
+        ) {
+          await loadCategories(result.pagination.totalPages)
+          return
+        }
         // Sort by order ascending
         const sorted = [...result.data].sort((a, b) => a.order - b.order)
         setCategories(sorted)

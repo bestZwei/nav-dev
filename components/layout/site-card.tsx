@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
@@ -116,6 +116,13 @@ function SiteIcon({
 
 export function SiteCard({ site, density: propDensity }: SiteCardProps) {
   const [copied, setCopied] = useState(false)
+  // 复制提示的复位计时器：卸载时清理，避免卸载后的延迟 setState
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    }
+  }, [])
   const [detailOpen, setDetailOpen] = useState(false)
   const { service } = useFaviconService()
   const { density: contextDensity } = useCardDensity()
@@ -156,12 +163,18 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
     }
   }
 
-  const handleCopy = (e: React.MouseEvent) => {
+  const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    navigator.clipboard.writeText(site.url)
+    try {
+      // 非 HTTPS 非 localhost 环境 navigator.clipboard 为 undefined
+      await navigator.clipboard.writeText(site.url)
+    } catch {
+      return
+    }
     setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    copyTimerRef.current = setTimeout(() => setCopied(false), 1800)
   }
 
   // ================= 紧凑模式 (Compact Mode) =================

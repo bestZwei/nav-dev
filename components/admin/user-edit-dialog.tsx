@@ -114,7 +114,7 @@ export function UserEditDialog({
     try {
       const updateData: {
         email?: string
-        name?: string
+        name?: string | null
         avatar?: string
       } = {}
 
@@ -123,7 +123,9 @@ export function UserEditDialog({
       }
 
       if (name !== userName) {
-        updateData.name = name || undefined
+        // 显式置空发 null（列可空）：发 undefined 会被 Prisma 视为「不更新」，
+        // 出现「提示成功但姓名未变」的假成功
+        updateData.name = name.trim() || null
       }
 
       if (avatar) {

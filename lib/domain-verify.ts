@@ -95,7 +95,8 @@ async function resolveHostAddresses(host: string): Promise<string[] | null> {
 // 字面量 + 解析结果双重校验；抛出 "private" 表示命中内网地址。
 // 解析结果含任一私网地址即拒绝：公网域名不会解析出内网地址，
 // 混合记录（公网+私网）可借轮询把请求导向内网，不能只拒绝"全部为私网"的情况
-async function assertPublicHost(host: string): Promise<void> {
+// 供 domain-verify 之外的出站通道复用（如插件 webhook），保证 SSRF 防护口径一致
+export async function assertPublicHost(host: string): Promise<void> {
   if (!isPublicHostLiteral(host)) {
     throw new Error("private")
   }

@@ -13,27 +13,30 @@ export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7 // 7 days
 // 旧版明文 Cookie：登录/登出/中间件流转时统一清理，防止脏会话残留
 export const LEGACY_COOKIE_NAMES = ["user_id", "user_role"]
 
-const INSECURE_FALLBACK_SECRET = "conan-nav-insecure-fallback-secret"
-
+// 未配置 SESSION_SECRET 时的回退方案：next.config.js 在构建期随机生成，
+// 经 env 内联进 Edge middleware 与 Node runtime 的产物（不进源码仓库）。
+// 固定常量写死在源码曾导致会话可被知晓开源代码的攻击者伪造（严重漏洞）；
+// 进程内随机会导致两个 runtime 密钥不一致、验签必然失败，均不可行。
+// 代价：镜像重建后需重新登录。
 let secretWarned = false
+
+function getFallbackSecret(): string {
+  return process.env.FALLBACK_SESSION_SECRET || ""
+}
 
 function getSessionSecret(): string {
   const configured =
     process.env.SESSION_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim()
   if (configured) return configured
 
-  // 未配置时回退到内置密钥并强警告。
-  // 曾经尝试生产环境直接 throw，但在 Vercel / Cloudflare Workers 等平台部署
-  // （无 entrypoint 兜底注入）会让登录直接 500、后台不可用；回退密钥的风险
-  // 是会话可被知晓此常量的攻击者伪造，对纯浏览型部署可接受，且警告日志
-  // 持续提示配置。配置方法：openssl rand -base64 32 设置为环境变量 SESSION_SECRET。
   if (!secretWarned) {
     secretWarned = true
     console.warn(
-      "[session] 未配置 SESSION_SECRET（或 NEXTAUTH_SECRET），会话签名使用内置回退密钥，强度受限。生产部署请务必配置 SESSION_SECRET（openssl rand -base64 32）。"
+      "[session] 未配置 SESSION_SECRET（或 NEXTAUTH_SECRET），会话签名使用构建期生成的回退密钥：" +
+        "重建镜像/产物后所有用户需重新登录。生产部署请配置 SESSION_SECRET（openssl rand -base64 32）。"
     )
   }
-  return INSECURE_FALLBACK_SECRET
+  return getFallbackSecret()
 }
 
 interface SessionPayload {

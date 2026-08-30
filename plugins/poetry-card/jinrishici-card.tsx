@@ -27,8 +27,17 @@ interface JinrishiciAPI {
   ): void
 }
 
-// 使用类型断言而不是 declare module
-const jinrishici = require("jinrishici") as JinrishiciAPI
+// 按需动态 import：该包为 CJS 模块，客户端组件顶层 require 在 Turbopack 下
+// 会让整个插件 bundle 求值失败；动态 import 在加载线程中执行且失败可捕获
+async function loadPoetry(success: (result: JinrishiciResult) => void, error: (err: Error) => void) {
+  try {
+    const mod = (await import("jinrishici")) as unknown as { default?: JinrishiciAPI } & JinrishiciAPI
+    const api = (mod.default ?? mod) as JinrishiciAPI
+    api.load(success, error)
+  } catch (err) {
+    error(err instanceof Error ? err : new Error(String(err)))
+  }
+}
 
 interface JinrishiciCardProps {
   onClose?: () => void
@@ -72,7 +81,7 @@ export function JinrishiciCard({ onClose }: JinrishiciCardProps) {
     isLoading = true
     setLoading(true)
 
-    jinrishici.load(
+    loadPoetry(
       (result) => {
         if (isMounted) {
           poetryCache = result.data // 缓存结果

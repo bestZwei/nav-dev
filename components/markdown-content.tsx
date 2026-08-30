@@ -76,7 +76,8 @@ export function MarkdownContent({ content }: { content: string }) {
           img: ({ src, alt }) => {
             const srcStr = typeof src === "string" ? src : ""
             const key = srcStr
-            if (failedImages[key]) {
+            // 空地址（如 Markdown 的 ![]()）直接按失败占位渲染，避免 next/image 抛错
+            if (!srcStr || failedImages[key]) {
               return (
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border/80 bg-muted/20 px-2.5 py-1.5 text-xs text-muted-foreground">
                   <ImageOff className="h-3.5 w-3.5" />

@@ -68,7 +68,8 @@
     "notFoundTitle": "No matching sites",
     "notFoundDesc": "No sites matched \"{query}\". Try different or shorter keywords.",
     "foundResults": "{count} results found",
-    "tryOtherKeywords": "Try other keywords"
+    "tryOtherKeywords": "Try other keywords",
+    "keywordLabel": "Keyword: "
   },
   "home": {
     "noSitesInCategory": "No sites yet",
@@ -169,7 +170,8 @@
       "rangeAll": "All time",
       "range3months": "Last 3 months",
       "range30days": "Last 30 days",
-      "rangeDays": "Last {days} days"
+      "rangeDays": "Last {days} days",
+      "loadError": "Failed to load statistics. Please try again later."
     },
     "chart": {
       "frequencyTitle": "Visit frequency",
