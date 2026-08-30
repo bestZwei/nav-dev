@@ -162,6 +162,20 @@ export default function AdminDashboardPage() {
           fetch("/api/admin/stats/category-distribution"),
         ])
 
+        // 非 2xx 响应必须显式呈现：safeJson 会把它们静默转为 null 再回退 0 值，
+        // 仅靠 catch 只能覆盖网络层异常，覆盖不了接口返回 4xx/5xx 的情况
+        const hasFailedResponse = [
+          sitesRes,
+          categoriesRes,
+          usersRes,
+          visitsRes,
+          frequencyRes,
+          todayRes,
+          contentRes,
+          distributionRes,
+        ].some((res) => res !== null && !res.ok)
+        if (hasFailedResponse) setLoadError(true)
+
         // 规范化各响应：字段缺失或类型不符时回退默认值，保证渲染层拿到的结构完整
         const sitesData = ((await safeJson(sitesRes)) ?? {}) as { total?: number }
         const categoriesData = ((await safeJson(categoriesRes)) ?? {}) as { total?: number }

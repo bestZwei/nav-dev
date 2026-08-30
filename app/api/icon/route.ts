@@ -116,8 +116,11 @@ let diskWritesSinceSweep = 0
 let diskSweepRunning = false
 const DISK_SWEEP_INTERVAL = 200
 const DISK_CACHE_MAX_ENTRIES = 20_000
+// 元数据读取并发上限：无上限的 Promise.all 在上万条目时会耗尽 fd（EMFILE），
+// 且读失败被误判为「已过期」会造成成批有效缓存被误删
+const SWEEP_READ_CONCURRENCY = 64
 
-async function sweepDiskCache(force = false): Promise<void> {
+async function sweepDiskCache(): Promise<void> {
   if (diskSweepRunning) return
   diskSweepRunning = true
   try {
@@ -125,22 +128,27 @@ async function sweepDiskCache(force = false): Promise<void> {
     const now = Date.now()
     const metas = files.filter((f) => f.endsWith(".json"))
     const expired: string[] = []
+    const unreadable: string[] = []
     const survivors: Array<{ hash: string; expires: number }> = []
-    await Promise.all(
-      metas.map(async (file) => {
-        try {
-          const meta = JSON.parse(await readFile(path.join(CACHE_DIR, file), "utf-8")) as { expires: number; ok: boolean }
+    for (let i = 0; i < metas.length; i += SWEEP_READ_CONCURRENCY) {
+      await Promise.all(
+        metas.slice(i, i + SWEEP_READ_CONCURRENCY).map(async (file) => {
           const hash = file.slice(0, -".json".length)
-          if (meta.expires <= now) {
-            expired.push(hash)
-          } else {
-            survivors.push({ hash, expires: meta.expires })
+          try {
+            const meta = JSON.parse(await readFile(path.join(CACHE_DIR, file), "utf-8")) as { expires: number }
+            if (meta.expires <= now) {
+              expired.push(hash)
+            } else {
+              survivors.push({ hash, expires: meta.expires })
+            }
+          } catch {
+            // 读取/解析失败（EMFILE、与并发写入的竞态等）：跳过，本轮不删，
+            // 下轮 sweep 自然重试——宁可多留一条也不能误删有效缓存
+            unreadable.push(hash)
           }
-        } catch {
-          expired.push(file.slice(0, -".json".length))
-        }
-      })
-    )
+        })
+      )
+    }
     // 超出硬上限：按过期时间升序（最先过期的先淘汰）裁剪到上限以内
     let evicted = expired
     if (survivors.length > DISK_CACHE_MAX_ENTRIES) {
@@ -148,17 +156,13 @@ async function sweepDiskCache(force = false): Promise<void> {
       const excess = survivors.slice(0, survivors.length - DISK_CACHE_MAX_ENTRIES)
       evicted = expired.concat(excess.map((s) => s.hash))
     }
-    await Promise.all(
-      evicted.map(async (hash) => {
-        await rm(path.join(CACHE_DIR, `${hash}.bin`), { force: true })
-        await rm(path.join(CACHE_DIR, `${hash}.json`), { force: true })
-      })
-    )
-    // 顺带清理孤儿 .bin（无对应 .json 元数据）
-    if (force) {
-      const metaSet = new Set(files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length)))
-      const orphanBins = files.filter((f) => f.endsWith(".bin") && !metaSet.has(f.slice(0, -".bin".length)))
-      await Promise.all(orphanBins.map((f) => rm(path.join(CACHE_DIR, f), { force: true })))
+    for (let i = 0; i < evicted.length; i += SWEEP_READ_CONCURRENCY) {
+      await Promise.all(
+        evicted.slice(i, i + SWEEP_READ_CONCURRENCY).map(async (hash) => {
+          await rm(path.join(CACHE_DIR, `${hash}.bin`), { force: true })
+          await rm(path.join(CACHE_DIR, `${hash}.json`), { force: true })
+        })
+      )
     }
   } catch {
     // 清理失败不影响主流程

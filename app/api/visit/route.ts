@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "siteId is required" }, { status: 400 })
     }
 
-    if (isDuplicateVisit(`${getClientIp(request)}:${siteId}`)) {
+    // 去重键依赖客户端 IP：无法取得 IP（unknown）时跳过去重，
+    // 避免无 XFF 的部署里全体访客共享一个键、合法访问被合并漏计
+    const clientIp = getClientIp(request)
+    if (clientIp !== "unknown" && isDuplicateVisit(`${clientIp}:${siteId}`)) {
       // 去重命中按成功静默返回，调用方（前台埋点）无需感知
       return NextResponse.json({ success: true, deduplicated: true })
     }

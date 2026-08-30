@@ -154,6 +154,9 @@ export async function firePluginWebhook(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ event, pluginId: id, payload }),
         signal: controller.signal,
+        // 不跟随重定向：30x 可把请求引向内网地址绕过上方 host 校验；
+        // webhook 端点本就不应重定向，3xx 视为投递失败
+        redirect: "manual",
       })
         .catch((error) => {
           logger.warn(`[plugins] webhook ${event} for ${id} failed:`, error)
