@@ -58,7 +58,8 @@
     "noDescription": "暂无描述",
     "copied": "已复制网址",
     "copy": "复制网址",
-    "iconAlt": "{name} 图标"
+    "iconAlt": "{name} 图标",
+    "copyFailed": "复制失败，请手动复制"
   },
   "search": {
     "resultsTitle": "搜索结果",
@@ -614,7 +615,9 @@
       "passwordChangedDesc": "用户密码已成功更新",
       "changeFailed": "修改失败",
       "changeFailedDesc": "无法修改密码，请稍后重试",
-      "confirmChange": "确认修改"
+      "confirmChange": "确认修改",
+      "passwordSavedProfileFailed": "密码已修改，但资料更新失败",
+      "passwordSavedProfileFailedDesc": "新密码已生效；请重新打开编辑窗口更新资料（再次保存需使用新密码作为当前密码）"
     },
     "workspaces": {
       "title": "工作区管理",

@@ -58,7 +58,8 @@
     "noDescription": "설명 없음",
     "copied": "URL 복사됨",
     "copy": "URL 복사",
-    "iconAlt": "{name} 아이콘"
+    "iconAlt": "{name} 아이콘",
+    "copyFailed": "복사에 실패했습니다. 수동으로 복사해 주세요."
   },
   "search": {
     "resultsTitle": "검색 결과",
@@ -614,7 +615,9 @@
       "passwordChangedDesc": "비밀번호가 업데이트되었습니다",
       "changeFailed": "변경 실패",
       "changeFailedDesc": "비밀번호를 변경할 수 없습니다. 잠시 후 다시 시도해 주세요",
-      "confirmChange": "확인"
+      "confirmChange": "확인",
+      "passwordSavedProfileFailed": "비밀번호는 변경되었지만 프로필 업데이트에 실패했습니다",
+      "passwordSavedProfileFailedDesc": "새 비밀번호가 적용되었습니다. 편집을 다시 열어 프로필을 업데이트하세요(다시 저장할 때 현재 비밀번호로 새 비밀번호를 사용하세요)."
     },
     "workspaces": {
       "title": "워크스페이스 관리",

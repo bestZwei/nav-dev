@@ -324,8 +324,11 @@ export async function deleteWorkspace(id: string) {
       return { success: false, error: "工作区下仍有分类，请先删除或转移其内容" }
     }
 
-    await prisma.domain.deleteMany({ where: { workspaceId: id } })
-    await prisma.workspace.delete({ where: { id } })
+    // 事务化：清域名与删工作区同成败，第二步失败不再留下「域名已丢、工作区仍在」
+    await prisma.$transaction(async (tx) => {
+      await tx.domain.deleteMany({ where: { workspaceId: id } })
+      await tx.workspace.delete({ where: { id } })
+    })
     revalidatePath("/", "layout")
     revalidatePath("/admin/workspaces")
     return { success: true }
@@ -386,6 +389,15 @@ export async function addWorkspaceDomain(workspaceId: string, rawHost: string) {
         success: false,
         error: `该域名已绑定到工作区「${owner?.name || existing.workspaceId}」`,
       }
+    }
+
+    // 目标工作区必须存在：内存模式无外键约束，否则会创建指向不存在工作区的孤儿域名
+    const targetWorkspace = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { id: true },
+    })
+    if (!targetWorkspace) {
+      return { success: false, error: "工作区不存在或已被删除" }
     }
 
     const domain = await prisma.domain.create({
@@ -1251,11 +1263,23 @@ export async function updateSite(id: string, data: {
       return { success: false, error: validationError }
     }
 
-    const publishedBefore = data.isPublished !== undefined
-      ? (await prisma.site.findUnique({ where: { id }, select: { isPublished: true } }))?.isPublished ?? null
-      : null
+    // 发布状态初值在事务内读取：与最终 update 同一快照，
+    // 并发 toggle 时不会基于过期状态漏发/双发 webhook
+    let publishedBefore: boolean | null = null
+    // 迁移分类时记录旧分类 slug：更新后新旧分类页缓存都要失效
+    let oldCategorySlug: string | null = null
 
     const site = await prisma.$transaction(async (tx) => {
+      if (data.isPublished !== undefined) {
+        publishedBefore = (await tx.site.findUnique({ where: { id }, select: { isPublished: true } }))?.isPublished ?? null
+      }
+      if (data.categoryId !== undefined) {
+        const oldSite = await tx.site.findUnique({
+          where: { id },
+          select: { category: { select: { slug: true } } },
+        })
+        oldCategorySlug = oldSite?.category?.slug ?? null
+      }
       const updateData: Prisma.SiteUpdateInput = {}
       if (data.name !== undefined) updateData.name = data.name
       if (data.url !== undefined) updateData.url = data.url
@@ -1340,6 +1364,10 @@ export async function updateSite(id: string, data: {
 
     revalidatePath("/admin/sites")
     revalidatePath("/")
+    // 分类迁移时新旧两个分类页都要失效（与 updateCategory 的 slug 变更口径一致）
+    if (oldCategorySlug && oldCategorySlug !== site.category?.slug) {
+      revalidatePath(`/category/${oldCategorySlug}`)
+    }
     revalidatePath(`/category/${site.category?.slug || ''}`)
 
     // 事件总线：发布状态变化时通知订阅插件（false→true 发布 / true→false 下架）
@@ -1440,6 +1468,7 @@ export async function toggleSitePublish(id: string) {
     })
     revalidatePath("/admin/sites")
     revalidatePath("/")
+    revalidatePath(`/category/${site.category?.slug || ''}`)
 
     // 事件总线：发布状态翻转时通知订阅插件
     await firePluginWebhook(site.isPublished ? "sitePublished" : "siteUnpublished", {

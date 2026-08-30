@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
+import { toast } from "sonner"
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
@@ -170,6 +171,8 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
       // 非 HTTPS 非 localhost 环境 navigator.clipboard 为 undefined
       await navigator.clipboard.writeText(site.url)
     } catch {
+      // 失败要显式反馈：静默 return 会让按钮点击像「没反应」
+      toast.error(t("copyFailed"))
       return
     }
     setCopied(true)

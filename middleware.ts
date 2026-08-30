@@ -64,7 +64,10 @@ function buildWorkspaceHeaders(request: NextRequest): Headers {
   const headers = new Headers(request.headers)
 
   // Host 提取：x-forwarded-host 优先（反代/Cloudflare 场景），回退 host；
-  // 去端口、转小写由应用层 normalizeHost 统一完成，这里保留原始值传递
+  // 去端口、转小写由应用层 normalizeHost 统一完成，这里保留原始值传递。
+  // 与 preview 头对称：先无条件删除客户端自带的同名头（HTTP 头可被伪造），
+  // 本端拿不到 Host 时不能放行客户端注入的值
+  headers.delete("x-workspace-host")
   const rawHost =
     request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
     request.headers.get("host") ||

@@ -111,6 +111,8 @@ export function UserEditDialog({
     }
 
     setLoading(true)
+    // 密码是否已修改（catch 分支也需要读取，用于部分成功的提示分流）
+    let passwordChanged = false
     try {
       const updateData: {
         email?: string
@@ -148,6 +150,7 @@ export function UserEditDialog({
           })
           return
         }
+        passwordChanged = true
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -168,15 +171,29 @@ export function UserEditDialog({
           onUpdate(result.data)
         }
         onOpenChange(false)
+      } else if (passwordChanged) {
+        // 部分成功必须如实告知：密码已生效但资料未更新，
+        // 若留在弹窗内重试，改密通道会用旧密码校验而报「当前密码不正确」
+        toast.warning(t("passwordSavedProfileFailed"), {
+          description: t("passwordSavedProfileFailedDesc"),
+        })
+        onOpenChange(false)
       } else {
         toast.error(t("updateFailed"), {
           description: result.error || t("updateFailedDesc"),
         })
       }
     } catch (error) {
-      toast.error(t("updateFailed"), {
-        description: tc("retryLater"),
-      })
+      if (passwordChanged) {
+        toast.warning(t("passwordSavedProfileFailed"), {
+          description: t("passwordSavedProfileFailedDesc"),
+        })
+        onOpenChange(false)
+      } else {
+        toast.error(t("updateFailed"), {
+          description: tc("retryLater"),
+        })
+      }
     } finally {
       setLoading(false)
     }

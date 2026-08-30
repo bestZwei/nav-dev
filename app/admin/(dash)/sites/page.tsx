@@ -225,7 +225,14 @@ export default function AdminSitesPage() {
   }
 
   // 筛选条件改变时重新加载
+  // 跳过挂载时由初始依赖触发的那一次：挂载 effect 已做过首屏加载，
+  // 否则每次进入页面会对同一列表发起两次完全相同的请求
+  const isFirstFilterRun = useRef(true)
   useEffect(() => {
+    if (isFirstFilterRun.current) {
+      isFirstFilterRun.current = false
+      return
+    }
     loadSitesRef.current(1)
   }, [filterCategory, filterStatus, filterSubmitter, sortBy, sortDir])
 
