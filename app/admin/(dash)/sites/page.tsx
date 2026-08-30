@@ -130,6 +130,17 @@ export default function AdminSitesPage() {
         sortDir,
       })
       if (result.success && result.data) {
+        // 删除末页最后一条/筛选缩小结果后页码越界：clamp 回最后一个有效页重新拉取，
+        // 避免「空列表 + 分页控件隐藏」的死端（与分类页口径一致）
+        if (
+          result.data.length === 0 &&
+          result.pagination &&
+          result.pagination.totalPages >= 1 &&
+          currentPage > result.pagination.totalPages
+        ) {
+          await loadSites(result.pagination.totalPages, currentPageSize)
+          return
+        }
         setSites(result.data)
         setPagination(result.pagination || null)
         setPage(result.pagination?.page || 1)

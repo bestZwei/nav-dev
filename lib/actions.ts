@@ -2396,7 +2396,7 @@ export async function importData(
           skippedSites++
         })
       }
-    })
+    }, { timeout: 30_000, maxWait: 10_000 })
 
     // 重新验证缓存
     revalidatePath('/', 'layout')
@@ -2582,9 +2582,11 @@ export async function importBookmarks(
   try {
     const { parseChromeBookmarks } = await import('./bookmarks')
     const parsed = parseChromeBookmarks(html)
-    // 覆盖导入的内容为空（如误传普通网页 HTML）时拒绝执行，防止清空工作区后导入 0 条
-    if (mode === 'overwrite' && parsed.categories.length === 0) {
-      return { success: false, error: "未从文件中解析出任何书签文件夹，已取消覆盖导入以保护现有数据" }
+    // 覆盖导入的内容为空（如误传普通网页 HTML，或文件夹里没有任何合法 URL）时拒绝执行，
+    // 防止清空工作区后导入 0 条——与 importData 的空内容保护口径一致
+    const totalBookmarkSites = parsed.categories.reduce((sum, c) => sum + c.sites.length, 0)
+    if (mode === 'overwrite' && (parsed.categories.length === 0 || totalBookmarkSites === 0)) {
+      return { success: false, error: "未从文件中解析出任何可导入的书签，已取消覆盖导入以保护现有数据" }
     }
     // 书签导入归属当前后台选中的工作区
     const workspace = await getAdminWorkspace()

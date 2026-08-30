@@ -75,18 +75,20 @@ export async function recordVisit(siteId: string, request?: Request) {
 export async function getVisitStats(days: number = 30, limit: number = 10) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
-  await assertPluginEnabled(PLUGIN_ID)
   try {
-    // 参数 clamp：NaN/负数会退化为全表扫描，超大值拖垮 DB
-    const safeDays = clampInt(days, 1, 365, 30)
-    const safeLimit = clampInt(limit, 1, 100, 10)
+    // 插件守卫在 try 内：PluginDisabledError 转为业务失败而非逸出成 500
+    await assertPluginEnabled(PLUGIN_ID)
+    // 参数 clamp：days/limit 为 0 表示「不限」（前端"全部"选项），
+    // NaN/负数回退默认值——防退化全表扫描的同时保留全量语义
+    const safeDays = clampInt(days, 0, 365, 30)
+    const safeLimit = clampInt(limit, 0, 100, 10)
     const topSites = await prisma.visit.groupBy({
       by: ['siteId'],
-      where: {
+      where: safeDays > 0 ? {
         visitedAt: {
           gte: new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000),
         },
-      },
+      } : undefined,
       _count: {
         id: true,
       },
@@ -95,7 +97,7 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
           id: 'desc',
         },
       },
-      take: safeLimit,
+      take: safeLimit > 0 ? safeLimit : undefined,
     })
 
     const siteIds = topSites.map(s => s.siteId)
@@ -117,11 +119,11 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
     })
 
     const totalVisits = await prisma.visit.count({
-      where: {
+      where: safeDays > 0 ? {
         visitedAt: {
           gte: new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000),
         },
-      },
+      } : undefined,
     })
 
     return {
@@ -141,17 +143,16 @@ export async function getVisitStats(days: number = 30, limit: number = 10) {
 export async function getVisitFrequency(days: number = 30) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
-  await assertPluginEnabled(PLUGIN_ID)
   try {
-    const safeDays = clampInt(days, 1, 365, 30)
-    const startDate = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000)
-
+    // 插件守卫在 try 内；days=0 表示「全部数据」（前端"全部"选项）
+    await assertPluginEnabled(PLUGIN_ID)
+    const safeDays = clampInt(days, 0, 365, 30)
     const visits = await prisma.visit.findMany({
-      where: {
+      where: safeDays > 0 ? {
         visitedAt: {
-          gte: startDate,
+          gte: new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000),
         },
-      },
+      } : undefined,
       select: {
         visitedAt: true,
       },
@@ -194,8 +195,9 @@ export async function getVisitFrequency(days: number = 30) {
 export async function getTodayVisitStats() {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
-  await assertPluginEnabled(PLUGIN_ID)
   try {
+    // 插件守卫在 try 内：PluginDisabledError 转为业务失败而非逸出成 500
+    await assertPluginEnabled(PLUGIN_ID)
     const now = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const yesterdayStart = new Date(todayStart)

@@ -154,9 +154,18 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
     }
   }, [open, enableSiteDetail, capability])
 
-  // 编辑模式：打开时拉取详情数据回填（Markdown 与截图）
+  // 编辑模式：打开时拉取详情数据回填（Markdown 与截图）。
+  // detailLoad 记录回填状态："loading" 未完成 / "ok" 成功 / "failed" 失败。
+  // 提交时仅 "ok" 才携带截图与详情内容——回填失败/未完成时提交空列表
+  // 会让 updateSite 的增量 diff 清空站点全部已有截图（不可逆数据丢失）
+  const [detailLoad, setDetailLoad] = useState<"ok" | "loading" | "failed">("ok")
+  const detailLoadTokenRef = useRef("")
+
   useEffect(() => {
     if (mode === "edit" && site && open) {
+      const siteId = site.id
+      detailLoadTokenRef.current = siteId
+      setDetailLoad("loading")
       setFormData({
         name: site.name,
         url: site.url,
@@ -170,10 +179,15 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
       setMdView("edit")
       setScreenshots([])
       // 按需拉取详情内容
-      fetch(`/api/sites/${site.id}/detail`)
+      fetch(`/api/sites/${siteId}/detail`)
         .then(res => (res.ok ? res.json() : null))
         .then(data => {
-          if (!data) return
+          // 竞态防护：仅接受当前打开站点的响应（快速切换站点时旧响应作废）
+          if (detailLoadTokenRef.current !== siteId) return
+          if (!data) {
+            setDetailLoad("failed")
+            return
+          }
           setFormData(prev => ({ ...prev, detailContent: data.detailContent || "" }))
           setScreenshots(
             (data.screenshots || []).map((shot: { id: string; source: string; displayUrl: string }) =>
@@ -193,11 +207,15 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
                   }
             )
           )
+          setDetailLoad("ok")
         })
         .catch(() => {
-          // 拉取失败不阻塞基本信息编辑
+          // 拉取失败不阻塞基本信息编辑；但详情数据视为未知，提交时不得携带空 diff
+          if (detailLoadTokenRef.current === siteId) setDetailLoad("failed")
         })
     } else if (mode === "create") {
+      detailLoadTokenRef.current = ""
+      setDetailLoad("ok")
       setFormData({
         name: "",
         url: "",
@@ -322,8 +340,10 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
         categoryId: formData.categoryId,
         isPublished: formData.isPublished,
         isPinned: formData.isPinned,
-        detailContent: enableSiteDetail ? formData.detailContent : undefined,
-        screenshots: enableSiteDetail ? screenshotInputs : undefined,
+        // 详情数据仅在回填成功后提交：回填中/失败时置 undefined，
+        // updateSite 会保留服务端现值，避免空列表 diff 清空已有截图
+        detailContent: enableSiteDetail && detailLoad === "ok" ? formData.detailContent : undefined,
+        screenshots: enableSiteDetail && detailLoad === "ok" ? screenshotInputs : undefined,
       }
 
       const result = mode === "create"

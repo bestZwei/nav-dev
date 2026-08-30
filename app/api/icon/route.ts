@@ -319,7 +319,8 @@ export async function GET(request: NextRequest) {
       return new NextResponse("Invalid domain", { status: 400 })
     }
     const service: FaviconServiceKey =
-      serviceParam && serviceParam in UPSTREAMS ? serviceParam : DEFAULT_ORDER[0]
+      // Object.hasOwn 而非 in：`in` 会命中原型链键（如 __proto__）导致 resolver 抛错
+      serviceParam && Object.hasOwn(UPSTREAMS, serviceParam) ? serviceParam : DEFAULT_ORDER[0]
     const key = cacheKeyFor(`domain:${domain}:${service}`)
     const entry = await getEntry(key, () => resolveDomainIcon(domain, service))
     return toResponse(entry)
