@@ -27,6 +27,10 @@ COPY . .
 RUN SQLITE_URL="file:/app/data/nav.db" npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss --skip-generate && \
     SQLITE_PATH=/app/data/nav.db npx tsx prisma/seed.ts full
 
+# 打包 runner 所需 node_modules 闭包（prisma CLI / tsx / bcryptjs 及其依赖树，
+# 按 package.json 依赖关系 BFS 动态计算，避免静态白名单随 Prisma 升级漂移）
+RUN node scripts/pack-runner-deps.mjs
+
 # 构建
 # SKIP_OPEN_NEXT_BUILD：Docker 只需要 Next standalone 产物，
 # postbuild 钩子的 OpenNext（Cloudflare Workers）打包在此属双倍构建时间
@@ -62,21 +66,9 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-# 复制运行时依赖（数据库初始化和 seed 脚本需要）
-# c12 / deepmerge-ts / effect / empathic：Prisma 6 的 @prisma/config 依赖（CLI 运行必需）
-COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/@esbuild ./node_modules/@esbuild
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
-COPY --from=builder /app/node_modules/esbuild ./node_modules/esbuild
-COPY --from=builder /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
-COPY --from=builder /app/node_modules/resolve-pkg-maps ./node_modules/resolve-pkg-maps
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
-COPY --from=builder /app/node_modules/c12 ./node_modules/c12
-COPY --from=builder /app/node_modules/deepmerge-ts ./node_modules/deepmerge-ts
-COPY --from=builder /app/node_modules/effect ./node_modules/effect
-COPY --from=builder /app/node_modules/empathic ./node_modules/empathic
+# 复制运行时依赖（数据库初始化和 seed 脚本需要；闭包由
+# scripts/pack-runner-deps.mjs 在 builder 阶段动态计算打包）
+COPY --from=builder /app/.runner-node-modules ./node_modules
 
 # 双数据库客户端（默认 sqlite / 可选 postgres，由 entrypoint.sh 按环境变量选择）
 COPY --from=builder /app/generated ./generated

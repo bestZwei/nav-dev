@@ -53,6 +53,9 @@ next-env.d.ts
 # SQLite 默认数据文件（本地开发）
 /data/
 
+# runner 镜像层依赖打包产物（scripts/pack-runner-deps.mjs 生成）
+/.runner-node-modules/
+
 # claude
 CLAUDE.md
 .claude/settings.local.json

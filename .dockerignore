@@ -23,6 +23,7 @@ data
 prisma/data
 *.db
 *.db-journal
+.runner-node-modules
 
 # Debug
 *.log
