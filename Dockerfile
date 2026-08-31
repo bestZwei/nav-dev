@@ -63,6 +63,7 @@ COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # 复制运行时依赖（数据库初始化和 seed 脚本需要）
+# c12 / deepmerge-ts / effect / empathic：Prisma 6 的 @prisma/config 依赖（CLI 运行必需）
 COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/@esbuild ./node_modules/@esbuild
@@ -72,6 +73,10 @@ COPY --from=builder /app/node_modules/esbuild ./node_modules/esbuild
 COPY --from=builder /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
 COPY --from=builder /app/node_modules/resolve-pkg-maps ./node_modules/resolve-pkg-maps
 COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
+COPY --from=builder /app/node_modules/c12 ./node_modules/c12
+COPY --from=builder /app/node_modules/deepmerge-ts ./node_modules/deepmerge-ts
+COPY --from=builder /app/node_modules/effect ./node_modules/effect
+COPY --from=builder /app/node_modules/empathic ./node_modules/empathic
 
 # 双数据库客户端（默认 sqlite / 可选 postgres，由 entrypoint.sh 按环境变量选择）
 COPY --from=builder /app/generated ./generated
