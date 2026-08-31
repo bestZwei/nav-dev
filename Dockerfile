@@ -10,8 +10,10 @@ ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
 ENV NEXT_PUBLIC_GIT_SHA=${GIT_SHA}
 
 # 复制 package 文件和 Prisma schema
+# scripts/ 必须在 npm ci 前就位：postinstall 钩子引用其中的 generate-prisma / db-bootstrap
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
+COPY scripts ./scripts
 
 # 安装所有依赖
 RUN npm ci && \
