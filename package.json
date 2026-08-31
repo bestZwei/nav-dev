@@ -10,7 +10,7 @@
     "lint": "next lint",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "postinstall": "node scripts/generate-prisma.mjs",
+    "postinstall": "node scripts/generate-prisma.mjs && node scripts/db-bootstrap.mjs",
     "db:push": "node scripts/db-sqlite.mjs && npm run db:seed",
     "db:push:pg": "npx prisma db push --schema prisma/schema.prisma",
     "db:setup": "node scripts/sync-schemas.mjs && node scripts/db-sqlite.mjs && npm run db:seed:full",

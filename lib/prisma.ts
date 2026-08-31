@@ -43,9 +43,22 @@ function createPrisma(): PrismaClient {
     return client as unknown as PrismaClient
   }
 
-  // SQLite：目录不存在时自动创建，数据库文件由引擎首次连接时创建
+  // SQLite：目录不存在时自动创建，数据库文件由引擎首次连接时创建。
+  // 只读文件系统（Vercel / Cloudflare Workers 等 Serverless 运行时）上创建必败：
+  // 捕获后转译为带解决方案的报错，避免裸 ENOENT 让全站 500 且无从排查
   if (dbConfig.sqlitePath) {
-    mkdirSync(path.dirname(dbConfig.sqlitePath), { recursive: true })
+    try {
+      mkdirSync(path.dirname(dbConfig.sqlitePath), { recursive: true })
+    } catch (error) {
+      throw new Error(
+        `[db] SQLite 数据目录不可写（${path.dirname(dbConfig.sqlitePath)}）。` +
+          "当前平台可能没有持久化文件系统（如 Vercel / Cloudflare Workers 的 Serverless 运行时，" +
+          "本地 SQLite 文件无法持久保存）。解决方案：" +
+          "1) 配置 POSTGRES_URL 环境变量连接外部 PostgreSQL（Neon / Supabase / RDS 等）后重新部署；" +
+          "2) 或改用 Docker / VPS 部署以使用默认 SQLite。" +
+          `原始错误：${error instanceof Error ? error.message : String(error)}`
+      )
+    }
   }
   return new SqlitePrismaClient({
     datasources: { db: { url: dbConfig.url } },
