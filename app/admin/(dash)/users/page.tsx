@@ -11,7 +11,6 @@ import { Loader2, Plus, Trash2, Info, Link2, PanelBottom, Layers, FileText, Code
 import {
   getSystemSettings,
   updateSystemSettings,
-  isMemoryMode,
   getWorkspaceDisplaySettings,
   updateWorkspaceDisplaySettings,
 } from "@/lib/actions"
@@ -91,7 +90,7 @@ export default function AdminSettingsPage() {
   })
   const [savingSettings, setSavingSettings] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
-  const [memoryMode, setMemoryMode] = useState(false)
+
   const [aboutPreview, setAboutPreview] = useState(false)
   // about-page 内置插件启用状态：「关于页面」区块仅在其启用时展示
   const [aboutEnabled, setAboutEnabled] = useState(false)
@@ -105,9 +104,6 @@ export default function AdminSettingsPage() {
   // 加载数据
   useEffect(() => {
     loadSettings()
-    isMemoryMode().then((result) => {
-      if (result.success) setMemoryMode(result.data)
-    })
     fetchPublicSettings().then((settings) => {
       const enabled = settings.plugins?.builtinEnabledIds?.includes("about-page") ?? false
       setAboutEnabled(enabled)
@@ -206,11 +202,6 @@ export default function AdminSettingsPage() {
         toast.success(t("saveSuccess"), {
           description: t("saveSuccessDesc"),
         })
-        if (memoryMode) {
-          toast.warning(t("memoryModeToastTitle"), {
-            description: t("memoryModeToastDesc"),
-          })
-        }
         setTimeout(() => window.location.reload(), 500)
       } else {
         toast.error(t("saveFailed"), {
