@@ -1,5 +1,6 @@
 import React from "react"
 import * as LucideIcons from "lucide-react"
+import { CategoryIconImage } from "@/components/category-icon-image"
 
 export interface PopularCategoryIconItem {
   name: string
@@ -81,18 +82,7 @@ export function CategoryIcon({ icon, className = "h-4 w-4", size = 16 }: Categor
     trimmedIcon.startsWith("data:image/") ||
     trimmedIcon.startsWith("/")
   ) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={trimmedIcon}
-        alt="Category icon"
-        className={`${className} object-contain inline-block rounded-sm`}
-        style={{ width: size, height: size }}
-        onError={(e) => {
-          e.currentTarget.style.display = "none"
-        }}
-      />
-    )
+    return <CategoryIconImage src={trimmedIcon} className={className} size={size} />
   }
 
   // 匹配 Lucide 图标组件
