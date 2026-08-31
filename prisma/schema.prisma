@@ -3,11 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma-postgres"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("POSTGRES_URL")
 }
 
 model Workspace {
@@ -146,7 +147,7 @@ model SystemSettings {
   // Footer settings
   showFooter        Boolean  @default(true) @map("show_footer")
   footerCopyright  String   @map("footer_copyright")  // 默认值由 seed.ts 动态生成
-  footerLinks      Json     @default("[]") @map("footer_links")
+  footerLinks      Json     @default(dbgenerated("'[]'")) @map("footer_links")
   showAdminLink    Boolean  @default(true) @map("show_admin_link")
   // ICP filing settings (备案信息)
   showIcp          Boolean  @default(false) @map("show_icp")
@@ -158,13 +159,13 @@ model SystemSettings {
   // enableAboutPage 功能开关均已迁移为内置插件，启停统一存于下方 enabledPlugins
   aboutContent         String?  @map("about_content")
   // Plugin system (插件启停状态与各插件配置，键为注册表中的插件 ID)
-  enabledPlugins       Json     @default("[]") @map("enabled_plugins")
-  pluginConfigs        Json     @default("{}") @map("plugin_configs")
+  enabledPlugins       Json     @default(dbgenerated("'[]'")) @map("enabled_plugins")
+  pluginConfigs        Json     @default(dbgenerated("'{}'")) @map("plugin_configs")
   // GitHub link
   githubUrl        String?  @map("github_url")
-  // 自定义代码（管理员注入全站，仅信任管理员输入）
-  // customHeadCode：注入 body 起始处（页面加载早期执行，适合统计/验证脚本）
-  // customBodyCode：注入 body 结尾处（水合后执行，适合特效/挂件/客服）
+  // 自定义代码（管理员注入，仅前台导航页渲染，见 app/(public)/layout.tsx；仅信任管理员输入）
+  // customHeadCode：注入前台 body 起始处（页面加载早期执行，适合统计/验证脚本）
+  // customBodyCode：注入前台内容结尾（水合后执行，适合特效/挂件/客服）
   customHeadCode   String?  @map("custom_head_code")
   customBodyCode   String?  @map("custom_body_code")
   // Default site language for visitors without a locale cookie (zh/en)
@@ -181,7 +182,7 @@ model Plugin {
   id        String   @id
   manifest  Json
   enabled   Boolean  @default(false)
-  configs   Json     @default("{}")
+  configs   Json     @default(dbgenerated("'{}'"))
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

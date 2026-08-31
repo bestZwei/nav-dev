@@ -13,6 +13,10 @@ const nextConfig = {
   output: 'standalone',
   // 允许预览环境域名跨域访问开发服务器（Next.js 15 使用 allowedDevOrigins）
   allowedDevOrigins: ['*.monkeycode-ai.online'],
+  // 双数据库客户端（sqlite / postgres）与其 query engine 二进制需完整进入 standalone 产物
+  outputFileTracingIncludes: {
+    '/**': ['./generated/**/*'],
+  },
   env: {
     FALLBACK_SESSION_SECRET,
   },

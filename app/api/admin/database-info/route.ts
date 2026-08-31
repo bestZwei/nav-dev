@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { prisma, dbConfig } from "@/lib/prisma"
 import { getAdminSession } from "@/lib/api-auth"
 
 interface DatabaseInfo {
-  type: string
+  type: "sqlite" | "postgres"
   status: "connected" | "error"
   host?: string
   port?: number
   database?: string
   username?: string
+  sqlitePath?: string
 }
 
 export async function GET() {
@@ -16,46 +17,41 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   try {
-    // 测试数据库连接
     await prisma.$queryRaw`SELECT 1`
 
-    // 从 DATABASE_URL 解析数据库信息
-    const databaseUrl = process.env.DATABASE_URL || ""
-    let dbInfo: DatabaseInfo = {
-      type: "In-Memory / PostgreSQL",
-      status: "connected",
+    if (dbConfig.provider === "sqlite") {
+      return NextResponse.json({
+        type: "sqlite",
+        status: "connected",
+        sqlitePath: dbConfig.sqlitePath,
+      } satisfies DatabaseInfo)
     }
 
-    if (databaseUrl) {
-      try {
-        // 解析 PostgreSQL 连接字符串: postgresql://user:password@host:port/database
-        // 库名剥掉 ?sslmode=... 等查询参数
-        const match = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/)
-        if (match) {
-          const [, username, , host, port, database] = match
-          dbInfo = {
-            ...dbInfo,
-            type: "PostgreSQL",
-            host,
-            port: parseInt(port),
-            database,
-            username,
-          }
-        }
-      } catch (error) {
-        console.error("Failed to parse DATABASE_URL:", error)
-      }
+    // 解析 PostgreSQL 连接串：postgresql://user:password@host:port/database
+    // 库名剥掉 ?sslmode=... 等查询参数
+    const match = dbConfig.url.match(
+      /postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/,
+    )
+    if (match) {
+      const [, username, , host, port, database] = match
+      return NextResponse.json({
+        type: "postgres",
+        status: "connected",
+        host,
+        port: parseInt(port),
+        database,
+        username,
+      } satisfies DatabaseInfo)
     }
-
-    return NextResponse.json(dbInfo)
+    return NextResponse.json({ type: "postgres", status: "connected" } satisfies DatabaseInfo)
   } catch (error) {
     console.error("Database connection error:", error)
     return NextResponse.json(
       {
-        type: "PostgreSQL",
+        type: dbConfig.provider,
         status: "error" as const,
       },
-      { status: 503 }
+      { status: 503 },
     )
   }
 }

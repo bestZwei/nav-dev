@@ -1,8 +1,7 @@
 "use server"
 
-import { prisma, useRealDatabase } from "./prisma"
+import { prisma, Prisma, ciContains } from "./prisma"
 import { revalidatePath } from "next/cache"
-import { Prisma } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { isLocale, type Locale } from "./i18n"
 import { getSystemSettingsRecord } from "./settings"
@@ -565,8 +564,8 @@ export async function getCategoriesWithPagination(params: {
 
     if (params.search) {
       where.OR = [
-        { name: { contains: params.search, mode: 'insensitive' } },
-        { slug: { contains: params.search, mode: 'insensitive' } },
+        { name: ciContains(params.search) },
+        { slug: ciContains(params.search) },
       ]
     }
 
@@ -825,9 +824,9 @@ export async function getSitesWithPagination(params: {
 
     if (params.search) {
       where.OR = [
-        { name: { contains: params.search, mode: 'insensitive' } },
-        { description: { contains: params.search, mode: 'insensitive' } },
-        { url: { contains: params.search, mode: 'insensitive' } },
+        { name: ciContains(params.search) },
+        { description: ciContains(params.search) },
+        { url: ciContains(params.search) },
       ]
     }
 
@@ -1104,13 +1103,6 @@ let capabilityCache: { supported: boolean; checkedAt: number; reason?: string } 
 export async function checkScreenshotUploadCapability() {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized
-  // 内存模式下，截图直接写入进程内存储，无需外部依赖
-  if (!useRealDatabase) {
-    return {
-      success: true,
-      data: { supported: true, checkedAt: Date.now() },
-    }
-  }
   const now = Date.now()
   if (capabilityCache && now - capabilityCache.checkedAt < 60_000) {
     return { success: true, data: capabilityCache }
@@ -1665,8 +1657,8 @@ export async function getUsersWithPagination(params: {
 
     if (params.search) {
       where.OR = [
-        { email: { contains: params.search, mode: 'insensitive' } },
-        { name: { contains: params.search, mode: 'insensitive' } },
+        { email: ciContains(params.search) },
+        { name: ciContains(params.search) },
       ]
     }
 
@@ -1810,9 +1802,9 @@ export async function searchSites(query: string) {
           { categoryId: { in: categoryIds } },
           {
             OR: [
-              { name: { contains: keyword, mode: "insensitive" } },
-              { description: { contains: keyword, mode: "insensitive" } },
-              { url: { contains: keyword, mode: "insensitive" } },
+              { name: ciContains(keyword) },
+              { description: ciContains(keyword) },
+              { url: ciContains(keyword) },
             ],
           },
         ],
@@ -1831,13 +1823,6 @@ export async function searchSites(query: string) {
 }
 
 // ==================== System Settings ====================
-
-// 当前是否运行在内存模式（未配置 DATABASE_URL）。
-// 内存模式下数据仅存在于单个实例内存中，Serverless 多实例（如 Vercel）
-// 之间不共享且实例回收后重置，站点详情等功能无法持久生效
-export async function isMemoryMode() {
-  return { success: true, data: !useRealDatabase }
-}
 
 export async function getSystemSettings() {
   // 管理员专用：完整设置行含 enabledPlugins/pluginConfigs 等敏感字段，

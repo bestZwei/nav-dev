@@ -10,20 +10,22 @@
     "lint": "next lint",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "postinstall": "prisma generate",
-    "db:push": "npx prisma db push && npm run db:seed",
+    "postinstall": "node scripts/generate-prisma.mjs",
+    "db:push": "node scripts/db-sqlite.mjs && npm run db:seed",
+    "db:push:pg": "npx prisma db push --schema prisma/schema.prisma",
+    "db:setup": "node scripts/sync-schemas.mjs && node scripts/db-sqlite.mjs && npm run db:seed:full",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:seed:full": "npx tsx prisma/seed.ts full",
     "db:migrate:deploy": "npx prisma migrate deploy",
     "db:migrate:dev": "npx prisma migrate dev",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio --schema prisma/schema.sqlite.prisma"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^6.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -49,7 +51,7 @@
     "next-intl": "^4.13.7",
     "next-themes": "^0.4.6",
     "pinyin-pro": "^3.29.3",
-    "prisma": "^5.22.0",
+    "prisma": "^6.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.69.0",

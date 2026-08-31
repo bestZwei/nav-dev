@@ -44,6 +44,14 @@ next-env.d.ts
 # prisma
 /prisma/*.db
 /prisma/*.db-journal
+# 生成的 SQLite schema 变体（由 scripts/sync-schemas.mjs 从主 schema 生成，勿手改）
+/prisma/schema.sqlite.prisma
+
+# 双数据库客户端生成目录（postinstall 重建）
+/generated/
+
+# SQLite 默认数据文件（本地开发）
+/data/
 
 # claude
 CLAUDE.md

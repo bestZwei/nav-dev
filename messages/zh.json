@@ -551,9 +551,6 @@
       "linkUrlPlaceholder": "链接地址",
       "siteDetailLabel": "站点详情弹窗",
       "siteDetailHint": "开启后，填写了详情内容的站点点击卡片先弹出图文介绍（介绍、截图、使用方法），再跳转目标网站",
-      "siteDetailMemoryWarning": "当前为内存模式，此开关保存后会因实例重启或回收被重置。站点详情功能需要连接数据库（配置 DATABASE_URL）才能正常使用。",
-      "memoryModeToastTitle": "内存模式提醒",
-      "memoryModeToastDesc": "未连接数据库，设置会在实例重启或回收后重置。站点详情等功能需要连接数据库才能持久生效。",
       "workspaceContext": "当前工作区：{name}",
       "workspaceIsDefault": "（全局配置）",
       "workspaceOverrideHint": "此处展示项仅对当前工作区生效，留空回退全局设置",
@@ -572,9 +569,9 @@
       "secCustomCodeDesc": "向全站页面注入自定义 HTML/CSS/JS 代码",
       "customCodeWarning": "代码将对全站所有页面生效并原样执行，请勿粘贴来源不明的脚本；填写错误可能导致前台异常，清空内容即可恢复。",
       "customHeadCodeLabel": "头部代码",
-      "customHeadCodeHint": "注入在页面 body 起始处，页面加载早期执行：适合访问统计、站点验证脚本、自定义样式。",
+      "customHeadCodeHint": "仅注入前台导航页（后台不注入），位于 body 起始处，页面加载早期执行：适合访问统计、站点验证脚本、自定义样式。",
       "customBodyCodeLabel": "尾部代码",
-      "customBodyCodeHint": "注入在页面 body 结尾处，页面渲染后执行：适合页面特效、第三方挂件、在线客服。"
+      "customBodyCodeHint": "仅注入前台导航页（后台不注入），位于前台内容结尾，页面渲染后执行：适合页面特效、第三方挂件、在线客服。"
     },
     "profile": {
       "admin": "管理员",

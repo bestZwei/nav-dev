@@ -551,9 +551,6 @@
       "linkUrlPlaceholder": "Link-URL",
       "siteDetailLabel": "Website-Detaildialog",
       "siteDetailHint": "Wenn aktiviert, zeigen Websites mit Detailinhalt einen Vorstellungsdialog (Text, Screenshots, Nutzung) vor der Weiterleitung",
-      "siteDetailMemoryWarning": "Der Speichermodus ist aktiv: Dieser Schalter wird beim Neustart oder Recycling der Instanz zurückgesetzt. Die Site-Details-Funktion erfordert eine Datenbank (DATABASE_URL).",
-      "memoryModeToastTitle": "Hinweis zum Speichermodus",
-      "memoryModeToastDesc": "Keine Datenbank verbunden. Einstellungen werden nach Neustart oder Recycling zurückgesetzt. Funktionen wie Site-Details benötigen eine Datenbank.",
       "workspaceContext": "Aktueller Workspace: {name}",
       "workspaceIsDefault": " (globale Konfiguration)",
       "workspaceOverrideHint": "Diese Anzeigefelder gelten nur für diesen Workspace; leere Felder fallen auf die globalen Einstellungen zurück",
@@ -572,9 +569,9 @@
       "secCustomCodeDesc": "Eigene HTML/CSS/JS-Codes auf allen Seiten einbinden",
       "customCodeWarning": "Eingefügter Code wird seitenweit unverändert ausgeführt. Fügen Sie keine Skripte aus unbekannten Quellen ein; fehlerhafter Code kann die Website beeinträchtigen — Feld leeren, um den Zustand wiederherzustellen.",
       "customHeadCodeLabel": "Head-Code",
-      "customHeadCodeHint": "Wird am Anfang des body eingefügt und früh ausgeführt: ideal für Analytics, Website-Verifizierung und eigene Styles.",
+      "customHeadCodeHint": "Wird nur in öffentliche Navigationsseiten injiziert (nicht ins Admin-Panel). Wird am Anfang des body eingefügt und früh ausgeführt: ideal für Analytics, Website-Verifizierung und eigene Styles.",
       "customBodyCodeLabel": "Footer-Code",
-      "customBodyCodeHint": "Wird am Ende des body eingefügt und nach dem Rendern ausgeführt: ideal für Seiteneffekte, Widgets und Live-Chat."
+      "customBodyCodeHint": "Wird nur in öffentliche Navigationsseiten injiziert (nicht ins Admin-Panel). Wird am Ende des body eingefügt und nach dem Rendern ausgeführt: ideal für Seiteneffekte, Widgets und Live-Chat."
     },
     "profile": {
       "admin": "Admin",

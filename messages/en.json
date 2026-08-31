@@ -551,9 +551,6 @@
       "linkUrlPlaceholder": "Link URL",
       "siteDetailLabel": "Site Detail Dialog",
       "siteDetailHint": "When enabled, sites with detail content show an introduction dialog (text, screenshots, usage) before redirecting",
-      "siteDetailMemoryWarning": "Memory mode is active: this toggle will be reset when the instance restarts or is recycled. Site detail requires a database (DATABASE_URL) to work properly.",
-      "memoryModeToastTitle": "Memory mode notice",
-      "memoryModeToastDesc": "No database connected. Settings will be reset after the instance restarts or is recycled. Features like site detail need a database to persist.",
       "workspaceContext": "Current workspace: {name}",
       "workspaceIsDefault": " (global config)",
       "workspaceOverrideHint": "These display fields apply to this workspace only; empty values fall back to global settings",
@@ -572,9 +569,9 @@
       "secCustomCodeDesc": "Inject custom HTML/CSS/JS into all site pages",
       "customCodeWarning": "Injected code runs site-wide exactly as written. Never paste scripts from untrusted sources; malformed code can break the frontend — clear the field to recover.",
       "customHeadCodeLabel": "Head Code",
-      "customHeadCodeHint": "Injected at the start of body, executes early: ideal for analytics, site verification scripts and custom styles.",
+      "customHeadCodeHint": "Injected into public nav pages only (not the admin panel), at the start of body, executing early: ideal for analytics, site verification scripts and custom styles.",
       "customBodyCodeLabel": "Footer Code",
-      "customBodyCodeHint": "Injected at the end of body, executes after render: ideal for page effects, third-party widgets and live chat."
+      "customBodyCodeHint": "Injected into public nav pages only (not the admin panel), at the end of the page content, executing after render: ideal for page effects, third-party widgets and live chat."
     },
     "profile": {
       "admin": "Admin",

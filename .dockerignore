@@ -16,6 +16,14 @@ dist
 .DS_Store
 *.pem
 
+# Prisma 生成物与本地数据库（构建期内重新生成，本地引擎架构与镜像不匹配）
+generated
+prisma/schema.sqlite.prisma
+data
+prisma/data
+*.db
+*.db-journal
+
 # Debug
 *.log
 

@@ -20,6 +20,11 @@ RUN npm ci && \
 # 复制剩余源代码
 COPY . .
 
+# 构建期数据库供给：静态预渲染页面需要可查询的数据库。
+# 默认 SQLite 模式，先建表并填充种子数据（产物仅存在于构建层，不进入 runner）
+RUN SQLITE_URL="file:/app/data/nav.db" npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss --skip-generate && \
+    SQLITE_PATH=/app/data/nav.db npx tsx prisma/seed.ts full
+
 # 构建
 # SKIP_OPEN_NEXT_BUILD：Docker 只需要 Next standalone 产物，
 # postbuild 钩子的 OpenNext（Cloudflare Workers）打包在此属双倍构建时间
@@ -56,7 +61,6 @@ COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # 复制运行时依赖（数据库初始化和 seed 脚本需要）
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/@esbuild ./node_modules/@esbuild
@@ -66,6 +70,9 @@ COPY --from=builder /app/node_modules/esbuild ./node_modules/esbuild
 COPY --from=builder /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
 COPY --from=builder /app/node_modules/resolve-pkg-maps ./node_modules/resolve-pkg-maps
 COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
+
+# 双数据库客户端（默认 sqlite / 可选 postgres，由 entrypoint.sh 按环境变量选择）
+COPY --from=builder /app/generated ./generated
 
 # 复制构建产物
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -78,6 +85,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/entrypoint.sh ./entrypoint.sh
 # /app 属 root 而进程以 nextjs 运行，必须预建可写目录，否则重启重新生成密钥、全部会话失效
 RUN mkdir -p /app/.session-data && chown -R nextjs:nodejs /app/.session-data
 ENV SESSION_SECRET_FILE=/app/.session-data/.session-secret
+
+# SQLite 默认数据目录：默认模式的数据持久化位置，配合 compose 挂载 nav-data 卷
+RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+ENV SQLITE_PATH=/app/data/nav.db
 
 # 切换到非 root 用户
 USER nextjs

@@ -21,13 +21,82 @@ if [ -z "$SESSION_SECRET" ] && [ -z "$NEXTAUTH_SECRET" ]; then
   fi
 fi
 
-# 未配置 DATABASE_URL 时使用内置内存数据，跳过数据库初始化
-if [ -z "$DATABASE_URL" ]; then
-  echo "⚠️  未配置 DATABASE_URL，使用内置内存数据（重启后修改不会保留）"
+# ===== 数据库模式判定（与 lib/db-config.ts 保持同一语义） =====
+# 1. DB_PROVIDER 显式指定 sqlite / postgres 时优先生效
+# 2. 未指定时：POSTGRES_URL 或 postgres:// 前缀的 DATABASE_URL 非空 → postgres
+# 3. 否则 → sqlite（默认）
+DB_MODE=""
+EFFECTIVE_PG_URL="${POSTGRES_URL:-${DATABASE_URL:-}}"
+case "$EFFECTIVE_PG_URL" in
+  postgres://*|postgresql://*) PG_URL_VALID=1 ;;
+  *) PG_URL_VALID=0 ;;
+esac
+
+if [ "$DB_PROVIDER" = "postgres" ] || [ "$DB_PROVIDER" = "sqlite" ]; then
+  DB_MODE="$DB_PROVIDER"
+elif [ "$PG_URL_VALID" = "1" ]; then
+  DB_MODE="postgres"
+else
+  DB_MODE="sqlite"
+fi
+
+if [ "$DB_MODE" = "postgres" ] && [ "$PG_URL_VALID" != "1" ]; then
+  echo "❌ DB_PROVIDER=postgres 但未提供有效连接串：请设置 POSTGRES_URL（或 postgres:// 前缀的 DATABASE_URL），或移除 DB_PROVIDER 使用默认 SQLite。"
+  exit 1
+fi
+
+# seed 前置检查：无管理员账户时执行种子初始化（sqlite / postgres 共用）
+seed_if_needed() {
+  echo "🔍 检查数据库是否已初始化..."
+  if node -e "
+    const { PrismaClient } = require('./generated/prisma-${1}');
+    const prisma = new PrismaClient();
+    prisma.user.findFirst({ where: { role: 'ADMIN' } })
+      .then(user => {
+        if (user) {
+          console.log('✅ 数据库已初始化，跳过 seed');
+          process.exit(0);
+        } else {
+          console.log('🌱 数据库未初始化，开始 seed...');
+          process.exit(1);
+        }
+      })
+      .catch(() => process.exit(1));
+  "; then
+    echo "✅ 跳过 seed"
+  else
+    echo "🌱 执行 seed 脚本（完整示例数据）..."
+    npx tsx prisma/seed.ts full
+  fi
+}
+
+# ===== SQLite 分支（默认） =====
+if [ "$DB_MODE" = "sqlite" ]; then
+  SQLITE_PATH="${SQLITE_PATH:-/app/data/nav.db}"
+  export SQLITE_PATH
+  export SQLITE_URL="file:${SQLITE_PATH}"
+  SQLITE_DIR="$(dirname "$SQLITE_PATH")"
+  mkdir -p "$SQLITE_DIR" 2>/dev/null || true
+  if [ ! -w "$SQLITE_DIR" ]; then
+    echo "❌ SQLite 目录不可写：$SQLITE_DIR（请挂载可写卷或调整权限）"
+    exit 1
+  fi
+
+  echo "🗄️  数据库模式：SQLite（$SQLITE_PATH）"
+
+  # 幂等建表：--accept-data-loss 仅在首次空库建表加唯一约束时跳过确认，对已同步库无操作
+  npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss --skip-generate
+
+  seed_if_needed sqlite
+
   echo "🚀 启动应用..."
-  # --max-http-header-size：测活探测需要，Google 等站点响应头（Set-Cookie）超过 undici 默认 16KB 上限
+  # --max-http-header-size：测活探测需要，避免 Google 等站点响应头超 undici 16KB 上限导致误判失效
   exec node --max-http-header-size=65536 server.js
 fi
+
+# ===== PostgreSQL 分支（配置了连接参数时） =====
+export POSTGRES_URL="$EFFECTIVE_PG_URL"
+echo "🐘 数据库模式：PostgreSQL"
 
 echo "🔧 初始化数据库..."
 
@@ -39,7 +108,7 @@ i=0
 while [ "$i" -lt 30 ]; do
   i=$((i + 1))
   if node -e "
-    const { PrismaClient } = require('@prisma/client');
+    const { PrismaClient } = require('./generated/prisma-postgres');
     const prisma = new PrismaClient();
     prisma.\$queryRaw\`SELECT 1\`
       .then(() => { console.log('ready'); process.exit(0); })
@@ -52,7 +121,7 @@ while [ "$i" -lt 30 ]; do
   sleep 10
 done
 if [ "$DB_READY" != "1" ]; then
-  echo "❌ 数据库在 5 分钟内未就绪，放弃启动。请检查 DATABASE_URL 与数据库状态。"
+  echo "❌ 数据库在 5 分钟内未就绪，放弃启动。请检查 POSTGRES_URL 与数据库状态。"
   exit 1
 fi
 
@@ -62,7 +131,7 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
 
   # 检查是否是首次初始化（通过 _prisma_migrations 表是否存在）
   MIGRATION_TABLE_EXISTS=$(node -e "
-    const { PrismaClient } = require('@prisma/client');
+    const { PrismaClient } = require('./generated/prisma-postgres');
     const prisma = new PrismaClient();
     prisma.\$queryRaw\`
       SELECT EXISTS (
@@ -87,7 +156,7 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
 
     # 检查 Site 表是否存在（判断是否是已有数据的数据库）
     TABLE_EXISTS=$(node -e "
-      const { PrismaClient } = require('@prisma/client');
+      const { PrismaClient } = require('./generated/prisma-postgres');
       const prisma = new PrismaClient();
       prisma.\$queryRaw\`
         SELECT EXISTS (
@@ -112,7 +181,7 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
       # 一次性 legacy 升级路径（仅 _prisma_migrations 缺失的旧数据卷）：
       # db push 需要删列丢数据时会拒绝执行，此时请人工介入：
       #   npx prisma db push --accept-data-loss
-      npx prisma db push --skip-generate
+      npx prisma db push --schema prisma/schema.prisma --skip-generate
       echo "📊 Schema 同步完成，进行基线化（baseline）..."
       # 标记所有迁移为已应用（因为数据库结构已经是最新）
       for migration_dir in /app/prisma/migrations/*/; do
@@ -146,32 +215,10 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
   fi
 else
   echo "⚠️  未检测到迁移文件，使用 db push（开发模式）..."
-  npx prisma db push --skip-generate
+  npx prisma db push --schema prisma/schema.prisma --skip-generate
 fi
 
-# 检查是否已初始化（检查管理员用户是否存在）
-echo "🔍 检查数据库是否已初始化..."
-if node -e "
-  const { PrismaClient } = require('@prisma/client');
-  const prisma = new PrismaClient();
-  prisma.user.findFirst({ where: { role: 'ADMIN' } })
-    .then(user => {
-      if (user) {
-        console.log('✅ 数据库已初始化，跳过 seed');
-        process.exit(0);
-      } else {
-        console.log('🌱 数据库未初始化，开始 seed...');
-        process.exit(1);
-      }
-    })
-    .catch(() => process.exit(1));
-"; then
-  echo "✅ 跳过 seed"
-else
-  echo "🌱 执行 seed 脚本（完整示例数据）..."
-  # 与无数据库的内存模式保持一致的默认体验：首次部署填充完整种子站点
-  npx tsx prisma/seed.ts full
-fi
+seed_if_needed postgres
 
 echo "🚀 启动应用..."
 # --max-http-header-size：测活探测需要，避免 Google 等站点响应头超 undici 16KB 上限导致误判失效

@@ -551,9 +551,6 @@
       "linkUrlPlaceholder": "URL du lien",
       "siteDetailLabel": "Dialogue de détail du site",
       "siteDetailHint": "Si activé, les sites avec contenu détaillé affichent un dialogue de présentation (texte, captures, usage) avant la redirection",
-      "siteDetailMemoryWarning": "Le mode mémoire est actif : ce commutateur sera réinitialisé au redémarrage ou au recyclage de l'instance. La fonction de détails du site nécessite une base de données (DATABASE_URL).",
-      "memoryModeToastTitle": "Avis mode mémoire",
-      "memoryModeToastDesc": "Aucune base de données connectée. Les paramètres seront réinitialisés après redémarrage ou recyclage. Les fonctions comme les détails du site nécessitent une base de données.",
       "workspaceContext": "Espace de travail actuel : {name}",
       "workspaceIsDefault": " (configuration globale)",
       "workspaceOverrideHint": "Ces champs d'affichage s'appliquent uniquement à cet espace ; les valeurs vides retombent sur les réglages globaux",
@@ -572,9 +569,9 @@
       "secCustomCodeDesc": "Injecter du HTML/CSS/JS personnalisé sur toutes les pages",
       "customCodeWarning": "Le code injecté s'exécute tel quel sur tout le site. Ne collez jamais de scripts d'origine inconnue ; un code défectueux peut casser l'affichage — videz le champ pour rétablir l'état normal.",
       "customHeadCodeLabel": "Code d'en-tête",
-      "customHeadCodeHint": "Injecté au début du body, exécution précoce : idéal pour les statistiques, la vérification de site et les styles personnalisés.",
+      "customHeadCodeHint": "Injecté uniquement dans les pages publiques (pas dans l'admin). Injecté au début du body, exécution précoce : idéal pour les statistiques, la vérification de site et les styles personnalisés.",
       "customBodyCodeLabel": "Code de pied de page",
-      "customBodyCodeHint": "Injecté à la fin du body, exécution après le rendu : idéal pour les effets visuels, les widgets tiers et le chat en direct."
+      "customBodyCodeHint": "Injecté uniquement dans les pages publiques (pas dans l'admin). Injecté à la fin du body, exécution après le rendu : idéal pour les effets visuels, les widgets tiers et le chat en direct."
     },
     "profile": {
       "admin": "Admin",
