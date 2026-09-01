@@ -135,6 +135,29 @@ function ShareDialog({
     [data.categories]
   )
 
+  // 1x1 透明 PNG：图标拉取失败（CORS/混合内容被阻止等）时的兜底占位。
+  // 失败图在页面上本就隐藏（首字母占位显示），透明占位与其视觉一致
+  const TRANSPARENT_IMAGE_PLACEHOLDER =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+
+  // 将图片 URL 转为 dataURL；跨域、混合内容等失败场景返回 null 由调用方兜底
+  const fetchAsDataUrl = async (src: string): Promise<string | null> => {
+    try {
+      const res = await fetch(src, { mode: "cors", credentials: "omit" })
+      if (!res.ok) return null
+      const blob = await res.blob()
+      return await new Promise<string | null>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () =>
+          resolve(typeof reader.result === "string" ? reader.result : null)
+        reader.onerror = () => resolve(null)
+        reader.readAsDataURL(blob)
+      })
+    } catch {
+      return null
+    }
+  }
+
   // 一键导出卡片为 PNG：html-to-image 按需动态加载；
   // 深色主题下临时给卡片挂 .dark 类，保证克隆节点内 CSS 变量解析为深色值
   const handleSaveImage = async () => {
@@ -143,9 +166,29 @@ function ShareDialog({
     setExporting(true)
     const isDark = document.documentElement.classList.contains("dark")
     if (isDark) node.classList.add("dark")
+
+    // 预转换卡片内全部图标为 dataURL 后再导出，html-to-image 无需再发起
+    // 图片请求，跨域/混合内容等场景便无法令整体导出失败；
+    // 导出完成后恢复原 src，保证 React 状态与 DOM 一致
+    const imgNodes = Array.from(node.querySelectorAll("img"))
+    const originalSrcs = imgNodes.map((img) => img.getAttribute("src"))
+
     try {
+      await Promise.all(
+        imgNodes.map(async (img, i) => {
+          const src = originalSrcs[i]
+          if (!src) return
+          const imageDataUrl = await fetchAsDataUrl(src)
+          img.setAttribute(
+            "src",
+            imageDataUrl || TRANSPARENT_IMAGE_PLACEHOLDER
+          )
+        })
+      )
+
       const { toPng } = await import("html-to-image")
-      const dataUrl = await toPng(node, { pixelRatio: 2 })
+      // 页面自定义字体（如 @import 引入的字体 CSS）在克隆文档插入常失败，直接跳过
+      const dataUrl = await toPng(node, { pixelRatio: 2, skipFonts: true })
       const link = document.createElement("a")
       link.download = `${data.siteName.replace(/[\\/:*?"<>|]+/g, "-") || "share"}-share.png`
       link.href = dataUrl
@@ -155,6 +198,10 @@ function ShareDialog({
       console.error("Failed to export share card:", err)
       toast.error(t("saveFailed"))
     } finally {
+      imgNodes.forEach((img, i) => {
+        const src = originalSrcs[i]
+        if (src !== null) img.setAttribute("src", src)
+      })
       if (isDark) node.classList.remove("dark")
       setExporting(false)
     }
