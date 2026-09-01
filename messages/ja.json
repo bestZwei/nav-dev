@@ -52,6 +52,15 @@
     "searchPlaceholder": "検索... （ショートカット /）",
     "clearSearch": "検索をクリア"
   },
+  "share": {
+    "toggle": "サイトを共有",
+    "title": "サイトを共有",
+    "description": "このカードを保存またはスクリーンショットして、より多くの人に共有しましょう",
+    "saveImage": "画像を保存",
+    "saving": "生成中...",
+    "saved": "画像を保存しました",
+    "saveFailed": "保存に失敗しました。再試行してください"
+  },
   "siteCard": {
     "visit": "{name} にアクセス",
     "pinned": "ピン留め",

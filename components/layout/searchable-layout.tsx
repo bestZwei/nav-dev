@@ -8,6 +8,7 @@ import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
 import { BackToTop } from "./back-to-top"
 import { SiteDetailProvider } from "./site-detail-provider"
+import type { ShareData } from "./share-dialog"
 import { Badge } from "@/components/ui/badge"
 import {
   PluginSlot,
@@ -39,6 +40,8 @@ interface SearchableLayoutProps {
   siteName?: string
   currentCategory?: string
   useAnchorLinks?: boolean
+  // 分享卡片数据：仅首页传入，分享按钮随之只在首页渲染
+  shareData?: ShareData
   children: React.ReactNode
 }
 
@@ -48,6 +51,7 @@ export function SearchableLayout({
   siteName,
   currentCategory,
   useAnchorLinks,
+  shareData,
   children,
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -114,6 +118,7 @@ export function SearchableLayout({
         onSearchChange={setSearchQuery}
         currentCategory={currentCategory}
         useAnchorLinks={anchorLinks}
+        shareData={shareData}
       />
 
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">

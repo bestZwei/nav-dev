@@ -52,6 +52,15 @@
     "searchPlaceholder": "Suchen... (Kürzel /)",
     "clearSearch": "Suche löschen"
   },
+  "share": {
+    "toggle": "Seite teilen",
+    "title": "Seite teilen",
+    "description": "Speichern oder fotografieren Sie diese Übersichtskarte und teilen Sie Ihre Sammlung",
+    "saveImage": "Bild speichern",
+    "saving": "Wird erstellt...",
+    "saved": "Bild gespeichert",
+    "saveFailed": "Speichern fehlgeschlagen, bitte erneut versuchen"
+  },
   "siteCard": {
     "visit": "{name} besuchen",
     "pinned": "Angeheftet",

@@ -52,6 +52,15 @@
     "searchPlaceholder": "검색... (단축키 /)",
     "clearSearch": "검색어 지우기"
   },
+  "share": {
+    "toggle": "사이트 공유",
+    "title": "사이트 공유",
+    "description": "이 카드를 저장하거나 스크린샷하여 더 많은 사람들과 공유하세요",
+    "saveImage": "이미지 저장",
+    "saving": "생성 중...",
+    "saved": "이미지가 저장되었습니다",
+    "saveFailed": "저장에 실패했습니다. 다시 시도하세요"
+  },
   "siteCard": {
     "visit": "{name} 방문",
     "pinned": "고정됨",

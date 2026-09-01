@@ -52,6 +52,15 @@
     "searchPlaceholder": "Search... (press /)",
     "clearSearch": "Clear search"
   },
+  "share": {
+    "toggle": "Share site",
+    "title": "Share site",
+    "description": "Save or screenshot this overview card and share your collection with more people",
+    "saveImage": "Save image",
+    "saving": "Generating...",
+    "saved": "Image saved",
+    "saveFailed": "Failed to save, please retry"
+  },
   "siteCard": {
     "visit": "Visit {name}",
     "pinned": "Pinned",

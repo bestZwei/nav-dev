@@ -52,6 +52,15 @@
     "searchPlaceholder": "Rechercher... (raccourci /)",
     "clearSearch": "Effacer la recherche"
   },
+  "share": {
+    "toggle": "Partager le site",
+    "title": "Partager le site",
+    "description": "Enregistrez ou capturez cette carte d'ensemble pour partager votre collection",
+    "saveImage": "Enregistrer l'image",
+    "saving": "Génération...",
+    "saved": "Image enregistrée",
+    "saveFailed": "Échec de l'enregistrement, veuillez réessayer"
+  },
   "siteCard": {
     "visit": "Visiter {name}",
     "pinned": "Épinglé",

@@ -1,6 +1,7 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
 import { CategoryIconBadge } from "@/components/category-icon"
+import type { ShareData } from "@/components/layout/share-dialog"
 import { getAllCategories, getCategories, getDisplaySettings, getSites } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -18,11 +19,29 @@ export default async function HomePage() {
   // 将所有网站扁平化，用于客户端搜索
   const flatSites = allSites?.filter(site => site.isPublished) || []
 
+  // 分享卡片数据：服务端渲染时就地投影给弹窗，避免运行时请求
+  const shareData: ShareData = {
+    siteName: settings?.siteName || "Conan Nav",
+    siteDescription: settings?.siteDescription,
+    footerCopyright: settings?.footerCopyright,
+    categories: (categories || []).map((category) => ({
+      id: category.id,
+      name: category.name,
+      sites: (category.sites || []).map((site) => ({
+        id: site.id,
+        name: site.name,
+        url: site.url,
+        iconUrl: site.iconUrl,
+      })),
+    })),
+  }
+
     return (
       <SearchableLayout
         allCategories={allCategories || []}
         flatSites={flatSites}
         siteName={settings?.siteName}
+        shareData={shareData}
       >
       <div className="space-y-8">
         {/* 分类内容 */}

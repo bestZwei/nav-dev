@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { LocaleToggle } from "@/components/locale-toggle"
 import { FaviconServiceToggle } from "@/components/favicon-service-toggle"
 import { CardDensityToggle } from "@/components/card-density-toggle"
+import { ShareToggle, type ShareData } from "@/components/layout/share-dialog"
 import {
   Drawer,
   DrawerContent,
@@ -39,6 +40,8 @@ interface HeaderProps {
   onSearchSubmit?: (query: string) => void
   useAnchorLinks?: boolean
   onCategoryClick?: (slug: string) => void
+  // 分享卡片数据：仅首页传入，分享按钮随之只在首页渲染
+  shareData?: ShareData
 }
 
 export function Header({
@@ -51,6 +54,7 @@ export function Header({
   onSearchSubmit,
   useAnchorLinks = false,
   onCategoryClick,
+  shareData,
 }: HeaderProps) {
   const [logo, setLogo] = useState<string | null>(siteLogo)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -334,6 +338,7 @@ export function Header({
 
             {/* 插件注入点：启用的插件在此渲染前台入口（如网站收录按钮） */}
             <PluginHeaderSlot />
+            <ShareToggle data={shareData} />
             <CardDensityToggle />
             <FaviconServiceToggle />
             {/* 插件工具按钮槽（如诗词显隐切换） */}
