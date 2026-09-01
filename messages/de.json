@@ -284,7 +284,9 @@
       "sourceUser": "Von Nutzern",
       "sourceAdminCreated": "Vom Admin",
       "sourceAdmin": "Admin",
-      "thSource": "Quelle"
+      "thSource": "Quelle",
+      "dragOrderHint": "Zeilen ziehen, um die Reihenfolge in dieser Kategorie zu ändern (Angepinnt bleiben oben)",
+      "orderUpdated": "Anzeigereihenfolge aktualisiert"
     },
     "siteForm": {
       "createTitle": "Seite hinzufügen",
@@ -768,5 +770,8 @@
       "name": "Über-Seite",
       "description": "Fügt dem Frontend einen Über-Eintrag hinzu (Fußzeilen-Link und Sitemap); der Inhalt wird in den Systemeinstellungen gepflegt"
     }
+  },
+  "siteOrder": {
+    "resetOrder": "Auf Standardreihenfolge zurücksetzen"
   }
 }

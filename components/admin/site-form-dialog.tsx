@@ -375,23 +375,28 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={enableSiteDetail ? "sm:max-w-[680px]" : "sm:max-w-[500px]"}>
-        <DialogHeader>
+      <DialogContent
+        className={`flex max-h-[85vh] flex-col overflow-hidden ${
+          enableSiteDetail ? "sm:max-w-[680px]" : "sm:max-w-[500px]"
+        }`}
+      >
+        <DialogHeader className="shrink-0">
           <DialogTitle>{mode === "create" ? t("createTitle") : t("editTitle")}</DialogTitle>
           <DialogDescription>
             {mode === "create" ? t("createDesc") : t("editDesc")}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
+        {/* 头部与底栏固定，仅表单内容区内部滚动：截图再多弹窗高度也保持稳定 */}
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           {enableSiteDetail ? (
-            <Tabs defaultValue="basic" className="py-4">
-              <TabsList className="grid w-full grid-cols-2">
+            <Tabs defaultValue="basic" className="flex min-h-0 flex-1 flex-col py-4">
+              <TabsList className="grid w-full shrink-0 grid-cols-2">
                 <TabsTrigger value="basic">{t("tabBasic")}</TabsTrigger>
                 <TabsTrigger value="detail">{t("tabDetail")}</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="basic" className="mt-4">
+              <TabsContent value="basic" className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
                 <BasicInfoFields
                   formData={formData}
                   setFormData={setFormData}
@@ -399,7 +404,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
                 />
               </TabsContent>
 
-              <TabsContent value="detail" className="mt-4">
+              <TabsContent value="detail" className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
                 <DetailContentFields
                   formData={formData}
                   setFormData={setFormData}
@@ -418,7 +423,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
                 />
               </TabsContent>
 
-              <DialogFooter className="mt-4">
+              <DialogFooter className="mt-4 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
@@ -435,7 +440,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
             </Tabs>
           ) : (
             <>
-              <div className="grid gap-4 py-4">
+              <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto py-4 pr-1">
                 <BasicInfoFields
                   formData={formData}
                   setFormData={setFormData}
@@ -443,7 +448,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
                 />
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="shrink-0">
                 <Button
                   type="button"
                   variant="outline"

@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import remarkBreaks from "remark-breaks"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, type ReactNode } from "react"
@@ -19,7 +20,7 @@ export function MarkdownContent({ content }: { content: string }) {
   return (
     <div className="markdown-content min-w-0 max-w-full text-sm leading-relaxed text-foreground/90 break-words [overflow-wrap:anywhere]">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
           a: ({ href, children }) => (
             <Link

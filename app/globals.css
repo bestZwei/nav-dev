@@ -112,6 +112,25 @@
   display: none;
 }
 
+/* 细滚动条：用于可横向滑动的分类导航与截图列表 */
+.scrollbar-thin {
+  -ms-overflow-style: auto;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: hsl(var(--border));
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* 滚动条样式：保留原生滚动以保证跟手与稳定的点击交互 */
 .native-scroll {
   overscroll-behavior: contain;

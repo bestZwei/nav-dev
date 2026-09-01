@@ -284,7 +284,9 @@
       "sourceUser": "用户提交",
       "sourceAdminCreated": "管理员创建",
       "sourceAdmin": "管理员",
-      "thSource": "来源"
+      "thSource": "来源",
+      "dragOrderHint": "拖拽行可调整此分类下的显示顺序（置顶站点始终排在最前）",
+      "orderUpdated": "显示顺序已更新"
     },
     "siteForm": {
       "createTitle": "新增网站",
@@ -768,5 +770,8 @@
       "name": "关于页面",
       "description": "启用后前台出现「关于」页面入口（页脚链接与 sitemap）；内容在系统设置的关于页面区块维护"
     }
+  },
+  "siteOrder": {
+    "resetOrder": "恢复默认排序"
   }
 }

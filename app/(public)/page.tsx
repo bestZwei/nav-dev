@@ -64,7 +64,7 @@ export default async function HomePage() {
               </div>
 
               {category.sites && category.sites.length > 0 ? (
-                <SiteGrid sites={category.sites} />
+                <SiteGrid sites={category.sites} categoryId={category.id} enableDrag />
               ) : (
                 <div className="flex min-h-[100px] items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20">
                   <p className="text-xs text-muted-foreground">{t("noSitesInCategory")}</p>

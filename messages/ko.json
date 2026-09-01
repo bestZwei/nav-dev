@@ -284,7 +284,9 @@
       "sourceUser": "사용자 제출",
       "sourceAdminCreated": "관리자 생성",
       "sourceAdmin": "관리자",
-      "thSource": "출처"
+      "thSource": "출처",
+      "dragOrderHint": "행을 드래그하여 이 카테고리의 표시 순서를 변경하세요(고정 항목은 항상 맨 앞)",
+      "orderUpdated": "표시 순서가 업데이트되었습니다"
     },
     "siteForm": {
       "createTitle": "사이트 추가",
@@ -768,5 +770,8 @@
       "name": "소개 페이지",
       "description": "활성화하면 프런트엔드에 소개 페이지 링크(푸터 및 사이트맵)가 표시됩니다. 내용은 시스템 설정에서 관리합니다"
     }
+  },
+  "siteOrder": {
+    "resetOrder": "기본 순서로 초기화"
   }
 }

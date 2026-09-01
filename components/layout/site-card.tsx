@@ -42,6 +42,8 @@ export interface SiteItemProps {
 interface SiteCardProps {
   site: SiteItemProps
   density?: "standard" | "compact"
+  // 本地拖拽排序启用时，禁用卡片链接的原生拖拽，由外层网格统一接管拖拽
+  dragEnabled?: boolean
 }
 
 // 独立的网站图标组件：支持 Next.js Image 优化、占位符骨架屏动画与平滑渐变
@@ -115,7 +117,7 @@ function SiteIcon({
   )
 }
 
-export function SiteCard({ site, density: propDensity }: SiteCardProps) {
+export function SiteCard({ site, density: propDensity, dragEnabled = false }: SiteCardProps) {
   const [copied, setCopied] = useState(false)
   // 复制提示的复位计时器：卸载时清理，避免卸载后的延迟 setState
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -192,6 +194,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleCardClick}
+              draggable={dragEnabled ? false : undefined}
               aria-label={t("visit", { name: site.name })}
               className={`group relative flex h-12 items-center gap-2.5 rounded-lg border px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs select-none ${
                 site.isPinned
@@ -267,6 +270,7 @@ export function SiteCard({ site, density: propDensity }: SiteCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleCardClick}
+      draggable={dragEnabled ? false : undefined}
       aria-label={t("visit", { name: site.name })}
       className="group relative block h-full select-none"
     >

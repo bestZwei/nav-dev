@@ -139,9 +139,9 @@ export function SiteDetailDialog({
               {/* 截图区骨架 */}
               <div className="shrink-0 space-y-3 border-b border-border/60 bg-muted/10 px-5 py-4 sm:px-6">
                 <Skeleton className="h-3 w-24" />
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <Skeleton className="aspect-video w-full rounded-lg" />
-                  <Skeleton className="aspect-video w-full rounded-lg" />
+                <div className="flex gap-3 overflow-hidden">
+                  <Skeleton className="aspect-video w-56 shrink-0 rounded-lg sm:w-64" />
+                  <Skeleton className="aspect-video w-56 shrink-0 rounded-lg sm:w-64" />
                 </div>
               </div>
               {/* Markdown 阅读区骨架 */}
@@ -214,7 +214,7 @@ export function SiteDetailDialog({
                     {detail.url}
                   </p>
                   {detail.description && (
-                    <p className="mt-1.5 break-words text-xs leading-relaxed text-muted-foreground">
+                    <p className="mt-1.5 whitespace-pre-line break-words text-xs leading-relaxed text-muted-foreground">
                       {detail.description}
                     </p>
                   )}
@@ -228,7 +228,7 @@ export function SiteDetailDialog({
                 </div>
               </div>
 
-              {/* 截图区：横跨宽度，横向网格（移动端 1 列，平板 2 列，桌面 3 列） */}
+              {/* 截图区：单行横向滚动，张数再多也不撑高、不挤压下方 Markdown 阅读区 */}
               {screenshots.length > 0 && (
                 <div className="shrink-0 border-b border-border/60 bg-muted/10 px-5 py-4 sm:px-6">
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -237,13 +237,13 @@ export function SiteDetailDialog({
                       ({screenshots.length})
                     </span>
                   </h3>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="native-scroll scrollbar-thin flex gap-3 overflow-x-auto pb-1">
                     {screenshots.map((shot) => (
                       <button
                         key={shot.id}
                         type="button"
                         onClick={() => setLightboxShot(shot)}
-                        className="group relative aspect-video w-full overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-all hover:border-primary/50 hover:shadow-sm"
+                        className="group relative aspect-video w-56 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-all hover:border-primary/50 hover:shadow-sm sm:w-64"
                       >
                         <ScreenshotImage
                           displayUrl={shot.displayUrl}

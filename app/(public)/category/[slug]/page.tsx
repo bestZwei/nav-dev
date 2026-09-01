@@ -50,7 +50,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       </div>
 
       {category.sites && category.sites.length > 0 ? (
-        <SiteGrid sites={category.sites} />
+        <SiteGrid sites={category.sites} categoryId={category.id} enableDrag />
       ) : (
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-center">
           <p className="text-sm font-semibold text-foreground">{t("noSitesTitle")}</p>

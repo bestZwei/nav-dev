@@ -284,7 +284,9 @@
       "sourceUser": "User submitted",
       "sourceAdminCreated": "Created by admin",
       "sourceAdmin": "Admin",
-      "thSource": "Source"
+      "thSource": "Source",
+      "dragOrderHint": "Drag rows to reorder sites in this category (pinned sites always come first)",
+      "orderUpdated": "Display order updated"
     },
     "siteForm": {
       "createTitle": "Add site",
@@ -768,5 +770,8 @@
       "name": "About Page",
       "description": "Adds an About page entry to the frontend (footer link and sitemap); content is maintained in System Settings"
     }
+  },
+  "siteOrder": {
+    "resetOrder": "Reset to default order"
   }
 }

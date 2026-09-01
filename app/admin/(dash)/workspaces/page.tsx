@@ -299,40 +299,41 @@ export default function AdminWorkspacesPage() {
 
                     <div className="ml-auto flex items-center gap-2">
                       {!ws.isDefault && (
-                        <>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="sm" onClick={() => handleSetPrimary(ws)}>
-                                <Star className="mr-1 h-3.5 w-3.5" />
-                                {t("setPrimary")}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>{t("setPrimaryTip")}</TooltipContent>
-                          </Tooltip>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setFormMode("edit")
-                              setEditing(ws)
-                              setFormOpen(true)
-                            }}
-                          >
-                            <Pencil className="mr-1 h-3.5 w-3.5" />
-                            {tc("edit")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => {
-                              setDeleting(ws)
-                              setDeleteOpen(true)
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => handleSetPrimary(ws)}>
+                              <Star className="mr-1 h-3.5 w-3.5" />
+                              {t("setPrimary")}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t("setPrimaryTip")}</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {/* 默认工作区同样允许编辑名称/描述/发布状态，仅「设为默认」「删除」受限 */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFormMode("edit")
+                          setEditing(ws)
+                          setFormOpen(true)
+                        }}
+                      >
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                        {tc("edit")}
+                      </Button>
+                      {!ws.isDefault && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setDeleting(ws)
+                            setDeleteOpen(true)
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       )}
                     </div>
                   </div>

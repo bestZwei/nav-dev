@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
@@ -180,6 +180,88 @@ export function Header({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  // 顶栏分类导航横向滑动：分类溢出时支持滚轮横滑与按住拖拽，边缘渐隐提示可滑方向
+  const navRef = useRef<HTMLElement>(null)
+  const [navOverflow, setNavOverflow] = useState({ left: false, right: false })
+
+  const updateNavOverflow = useCallback(() => {
+    const el = navRef.current
+    if (!el) return
+    setNavOverflow({
+      left: el.scrollLeft > 1,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+    })
+  }, [])
+
+  // 滚轮默认只产生纵向 deltaY，这里转为横向滚动（React 根节点的 wheel 监听是
+  // 被动的，preventDefault 需要手动挂非 passive 监听）
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth) return
+      const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX
+      if (!delta) return
+      e.preventDefault()
+      el.scrollLeft += delta
+    }
+    el.addEventListener("wheel", onWheel, { passive: false })
+    return () => el.removeEventListener("wheel", onWheel)
+  }, [])
+
+  useEffect(() => {
+    updateNavOverflow()
+    const el = navRef.current
+    if (!el) return
+    el.addEventListener("scroll", updateNavOverflow, { passive: true })
+    const ro = new ResizeObserver(updateNavOverflow)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener("scroll", updateNavOverflow)
+      ro.disconnect()
+    }
+  }, [updateNavOverflow, categories])
+
+  // 激活分类居中滚入视野：分类多、当前项被溢出遮挡时保持可见
+  useEffect(() => {
+    const el = navRef.current
+    if (!el || !currentCategory) return
+    const active = el.querySelector<HTMLElement>(
+      `[data-category-slug="${CSS.escape(currentCategory)}"]`
+    )
+    if (!active) return
+    const target = active.offsetLeft - (el.clientWidth - active.offsetWidth) / 2
+    el.scrollTo({ left: Math.max(0, target), behavior: "smooth" })
+  }, [currentCategory, categories])
+
+  // 按住拖拽滑动：pointer 拖动超过阈值进入拖拽态，随后的 click 在捕获阶段被吞掉，
+  // 避免松手时误触分类链接
+  const navDragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false })
+
+  const handleNavPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return
+    navDragRef.current = { down: true, startX: e.clientX, startScroll: navRef.current?.scrollLeft ?? 0, moved: false }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const handleNavPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const drag = navDragRef.current
+    if (!drag.down) return
+    const dx = e.clientX - drag.startX
+    if (!drag.moved && Math.abs(dx) > 4) drag.moved = true
+    if (drag.moved && navRef.current) {
+      navRef.current.scrollLeft = drag.startScroll - dx
+    }
+  }
+
+  const handleNavClickCapture = (e: React.MouseEvent<HTMLElement>) => {
+    if (navDragRef.current.moved) {
+      e.preventDefault()
+      e.stopPropagation()
+      navDragRef.current.moved = false
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="px-2 sm:px-4 lg:px-6">
@@ -278,28 +360,43 @@ export function Header({
             </Link>
           </div>
 
-          {/* 桌面端：Tabs 风格横向分类导航 */}
-          <nav className="hidden md:flex flex-1 items-center overflow-x-auto overflow-y-hidden scrollbar-hide">
-            <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px] gap-0.5">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={getCategoryHref(category.slug)}
-                  onClick={(e) => handleAnchorClick(e, category.slug)}
-                  className={`inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] ${
-                    currentCategory === category.slug
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-accent/50"
-                  }`}
-                >
-                  {category.icon && (
-                    <CategoryIcon icon={category.icon} className="h-3.5 w-3.5 shrink-0" size={14} />
-                  )}
-                  <span>{category.name}</span>
-                </Link>
-              ))}
-            </div>
-          </nav>
+          {/* 桌面端：Tabs 风格横向分类导航（分类溢出时滚轮/拖拽横滑，边缘渐隐提示） */}
+          <div className="relative hidden min-w-0 flex-1 md:block">
+            <nav
+              ref={navRef}
+              onPointerDown={handleNavPointerDown}
+              onPointerMove={handleNavPointerMove}
+              onClickCapture={handleNavClickCapture}
+              className="flex flex-1 select-none items-center overflow-x-auto overflow-y-hidden scrollbar-hide"
+            >
+              <div className="bg-muted inline-flex h-9 items-center justify-center rounded-lg p-[3px] gap-0.5">
+                {categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    data-category-slug={category.slug}
+                    href={getCategoryHref(category.slug)}
+                    onClick={(e) => handleAnchorClick(e, category.slug)}
+                    className={`inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] ${
+                      currentCategory === category.slug
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-accent/50"
+                    }`}
+                  >
+                    {category.icon && (
+                      <CategoryIcon icon={category.icon} className="h-3.5 w-3.5 shrink-0" size={14} />
+                    )}
+                    <span>{category.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </nav>
+            {navOverflow.left && (
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent" />
+            )}
+            {navOverflow.right && (
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
+            )}
+          </div>
 
           <div className="flex-shrink-0 ml-auto pl-2 sm:pl-4 flex items-center gap-2">
             <div className="relative hidden sm:block group">
