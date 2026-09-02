@@ -284,7 +284,9 @@
       "sourceUser": "ユーザー投稿",
       "sourceAdminCreated": "管理者作成",
       "sourceAdmin": "管理者",
-      "thSource": "来源"
+      "thSource": "来源",
+      "dragOrderHint": "行をドラッグしてこのカテゴリ内の表示順を変更できます（ピン留めは常に先頭）",
+      "orderUpdated": "表示順を更新しました"
     },
     "siteForm": {
       "createTitle": "サイトを追加",
@@ -768,5 +770,8 @@
       "name": "about ページ",
       "description": "有効にするとフロントエンドに about ページへのリンク（フッターとサイトマップ）が表示されます。内容はシステム設定で編集します"
     }
+  },
+  "siteOrder": {
+    "resetOrder": "デフォルトの順序に戻す"
   }
 }

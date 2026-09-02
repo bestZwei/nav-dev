@@ -734,6 +734,69 @@ export async function updateCategoriesOrder(items: { id: string; order: number }
   }
 }
 
+// 读取分类下站点的当前显示顺序（与前台/后台默认排序同口径：置顶优先 + order + id）
+export async function getCategorySiteOrder(categoryId: string) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    if (!(await isCategoryInCurrentWorkspace(categoryId))) {
+      return { success: false, error: "分类不属于当前工作区" }
+    }
+    const sites = await prisma.site.findMany({
+      where: { categoryId },
+      orderBy: [{ isPinned: "desc" }, { order: "asc" }, { id: "asc" }],
+      select: { id: true },
+    })
+    return { success: true, data: sites.map(s => s.id) }
+  } catch (error) {
+    if (isNextDynamicError(error)) throw error
+    console.error("Error fetching category site order:", error)
+    return { success: false, error: "Failed to fetch category site order" }
+  }
+}
+
+// 保存分类下站点的显示顺序：入参为该分类完整的站点 id 序列，
+// 整体重编号 1..N（存量数据 order 全为默认 0 时也能得到确定顺序）；
+// 入参未覆盖的站点按原顺序追加到末尾，防拖拽期间新增/删除造成丢项
+export async function updateSitesOrder(categoryId: string, orderedIds: string[]) {
+  const unauthorized = await requireAdmin()
+  if (unauthorized) return unauthorized
+  try {
+    if (!(await isCategoryInCurrentWorkspace(categoryId))) {
+      return { success: false, error: "分类不属于当前工作区" }
+    }
+    const sites = await prisma.site.findMany({
+      where: { categoryId },
+      select: { id: true },
+      orderBy: [{ isPinned: "desc" }, { order: "asc" }, { id: "asc" }],
+    })
+    const siteIdSet = new Set(sites.map(s => s.id))
+    const seen = new Set<string>()
+    const validOrdered = orderedIds.filter(id => {
+      if (!siteIdSet.has(id) || seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
+    const missing = sites.map(s => s.id).filter(id => !seen.has(id))
+    const finalOrder = [...validOrdered, ...missing]
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < finalOrder.length; i++) {
+        await tx.site.update({
+          where: { id: finalOrder[i] },
+          data: { order: i + 1 },
+        })
+      }
+    })
+    revalidatePath("/admin/sites")
+    revalidatePath("/")
+    return { success: true }
+  } catch (error) {
+    if (isNextDynamicError(error)) throw error
+    console.error("Error updating sites order:", error)
+    return { success: false, error: "Failed to update sites order" }
+  }
+}
+
 export async function deleteCategory(id: string) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized

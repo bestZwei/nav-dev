@@ -42,10 +42,10 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useTranslations } from "next-intl"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square, ArrowUp, ArrowDown } from "lucide-react"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square, ArrowUp, ArrowDown, GripVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
-import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter, checkSiteHealth, getSiteIdsForHealthCheck } from "@/lib/actions"
+import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter, checkSiteHealth, getSiteIdsForHealthCheck, getCategorySiteOrder, updateSitesOrder } from "@/lib/actions"
 import { fetchPublicSettings } from "@/lib/client-settings"
 import { toast } from "sonner"
 
@@ -108,6 +108,20 @@ export default function AdminSitesPage() {
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState("")
   const isFirstSearch = useRef(true)
+
+  // 分类内拖拽排序：仅当选中了单一分类、按默认排序查看且无搜索/其他筛选时启用，
+  // 保证拖拽结果与「分类下站点显示顺序」一一对应
+  const dragOrderEnabled =
+    filterCategory !== "all" &&
+    sortBy === "default" &&
+    filterStatus === "all" &&
+    (!submissionEnabled || filterSubmitter === "all") &&
+    !searchKeyword.trim()
+  const [draggedSiteId, setDraggedSiteId] = useState<string | null>(null)
+  const [dragOverSiteId, setDragOverSiteId] = useState<string | null>(null)
+  const [savingOrder, setSavingOrder] = useState(false)
+  // 分类下完整站点 id 顺序（服务端同口径排序），落库时以它为底册套用本页的拖拽结果
+  const fullOrderRef = useRef<string[]>([])
 
   // 分页状态
   const [page, setPage] = useState(1)
@@ -251,6 +265,78 @@ export default function AdminSitesPage() {
     const newSize = Number(value)
     setPageSize(newSize)
     loadSites(1, newSize)
+  }
+
+  // 拖拽排序：启用或切换分类时拉取该分类完整顺序底册
+  useEffect(() => {
+    if (!dragOrderEnabled || filterCategory === "all") {
+      fullOrderRef.current = []
+      return
+    }
+    let cancelled = false
+    getCategorySiteOrder(filterCategory).then((result) => {
+      if (!cancelled && result.success && result.data) {
+        fullOrderRef.current = result.data as string[]
+      }
+    })
+    return () => { cancelled = true }
+  }, [dragOrderEnabled, filterCategory])
+
+  const handleDragStartRow = (siteId: string) => {
+    setDraggedSiteId(siteId)
+  }
+
+  const handleDragEnterRow = (siteId: string) => {
+    if (!draggedSiteId || siteId === draggedSiteId) return
+    setDragOverSiteId(siteId)
+  }
+
+  const handleDropRow = async () => {
+    const from = sites.findIndex(s => s.id === draggedSiteId)
+    const to = sites.findIndex(s => s.id === dragOverSiteId)
+    setDraggedSiteId(null)
+    setDragOverSiteId(null)
+    if (from < 0 || to < 0 || from === to) return
+
+    const nextVisible = [...sites]
+    const [moved] = nextVisible.splice(from, 1)
+    nextVisible.splice(to, 0, moved)
+    // 置顶站点始终显示在最前：落库前稳定分区（置顶区/普通区各自保序），
+    // 避免「拖到置顶上方、刷新后却不生效」的错觉
+    const newVisible = [
+      ...nextVisible.filter(s => s.isPinned),
+      ...nextVisible.filter(s => !s.isPinned),
+    ].map(s => s.id)
+
+    // 用可见页的新顺序替换完整底册中对应位置的 id（位置集合不变，仅换内容）
+    const full = [...fullOrderRef.current]
+    if (full.length > 0) {
+      const positions = sites
+        .map(s => full.indexOf(s.id))
+        .filter(p => p >= 0)
+        .sort((a, b) => a - b)
+      positions.forEach((pos, i) => { full[pos] = newVisible[i] })
+    }
+
+    setSavingOrder(true)
+    try {
+      const result = await updateSitesOrder(filterCategory, full.length > 0 ? full : newVisible)
+      if (result.success) {
+        fullOrderRef.current = full.length > 0 ? full : newVisible
+        toast.success(t("orderUpdated"))
+        loadSites()
+      } else {
+        toast.error(tc("operationFailed"), {
+          description: result.error || tc("retryLater"),
+        })
+      }
+    } catch {
+      toast.error(tc("operationFailed"), {
+        description: tc("retryLater"),
+      })
+    } finally {
+      setSavingOrder(false)
+    }
   }
 
   // 打开创建对话框
@@ -591,7 +677,15 @@ export default function AdminSitesPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t("listTitle")}</CardTitle>
-          <CardDescription>{t("totalSites", { count: pagination?.total || 0 })}</CardDescription>
+          <CardDescription>
+            {t("totalSites", { count: pagination?.total || 0 })}
+            {dragOrderEnabled && (
+              <span className="ml-2 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                <GripVertical className="h-3 w-3" />
+                {t("dragOrderHint")}
+              </span>
+            )}
+          </CardDescription>
           <CardAction>
             <div className="flex items-center gap-2">
               {batchChecking ? (
@@ -651,6 +745,9 @@ export default function AdminSitesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {dragOrderEnabled && (
+                      <TableHead className="w-10" />
+                    )}
                     <TableHead className="w-20 min-w-[72px] text-center whitespace-nowrap">{t("thIcon")}</TableHead>
                     <TableHead className="min-w-[180px] whitespace-nowrap">{t("thNameDesc")}</TableHead>
                     <TableHead className="w-36 whitespace-nowrap">{t("thCategory")}</TableHead>
@@ -665,7 +762,30 @@ export default function AdminSitesPage() {
                 </TableHeader>
                 <TableBody>
                   {sites.map((site) => (
-                    <TableRow key={site.id} className={site.isPinned ? "bg-amber-500/5" : ""}>
+                    <TableRow
+                      key={site.id}
+                      draggable={dragOrderEnabled}
+                      onDragStart={() => handleDragStartRow(site.id)}
+                      onDragEnter={() => handleDragEnterRow(site.id)}
+                      onDragOver={(e) => dragOrderEnabled && e.preventDefault()}
+                      onDrop={dragOrderEnabled ? handleDropRow : undefined}
+                      onDragEnd={() => {
+                        setDraggedSiteId(null)
+                        setDragOverSiteId(null)
+                      }}
+                      className={[
+                        site.isPinned ? "bg-amber-500/5" : "",
+                        draggedSiteId === site.id ? "opacity-40" : "",
+                        dragOverSiteId === site.id && draggedSiteId !== site.id ? "bg-primary/5" : "",
+                      ].join(" ").trim() || undefined}
+                    >
+                      {dragOrderEnabled && (
+                        <TableCell className="w-10 pr-0">
+                          <GripVertical
+                            className={`h-4 w-4 ${savingOrder ? "text-muted-foreground/30" : "cursor-grab text-muted-foreground/60 hover:text-muted-foreground"}`}
+                          />
+                        </TableCell>
+                      )}
                       {/* 图标 */}
                       <TableCell className="text-center w-20 min-w-[72px]">
                         <div className="flex items-center justify-center">

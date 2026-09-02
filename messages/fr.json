@@ -284,7 +284,9 @@
       "sourceUser": "Soumis par un utilisateur",
       "sourceAdminCreated": "Créé par l'admin",
       "sourceAdmin": "Admin",
-      "thSource": "Source"
+      "thSource": "Source",
+      "dragOrderHint": "Faites glisser les lignes pour réordonner cette catégorie (les épinglés restent en tête)",
+      "orderUpdated": "Ordre d'affichage mis à jour"
     },
     "siteForm": {
       "createTitle": "Ajouter un site",
@@ -768,5 +770,8 @@
       "name": "Page À propos",
       "description": "Ajoute une entrée « À propos » au frontend (lien de pied de page et sitemap) ; le contenu se gère dans les paramètres système"
     }
+  },
+  "siteOrder": {
+    "resetOrder": "Rétablir l'ordre par défaut"
   }
 }
