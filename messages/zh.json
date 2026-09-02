@@ -715,6 +715,17 @@
       "updateFailed": "操作失败，请重试",
       "deleteSuccess": "插件已删除"
     },
+    "browserExtension": {
+      "name": "浏览器扩展",
+      "description": "配套浏览器扩展直连收录：配置令牌后可在扩展中直接添加网址到指定工作区与分类，无需跳转站点",
+      "config": {
+        "token": "访问令牌（Token）"
+      },
+      "generate": "生成令牌",
+      "generated": "令牌已生成，请复制到浏览器扩展",
+      "copied": "已复制",
+      "copy": "复制"
+    },
     "siteSubmission": {
       "name": "网站收录",
       "description": "填写网站信息，管理员审核通过后会发布到导航站",

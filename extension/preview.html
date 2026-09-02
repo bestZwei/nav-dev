@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Waypoint 弹窗预览</title>
+    <script type="module" src="/src/preview/preview.tsx"></script>
+  </head>
+  <body>
+    <div class="flex flex-col items-center gap-4 bg-neutral-200 p-8">
+      <div class="w-[360px] overflow-hidden rounded-lg shadow-xl">
+        <div id="app"></div>
+      </div>
+      <div class="w-96 rounded-lg border bg-white p-3">
+        <div class="mb-2 text-xs font-semibold text-neutral-700">
+          交互日志（模拟 chrome API 与 /api/extension）
+        </div>
+        <div id="preview-log" class="space-y-1 break-all text-xs text-neutral-600"></div>
+      </div>
+    </div>
+  </body>
+</html>

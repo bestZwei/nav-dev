@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -88,6 +88,42 @@ export function SiteSubmissionHeaderSlot() {
       submitterContact: "",
     },
   })
+
+  // 浏览器扩展深链：?__ext_submit=1&ext_url=&ext_title=&ext_desc=
+  // 预填投稿弹窗并自动展开，随后清理地址栏避免刷新重复触发
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("__ext_submit") !== "1") return
+    const extUrl = params.get("ext_url") || ""
+    try {
+      const parsed = new URL(extUrl)
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return
+    } catch {
+      return
+    }
+    setOpen(true)
+    form.reset({
+      name: (params.get("ext_title") || "").slice(0, 50),
+      url: extUrl,
+      description: (params.get("ext_desc") || "").slice(0, 200),
+      categoryId: "",
+      submitterContact: "",
+    })
+    if (categories.length === 0) {
+      getSubmissionCategories().then(setCategories)
+    }
+    for (const key of ["__ext_submit", "ext_url", "ext_title", "ext_desc"]) {
+      params.delete(key)
+    }
+    const qs = params.toString()
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen)

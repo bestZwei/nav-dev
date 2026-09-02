@@ -64,3 +64,10 @@ CLAUDE.md
 .mimosa/
 .monkeycode/
 .zcode/
+# pnpm（本机安装副产物）
+/.pnpm-store/
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+# 浏览器扩展（extension/）
+/extension/node_modules/
+/extension/dist/

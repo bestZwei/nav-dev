@@ -1,4 +1,5 @@
 import { siteSubmissionPlugin } from "@/plugins/site-submission"
+import { browserExtensionPlugin } from "@/plugins/browser-extension"
 import { poetryCardPlugin } from "@/plugins/poetry-card"
 import { visitTrackingPlugin } from "@/plugins/visit-tracking"
 import { siteDetailPlugin } from "@/plugins/site-detail"
@@ -9,6 +10,7 @@ import type { PluginDefinition } from "./types"
 // 上传插件走 Plugin 表，与注册表在 server.ts 中合并为统一视图。
 export const pluginRegistry: PluginDefinition[] = [
   siteSubmissionPlugin,
+  browserExtensionPlugin,
   poetryCardPlugin,
   visitTrackingPlugin,
   siteDetailPlugin,

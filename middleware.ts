@@ -93,6 +93,13 @@ function buildWorkspaceHeaders(request: NextRequest): Headers {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ---- 浏览器扩展 API：Bearer 令牌鉴权（无 Cookie），CSRF 不适用，直接放行 ----
+  if (pathname.startsWith("/api/extension")) {
+    return NextResponse.next({
+      request: { headers: buildWorkspaceHeaders(request) },
+    })
+  }
+
   // ---- CSRF：拒绝跨站伪造的 API 写请求 ----
   if (pathname.startsWith("/api/") && !isSameOriginApiRequest(request)) {
     return NextResponse.json(

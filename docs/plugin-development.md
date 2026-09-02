@@ -198,6 +198,7 @@ Multiple plugins may register for a slot; by product convention only one homeSid
 | `visit-tracking` | Visit tracking + admin visit statistics | Pluginized |
 | `site-detail` | Secondary detail dialog on site cards | Pluginized (data fetching `getSiteDetail` stays core; dialog UI belongs to the plugin) |
 | `about-page` | Frontend About page entry (footer link + sitemap) | Pluginized (content stays in SystemSettings with workspace overrides) |
+| `browser-extension` | Direct collection via the companion browser extension: token-authenticated API (`/api/extension`), submissions publish immediately; see `extension/` | Pluginized (token stored in plugin config) |
 
 ### 2.4 Backend capabilities (actions.ts)
 

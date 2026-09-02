@@ -28,6 +28,7 @@ import {
   uploadPluginManifest,
   deleteUploadedPlugin,
 } from "@/lib/plugins/plugin-actions"
+import { generateExtensionToken } from "@/plugins/browser-extension/actions"
 import type {
   PluginConfigField,
 } from "@/lib/plugins/types"
@@ -238,6 +239,32 @@ function PluginCard({
     setValues((prev) => ({ ...prev, [key]: value }))
   }
 
+  // browser-extension 插件专属：生成/复制访问令牌。
+  // 令牌由服务端生成写入插件配置，这里仅展示与复制
+  const [tokenGenerating, setTokenGenerating] = useState(false)
+
+  async function handleGenerateToken() {
+    setTokenGenerating(true)
+    try {
+      const result = await generateExtensionToken()
+      if (result.success && result.token) {
+        setValues((prev) => ({ ...prev, extensionToken: result.token! }))
+        toast.success(tr("plugins.browserExtension.generated"))
+      } else {
+        toast.error(result.error || t("updateFailed"))
+      }
+    } finally {
+      setTokenGenerating(false)
+    }
+  }
+
+  function handleCopyToken() {
+    const token = String(values.extensionToken || "")
+    if (!token) return
+    navigator.clipboard.writeText(token)
+    toast.success(tr("plugins.browserExtension.copied"))
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -306,7 +333,33 @@ function PluginCard({
                     ? tr(field.labelKey)
                     : field.labelKey}
                 </Label>
-                {field.type === "boolean" ? (
+                {plugin.id === "browser-extension" &&
+                field.key === "extensionToken" ? (
+                  <div className="flex flex-1 items-center justify-end gap-2">
+                    <code className="min-w-0 max-w-[280px] flex-1 truncate rounded bg-muted px-2 py-1 text-right font-mono text-xs text-muted-foreground">
+                      {String(values[field.key] || "") || "—"}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={tokenGenerating}
+                      onClick={handleGenerateToken}
+                    >
+                      {tokenGenerating && (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      )}
+                      {tr("plugins.browserExtension.generate")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!values[field.key]}
+                      onClick={handleCopyToken}
+                    >
+                      {tr("plugins.browserExtension.copy")}
+                    </Button>
+                  </div>
+                ) : field.type === "boolean" ? (
                   <Switch
                     id={`${plugin.id}-${field.key}`}
                     checked={Boolean(values[field.key])}

@@ -34,7 +34,7 @@ A clean and modern link navigation system built with Next.js 15, Prisma, and sha
 - 👤 Admin System - single-admin design, edit profile from the sidebar avatar
 - ⚙️ System Settings - site name, logo, favicon, GitHub link, ICP filing, etc.
 - 📈 Visit Tracking - optional site visit statistics
-- 🧩 **Plugin System** - builtin site-submission plugin plus user-uploaded declarative plugins; see the [Plugin Development Guide](docs/plugin-development.md)
+- 🧩 **Plugin System** - builtin collection/browser-extension plugins plus user-uploaded declarative plugins; see the [Plugin Development Guide](docs/plugin-development.md)
 
 ### Technical Highlights
 - **Single-admin architecture** - no complex user permission system needed

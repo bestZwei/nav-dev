@@ -715,6 +715,17 @@
       "updateFailed": "작업에 실패했습니다. 다시 시도해 주세요",
       "deleteSuccess": "플러그인이 삭제되었습니다"
     },
+    "browserExtension": {
+      "name": "브라우저 확장",
+      "description": "브라우저 확장 직접 수집: 토큰을 설정하면 사이트로 이동하지 않고 지정한 워크스페이스와 카테고리에 URL을 추가할 수 있습니다",
+      "config": {
+        "token": "액세스 토큰"
+      },
+      "generate": "토큰 생성",
+      "generated": "토큰이 생성되었습니다. 브라우저 확장에 복사하세요",
+      "copied": "복사됨",
+      "copy": "복사"
+    },
     "siteSubmission": {
       "name": "사이트 등록",
       "description": "사이트 정보를 입력하세요. 관리자 검토 후 게시됩니다",

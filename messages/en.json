@@ -715,6 +715,17 @@
       "updateFailed": "Operation failed, please retry",
       "deleteSuccess": "Plugin deleted"
     },
+    "browserExtension": {
+      "name": "Browser Extension",
+      "description": "Direct collection with the companion browser extension: configure a token to add URLs to any workspace and category without leaving the browser",
+      "config": {
+        "token": "Access token"
+      },
+      "generate": "Generate token",
+      "generated": "Token generated. Copy it into the browser extension",
+      "copied": "Copied",
+      "copy": "Copy"
+    },
     "siteSubmission": {
       "name": "Site Submission",
       "description": "Fill in the site info; it will be published after admin review",

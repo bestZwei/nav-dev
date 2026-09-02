@@ -715,6 +715,17 @@
       "updateFailed": "Vorgang fehlgeschlagen, bitte wiederholen",
       "deleteSuccess": "Plugin entfernt"
     },
+    "browserExtension": {
+      "name": "Browser-Erweiterung",
+      "description": "Direktes Sammeln mit der Browser-Erweiterung: Nach Token-Konfiguration lassen sich URLs ohne Umweg in beliebige Arbeitsbereiche und Kategorien eintragen",
+      "config": {
+        "token": "Zugriffstoken"
+      },
+      "generate": "Token generieren",
+      "generated": "Token generiert. Bitte in die Browser-Erweiterung kopieren",
+      "copied": "Kopiert",
+      "copy": "Kopieren"
+    },
     "siteSubmission": {
       "name": "Website-Einsendung",
       "description": "Füllen Sie die Seiteninfos aus; nach Prüfung durch den Admin wird sie veröffentlicht",

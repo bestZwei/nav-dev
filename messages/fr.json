@@ -715,6 +715,17 @@
       "updateFailed": "Échec de l'opération, veuillez réessayer",
       "deleteSuccess": "Extension supprimée"
     },
+    "browserExtension": {
+      "name": "Extension navigateur",
+      "description": "Collecte directe via l'extension navigateur : après configuration du jeton, ajoutez des URLs dans n'importe quel espace et catégorie sans quitter le navigateur",
+      "config": {
+        "token": "Jeton d'accès"
+      },
+      "generate": "Générer le jeton",
+      "generated": "Jeton généré. Copiez-le dans l'extension navigateur",
+      "copied": "Copié",
+      "copy": "Copier"
+    },
     "siteSubmission": {
       "name": "Soumission de sites",
       "description": "Remplissez les informations du site ; il sera publié après validation par l'administrateur",

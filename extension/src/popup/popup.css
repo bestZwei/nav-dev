@@ -1,0 +1,9 @@
+@import "../styles/tailwind.css";
+
+/* 扩展弹窗视口：固定宽度、清零默认边距，避免四周留白 */
+html,
+body {
+  margin: 0;
+  width: 360px;
+  background: hsl(var(--background));
+}

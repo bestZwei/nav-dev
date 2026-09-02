@@ -198,6 +198,7 @@ export const pluginRegistry: PluginDefinition[] = [
 | `visit-tracking` | 站点访问埋点 + 后台访问统计 | 插件化 |
 | `site-detail` | 站点卡片二级详情弹窗 | 插件化（数据获取 getSiteDetail 属于核心，弹窗 UI 属于插件） |
 | `about-page` | 前台「关于」页面入口（页脚链接 + sitemap） | 插件化（内容仍存 SystemSettings，支持工作区覆盖） |
+| `browser-extension` | 浏览器扩展直连收录：令牌鉴权 API（/api/extension），收录直接发布；配套 Chrome 扩展见 `extension/` | 插件化（令牌存插件配置） |
 
 ### 4. 后端能力（actions.ts）
 

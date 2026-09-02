@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Waypoint 图标：shadcn 风格深色圆角方块 + 白色 W 航点笔画，末笔圆环标记航点 -->
+  <rect width="512" height="512" rx="116" fill="#09090b"/>
+  <path
+    d="M132 178 L178 374 L256 230 L334 374 L380 178"
+    fill="none"
+    stroke="#fafafa"
+    stroke-width="46"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="380" cy="178" r="52" fill="none" stroke="#fafafa" stroke-width="30"/>
+</svg>
