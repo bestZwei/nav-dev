@@ -1,10 +1,5 @@
-import { getExtConfig } from "./storage"
 
-export interface CollectPayload {
-  url: string
-  title: string
-  description?: string
-}
+import { getExtConfig } from "./storage"
 
 export function isHttpUrl(url: string): boolean {
   try {
@@ -77,22 +72,4 @@ export function submitDirect(
     method: "POST",
     body: JSON.stringify(payload),
   })
-}
-
-export async function buildCollectUrl(
-  payload: CollectPayload
-): Promise<string> {
-  const { baseUrl } = await getExtConfig()
-  const params = new URLSearchParams()
-  params.set("__ext_submit", "1")
-  params.set("ext_url", payload.url)
-  if (payload.title) params.set("ext_title", payload.title.slice(0, 200))
-  if (payload.description)
-    params.set("ext_desc", payload.description.slice(0, 300))
-  return `${baseUrl}/?${params.toString()}`
-}
-
-export async function openCollectTab(payload: CollectPayload): Promise<void> {
-  const url = await buildCollectUrl(payload)
-  await chrome.tabs.create({ url })
 }

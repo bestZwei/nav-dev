@@ -50,33 +50,48 @@ function Popup() {
       document.documentElement.classList.add("dark")
     }
     ;(async () => {
-      const [cfg, tabs] = await Promise.all([
-        getExtConfig(),
-        chrome.tabs.query({ active: true, currentWindow: true }),
-      ])
+      // 深链预填（右键菜单/扩展窗口场景）：参数优先于当前标签页
+      const params = new URLSearchParams(window.location.search)
+      const extUrl = params.get("ext_url") || ""
+      const hasExtTarget = isHttpUrl(extUrl)
+      const cfg = await getExtConfig()
       setConfig(cfg)
       setKeepDomainOnly(cfg.keepDomainOnly)
-      const current = tabs[0] || null
-      setTab(current)
-      if (isHttpUrl(current?.url || "")) {
-        setName(current!.title || "")
-        try {
-          const [result] = await chrome.scripting.executeScript({
-            target: { tabId: current!.id! },
-            func: () => {
-              const meta =
-                document.querySelector<HTMLMetaElement>(
-                  "meta[property='og:description']"
-                ) ||
-                document.querySelector<HTMLMetaElement>(
-                  "meta[name='description']"
-                )
-              return meta?.content?.trim() || ""
-            },
-          })
-          setDescription((result?.result as string) || "")
-        } catch {
-          /* 无法注入时静默降级 */
+      if (hasExtTarget) {
+        setTab({
+          id: -1,
+          url: extUrl,
+          title: params.get("ext_title") || extUrl,
+        } as chrome.tabs.Tab)
+        setName(params.get("ext_title") || extUrl)
+        setDescription(params.get("ext_desc") || "")
+      } else {
+        const tabs = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        })
+        const current = tabs[0] || null
+        setTab(current)
+        if (isHttpUrl(current?.url || "")) {
+          setName(current!.title || "")
+          try {
+            const [result] = await chrome.scripting.executeScript({
+              target: { tabId: current!.id! },
+              func: () => {
+                const meta =
+                  document.querySelector<HTMLMetaElement>(
+                    "meta[property='og:description']"
+                  ) ||
+                  document.querySelector<HTMLMetaElement>(
+                    "meta[name='description']"
+                  )
+                return meta?.content?.trim() || ""
+              },
+            })
+            setDescription((result?.result as string) || "")
+          } catch {
+            /* 无法注入时静默降级 */
+          }
         }
       }
       if (cfg.baseUrl && cfg.token) {
