@@ -50,9 +50,17 @@ function Popup() {
       document.documentElement.classList.add("dark")
     }
     ;(async () => {
-      // 深链预填（右键菜单/扩展窗口场景）：参数优先于当前标签页
+      // 暂存目标优先（右键菜单经 openPopup 打开时使用）：session → URL 参数 → 当前标签页
+      let pending: { url: string; title: string; description: string } | null = null
+      try {
+        const data = await chrome.storage.session.get("pendingCollect")
+        pending = data?.pendingCollect ?? null
+        if (pending) await chrome.storage.session.remove("pendingCollect")
+      } catch {
+        /* 预览环境无 storage.session 时忽略 */
+      }
       const params = new URLSearchParams(window.location.search)
-      const extUrl = params.get("ext_url") || ""
+      const extUrl = pending?.url || params.get("ext_url") || ""
       const hasExtTarget = isHttpUrl(extUrl)
       const cfg = await getExtConfig()
       setConfig(cfg)
@@ -61,10 +69,10 @@ function Popup() {
         setTab({
           id: -1,
           url: extUrl,
-          title: params.get("ext_title") || extUrl,
+          title: pending?.title || params.get("ext_title") || extUrl,
         } as chrome.tabs.Tab)
-        setName(params.get("ext_title") || extUrl)
-        setDescription(params.get("ext_desc") || "")
+        setName(pending?.title || params.get("ext_title") || extUrl)
+        setDescription(pending?.description ?? params.get("ext_desc") ?? "")
       } else {
         const tabs = await chrome.tabs.query({
           active: true,
