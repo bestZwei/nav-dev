@@ -138,6 +138,8 @@ function Popup() {
       workspaceId,
       categoryId,
     })
+    // 记住本次目标：右键菜单「收录此站点」默认沿用
+    await setExtConfig({ lastWorkspaceId: workspaceId, lastCategoryId: categoryId })
     setSubmitting(false)
     if (!result.ok) {
       const messages: Record<string, string> = {

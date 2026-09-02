@@ -2,6 +2,9 @@ export interface ExtConfig {
   baseUrl: string
   token: string
   keepDomainOnly: boolean
+  /** 上一次直连收录使用的目标（右键菜单默认沿用） */
+  lastWorkspaceId?: string
+  lastCategoryId?: string
 }
 
 const DEFAULTS: ExtConfig = {
