@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { CategoryIconPicker } from "@/components/admin/category-icon-picker"
 import { createCategory, updateCategory, getCategoryById } from "@/lib/actions"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
@@ -39,6 +40,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
   const router = useRouter()
   const t = useTranslations("admin.categoryForm")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<{
     name: string
@@ -110,7 +112,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
         router.refresh()
       } else {
         toast.error(tc("operationFailed"), {
-          description: result.error || tc("operationFailed"),
+          description: resolveActionError(tAE, result.error, tc("operationFailed")),
         })
       }
     } catch (error) {

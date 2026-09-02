@@ -51,6 +51,7 @@ import {
 } from "@/lib/actions"
 import { toast } from "sonner"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 
 interface DomainItem {
   id: string
@@ -79,6 +80,7 @@ interface Workspace {
 export default function AdminWorkspacesPage() {
   const t = useTranslations("admin.workspaces")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -103,7 +105,7 @@ export default function AdminWorkspacesPage() {
       if (result.success && result.data) {
         setWorkspaces(result.data as Workspace[])
       } else {
-        toast.error(tc("loadFailed"), { description: result.error || t("cannotLoad") })
+        toast.error(tc("loadFailed"), { description: resolveActionError(tAE, result.error, t("cannotLoad"))})
       }
     } catch {
       toast.error(tc("loadFailed"), { description: tc("retryLater") })
@@ -125,7 +127,7 @@ export default function AdminWorkspacesPage() {
       toast.success(t("primarySet", { name: ws.name }))
       loadRef.current()
     } else {
-      toast.error(result.error || t("actionFailed"))
+      toast.error(resolveActionError(tAE, result.error, t("actionFailed")))
     }
   }
 
@@ -136,7 +138,7 @@ export default function AdminWorkspacesPage() {
       toast.success(t("deleteSuccess"))
       loadRef.current()
     } else {
-      toast.error(result.error || t("actionFailed"))
+      toast.error(resolveActionError(tAE, result.error, t("actionFailed")))
     }
     setDeleteOpen(false)
     setDeleting(null)
@@ -158,7 +160,14 @@ export default function AdminWorkspacesPage() {
           void applyDomainVerify(createdId)
         }
       } else {
-        toast.error(result.error || t("actionFailed"))
+        toast.error(
+          resolveActionError(
+            tAE,
+            result.error,
+            t("actionFailed"),
+            (result as { data?: { workspace?: string } }).data
+          )
+        )
       }
     } finally {
       setDomainBusy(prev => ({ ...prev, [ws.id]: false }))
@@ -171,7 +180,7 @@ export default function AdminWorkspacesPage() {
       toast.success(t("domainRemoved"))
       loadRef.current()
     } else {
-      toast.error(result.error || t("actionFailed"))
+      toast.error(resolveActionError(tAE, result.error, t("actionFailed")))
     }
   }
 

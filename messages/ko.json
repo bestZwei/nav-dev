@@ -786,5 +786,30 @@
   },
   "siteOrder": {
     "resetOrder": "기본 순서로 초기화"
+  },
+  "actionErrors": {
+    "WORKSPACE_NAME_REQUIRED": "워크스페이스 이름은 비워둘 수 없습니다",
+    "WORKSPACE_SLUG_INVALID": "슬러그는 소문자, 숫자, 하이픈만 가능합니다(1-50자)",
+    "WORKSPACE_SLUG_TAKEN": "해당 슬러그는 다른 워크스페이스에서 사용 중입니다",
+    "WORKSPACE_DEFAULT_UNDELETABLE": "기본 워크스페이스는 삭제할 수 없습니다",
+    "WORKSPACE_HAS_CATEGORIES": "이 워크스페이스에 아직 카테고리가 있습니다. 먼저 삭제하거나 이동하세요",
+    "WORKSPACE_NOT_FOUND": "워크스페이스가 없거나 삭제되었습니다",
+    "DOMAIN_INVALID": "도메인 형식이 올바르지 않습니다",
+    "DOMAIN_ALREADY_BOUND": "이 도메인은 이미 현재 워크스페이스에 연결되어 있습니다",
+    "DOMAIN_BOUND_TO_OTHER_WORKSPACE": "이 도메인은 워크스페이스 \"{workspace}\"에 이미 연결되어 있습니다",
+    "DOMAIN_NOT_FOUND": "도메인을 찾을 수 없습니다",
+    "CATEGORY_SLUG_TAKEN": "같은 슬러그의 카테고리가 이 워크스페이스에 이미 있습니다",
+    "CATEGORY_NOT_IN_WORKSPACE": "카테고리가 현재 워크스페이스에 속하지 않습니다",
+    "CATEGORY_HAS_SITES": "이 카테고리에 아직 {count}개의 사이트가 있습니다. 삭제 전에 이동하거나 삭제하세요",
+    "SITE_URL_INVALID_PROTOCOL": "URL은 http 또는 https 프로토콜을 사용해야 합니다",
+    "TARGET_CATEGORY_NOT_IN_WORKSPACE": "대상 카테고리가 현재 워크스페이스에 속하지 않습니다",
+    "SITE_NOT_IN_WORKSPACE": "사이트가 현재 워크스페이스에 속하지 않습니다",
+    "PASSWORD_TOO_SHORT": "새 비밀번호는 6자 이상이어야 합니다",
+    "USER_NOT_FOUND": "사용자를 찾을 수 없습니다. 다시 로그인하세요",
+    "PASSWORD_INCORRECT": "현재 비밀번호가 올바르지 않습니다",
+    "IMPORT_EMPTY_OR_INVALID": "가져올 내용이 비었거나 모두 유효하지 않아 기존 데이터 보호를 위해 취소되었습니다",
+    "BOOKMARKS_IMPORT_EMPTY": "가져올 수 있는 북마크가 없어 취소되었습니다",
+    "IMPORT_SITE_VALIDATION_FAILED": "백업의 일부 사이트가 검증에 실패하여 데이터 보호를 위해 가져오기를 중단했습니다",
+    "IMPORT_WORKSPACE_VALIDATION_FAILED": "백업의 일부 워크스페이스가 검증에 실패하여 가져오기를 중단했습니다"
   }
 }

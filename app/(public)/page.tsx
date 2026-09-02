@@ -2,7 +2,7 @@ import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
 import { CategoryIconBadge } from "@/components/category-icon"
 import type { ShareData } from "@/components/layout/share-dialog"
-import { getAllCategories, getCategories, getDisplaySettings, getSites } from "@/lib/actions"
+import { getCategories, getDisplaySettings } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { getTranslations } from "next-intl/server"
@@ -11,13 +11,17 @@ import { getTranslations } from "next-intl/server"
 // 后台数据更新时由 revalidatePath("/") 触发立即重新渲染
 export default async function HomePage() {
   const { data: categories } = await getCategories()
-  const { data: allCategories } = await getAllCategories()
   const settings = await getDisplaySettings()
-  const { data: allSites } = await getSites()
   const t = await getTranslations("home")
 
-  // 将所有网站扁平化，用于客户端搜索
-  const flatSites = allSites?.filter(site => site.isPublished) || []
+  // 顶栏导航与全局搜索数据直接从分类结果投影，避免再发起两份近重复的全量加载
+  const allCategories = (categories || []).map(c => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    icon: c.icon,
+  }))
+  const flatSites = (categories || []).flatMap(c => c.sites ?? [])
 
   // 分享卡片数据：服务端渲染时就地投影给弹窗，避免运行时请求
   const shareData: ShareData = {

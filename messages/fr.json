@@ -786,5 +786,30 @@
   },
   "siteOrder": {
     "resetOrder": "Rétablir l'ordre par défaut"
+  },
+  "actionErrors": {
+    "WORKSPACE_NAME_REQUIRED": "Le nom de l'espace de travail ne peut pas être vide",
+    "WORKSPACE_SLUG_INVALID": "Le slug n'accepte que minuscules, chiffres et tirets (1-50 caractères)",
+    "WORKSPACE_SLUG_TAKEN": "Ce slug est déjà utilisé par un autre espace de travail",
+    "WORKSPACE_DEFAULT_UNDELETABLE": "L'espace de travail par défaut ne peut pas être supprimé",
+    "WORKSPACE_HAS_CATEGORIES": "Cet espace contient encore des catégories ; supprimez-les ou déplacez-les d'abord",
+    "WORKSPACE_NOT_FOUND": "Espace de travail introuvable ou déjà supprimé",
+    "DOMAIN_INVALID": "Format de domaine invalide",
+    "DOMAIN_ALREADY_BOUND": "Ce domaine est déjà lié à l'espace de travail actuel",
+    "DOMAIN_BOUND_TO_OTHER_WORKSPACE": "Ce domaine est déjà lié à l'espace de travail « {workspace} »",
+    "DOMAIN_NOT_FOUND": "Domaine introuvable",
+    "CATEGORY_SLUG_TAKEN": "Une catégorie avec ce slug existe déjà dans cet espace de travail",
+    "CATEGORY_NOT_IN_WORKSPACE": "La catégorie n'appartient pas à l'espace de travail actuel",
+    "CATEGORY_HAS_SITES": "Cette catégorie contient encore {count} sites ; retirez-les ou déplacez-les avant de supprimer",
+    "SITE_URL_INVALID_PROTOCOL": "L'URL doit utiliser le protocole http ou https",
+    "TARGET_CATEGORY_NOT_IN_WORKSPACE": "La catégorie cible n'appartient pas à l'espace de travail actuel",
+    "SITE_NOT_IN_WORKSPACE": "Le site n'appartient pas à l'espace de travail actuel",
+    "PASSWORD_TOO_SHORT": "Le nouveau mot de passe doit contenir au moins 6 caractères",
+    "USER_NOT_FOUND": "Utilisateur introuvable, veuillez vous reconnecter",
+    "PASSWORD_INCORRECT": "Le mot de passe actuel est incorrect",
+    "IMPORT_EMPTY_OR_INVALID": "Contenu d'import vide ou invalide ; import annulé pour protéger les données existantes",
+    "BOOKMARKS_IMPORT_EMPTY": "Aucun favori importable trouvé dans le fichier ; import annulé",
+    "IMPORT_SITE_VALIDATION_FAILED": "Certains sites de la sauvegarde sont invalides ; import annulé pour éviter toute perte de données",
+    "IMPORT_WORKSPACE_VALIDATION_FAILED": "Certains espaces de la sauvegarde sont invalides ; import annulé"
   }
 }

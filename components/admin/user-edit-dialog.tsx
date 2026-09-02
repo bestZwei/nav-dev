@@ -18,6 +18,7 @@ import { updateUser, changePassword } from "@/lib/actions"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 
 interface UpdatedUser {
   id: string
@@ -45,6 +46,7 @@ export function UserEditDialog({
 }: UserEditDialogProps) {
   const t = useTranslations("admin.profile")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const [name, setName] = useState(userName || "")
   const [email, setEmail] = useState(userEmail)
   const [avatar, setAvatar] = useState("")
@@ -146,7 +148,7 @@ export function UserEditDialog({
         const passwordResult = await changePassword(currentPassword, password)
         if (!passwordResult.success) {
           toast.error(t("updateFailed"), {
-            description: passwordResult.error || t("updateFailedDesc"),
+            description: resolveActionError(tAE, passwordResult.error, t("updateFailedDesc")),
           })
           return
         }
@@ -180,7 +182,7 @@ export function UserEditDialog({
         onOpenChange(false)
       } else {
         toast.error(t("updateFailed"), {
-          description: result.error || t("updateFailedDesc"),
+          description: resolveActionError(tAE, result.error, t("updateFailedDesc")),
         })
       }
     } catch (error) {

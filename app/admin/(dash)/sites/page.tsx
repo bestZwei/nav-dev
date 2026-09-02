@@ -41,6 +41,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square, ArrowUp, ArrowDown, ChevronUp, ChevronDown, GripVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -86,6 +87,7 @@ interface PaginationInfo {
 export default function AdminSitesPage() {
   const t = useTranslations("admin.sites")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -161,7 +163,7 @@ export default function AdminSitesPage() {
         setPage(result.pagination?.page || 1)
       } else {
         toast.error(tc("loadFailed"), {
-          description: result.error || t("cannotLoad"),
+          description: resolveActionError(tAE, result.error, t("cannotLoad")),
         })
       }
     } catch (error) {
@@ -332,7 +334,7 @@ export default function AdminSitesPage() {
         loadSites()
       } else {
         toast.error(tc("operationFailed"), {
-          description: result.error || tc("retryLater"),
+          description: resolveActionError(tAE, result.error, tc("retryLater")),
         })
       }
     } catch {
@@ -384,7 +386,7 @@ export default function AdminSitesPage() {
         loadSites()
       } else {
         toast.error(tc("operationFailed"), {
-          description: result.error || tc("retryLater"),
+          description: resolveActionError(tAE, result.error, tc("retryLater")),
         })
       }
     } catch {
@@ -435,7 +437,7 @@ export default function AdminSitesPage() {
         loadSites()
       } else {
         toast.error(t("deleteFailed"), {
-          description: result.error || t("deleteFailedDesc"),
+          description: resolveActionError(tAE, result.error, t("deleteFailedDesc")),
         })
       }
     } catch (error) {
@@ -463,7 +465,7 @@ export default function AdminSitesPage() {
         loadSites()
       } else {
         toast.error(tc("operationFailed"), {
-          description: result.error || tc("operationFailed"),
+          description: resolveActionError(tAE, result.error, tc("operationFailed")),
         })
       }
     } catch (error) {
@@ -489,7 +491,7 @@ export default function AdminSitesPage() {
         loadSites()
       } else {
         toast.error(tc("operationFailed"), {
-          description: result.error || t("pinToggleFailed"),
+          description: resolveActionError(tAE, result.error, t("pinToggleFailed")),
         })
       }
     } catch (error) {
@@ -522,7 +524,7 @@ export default function AdminSitesPage() {
         }
       } else {
         toast.error(tc("operationFailed"), {
-          description: result.error || tc("retryLater"),
+          description: resolveActionError(tAE, result.error, tc("retryLater")),
         })
       }
     } catch (error) {
@@ -549,7 +551,7 @@ export default function AdminSitesPage() {
       const listResult = await getSiteIdsForHealthCheck()
       if (!listResult.success || !listResult.data) {
         toast.error(tc("operationFailed"), {
-          description: listResult.error || tc("retryLater"),
+          description: resolveActionError(tAE, listResult.error, tc("retryLater")),
         })
         return
       }

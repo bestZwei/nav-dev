@@ -27,6 +27,7 @@ import { MarkdownContent } from "@/components/markdown-content"
 import { createSite, updateSite, getAdminCategories, type ScreenshotInput } from "@/lib/actions"
 import { fetchPublicSettings } from "@/lib/client-settings"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 import { toast } from "sonner"
 import { Loader2, Plus, Trash2, ArrowUp, ArrowDown, Upload, Link2, Eye, Pencil } from "lucide-react"
 import Image from "next/image"
@@ -80,6 +81,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
   const router = useRouter()
   const t = useTranslations("admin.siteForm")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [enableSiteDetail, setEnableSiteDetail] = useState(false)
@@ -361,7 +363,7 @@ export function SiteFormDialog({ open, onOpenChange, site, mode, onSuccess }: Si
         router.refresh()
       } else {
         toast.error(tc("operationFailed"), {
-          description: result.error || tc("operationFailed"),
+          description: resolveActionError(tAE, result.error, tc("operationFailed")),
         })
       }
     } catch (error) {

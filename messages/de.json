@@ -786,5 +786,30 @@
   },
   "siteOrder": {
     "resetOrder": "Auf Standardreihenfolge zurücksetzen"
+  },
+  "actionErrors": {
+    "WORKSPACE_NAME_REQUIRED": "Der Workspace-Name darf nicht leer sein",
+    "WORKSPACE_SLUG_INVALID": "Der Slug erlaubt nur Kleinbuchstaben, Ziffern und Bindestriche (1-50 Zeichen)",
+    "WORKSPACE_SLUG_TAKEN": "Dieser Slug wird bereits von einem anderen Workspace verwendet",
+    "WORKSPACE_DEFAULT_UNDELETABLE": "Der Standard-Workspace kann nicht gelöscht werden",
+    "WORKSPACE_HAS_CATEGORIES": "Dieser Workspace hat noch Kategorien; bitte zuerst löschen oder verschieben",
+    "WORKSPACE_NOT_FOUND": "Workspace nicht gefunden oder bereits gelöscht",
+    "DOMAIN_INVALID": "Ungültiges Domänenformat",
+    "DOMAIN_ALREADY_BOUND": "Diese Domäne ist bereits an den aktuellen Workspace gebunden",
+    "DOMAIN_BOUND_TO_OTHER_WORKSPACE": "Diese Domäne ist bereits an den Workspace „{workspace}“ gebunden",
+    "DOMAIN_NOT_FOUND": "Domäne nicht gefunden",
+    "CATEGORY_SLUG_TAKEN": "Eine Kategorie mit diesem Slug existiert in diesem Workspace bereits",
+    "CATEGORY_NOT_IN_WORKSPACE": "Die Kategorie gehört nicht zum aktuellen Workspace",
+    "CATEGORY_HAS_SITES": "Diese Kategorie enthält noch {count} Websites; vor dem Löschen entfernen oder verschieben",
+    "SITE_URL_INVALID_PROTOCOL": "Die URL muss das Protokoll http oder https verwenden",
+    "TARGET_CATEGORY_NOT_IN_WORKSPACE": "Die Zielkategorie gehört nicht zum aktuellen Workspace",
+    "SITE_NOT_IN_WORKSPACE": "Die Website gehört nicht zum aktuellen Workspace",
+    "PASSWORD_TOO_SHORT": "Das neue Passwort muss mindestens 6 Zeichen lang sein",
+    "USER_NOT_FOUND": "Benutzer nicht gefunden, bitte erneut anmelden",
+    "PASSWORD_INCORRECT": "Das aktuelle Passwort ist falsch",
+    "IMPORT_EMPTY_OR_INVALID": "Importinhalt ist leer oder ungültig; Import zum Schutz bestehender Daten abgebrochen",
+    "BOOKMARKS_IMPORT_EMPTY": "Keine importierbaren Lesezeichen gefunden; Import abgebrochen",
+    "IMPORT_SITE_VALIDATION_FAILED": "Einige Websites im Backup sind ungültig; Import zum Datenschutz abgebrochen",
+    "IMPORT_WORKSPACE_VALIDATION_FAILED": "Einige Workspaces im Backup sind ungültig; Import abgebrochen"
   }
 }

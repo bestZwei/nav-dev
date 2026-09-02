@@ -55,6 +55,7 @@ import { getCategoriesWithPagination, deleteCategory, updateCategoriesOrder } fr
 import { toast } from "sonner"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 
 interface Category {
   id: string
@@ -77,6 +78,7 @@ interface PaginationInfo {
 export default function AdminCategoriesPage() {
   const t = useTranslations("admin.categories")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [isSavingOrder, setIsSavingOrder] = useState(false)
@@ -116,7 +118,7 @@ export default function AdminCategoriesPage() {
         setPage(result.pagination?.page || 1)
       } else {
         toast.error(tc("loadFailed"), {
-          description: result.error || t("cannotLoad"),
+          description: resolveActionError(tAE, result.error, t("cannotLoad")),
         })
       }
     } catch (error) {
@@ -161,7 +163,7 @@ export default function AdminCategoriesPage() {
         })
       } else {
         toast.error(t("orderSaveFailed"), {
-          description: result.error || t("cannotSaveOrder"),
+          description: resolveActionError(tAE, result.error, t("cannotSaveOrder")),
         })
         loadCategories(page)
       }
@@ -261,7 +263,12 @@ export default function AdminCategoriesPage() {
         loadCategories()
       } else {
         toast.error(t("deleteFailed"), {
-          description: result.error || t("deleteFailedDesc"),
+          description: resolveActionError(
+            tAE,
+            result.error,
+            t("deleteFailedDesc"),
+            (result as { data?: { count?: number } }).data
+          ),
         })
       }
     } catch (error) {
