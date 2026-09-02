@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
 import { Loader2, Settings } from "lucide-react"
+import confetti from "canvas-confetti"
 
 import "./popup.css"
 import { Button } from "@/components/ui/button"
@@ -37,7 +38,20 @@ function Popup() {
   function showStatus(message: string, tone: "ok" | "err") {
     setStatus({ message, tone })
     setStatusVisible(true)
-    setTimeout(() => setStatusVisible(false), tone === "ok" ? 1100 : 2400)
+    setTimeout(() => setStatusVisible(false), tone === "ok" ? 1900 : 2400)
+  }
+
+  // 收录成功礼花：双层迸发，配色与界面一致
+  function fireConfetti() {
+    const base = {
+      zIndex: 60,
+      colors: ["#fafafa", "#facc15", "#38bdf8", "#4ade80"],
+    }
+    confetti({ ...base, particleCount: 90, spread: 70, origin: { y: 0.7 } })
+    setTimeout(
+      () => confetti({ ...base, particleCount: 60, spread: 100, origin: { y: 0.6 } }),
+      220
+    )
   }
 
   const collectable = isHttpUrl(tab?.url || "")
@@ -179,7 +193,8 @@ function Popup() {
       return
     }
     showStatus("已收录到导航站", "ok")
-    setTimeout(() => window.close(), 1300)
+    fireConfetti()
+    setTimeout(() => window.close(), 2000)
   }
 
   const statusText = (() => {
