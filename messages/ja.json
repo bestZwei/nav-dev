@@ -286,7 +286,9 @@
       "sourceAdmin": "管理者",
       "thSource": "来源",
       "dragOrderHint": "行をドラッグしてこのカテゴリ内の表示順を変更できます（ピン留めは常に先頭）",
-      "orderUpdated": "表示順を更新しました"
+      "orderUpdated": "表示順を更新しました",
+      "moveUp": "上へ移動",
+      "moveDown": "下へ移動"
     },
     "siteForm": {
       "createTitle": "サイトを追加",

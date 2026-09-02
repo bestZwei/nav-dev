@@ -286,7 +286,9 @@
       "sourceAdmin": "Admin",
       "thSource": "Source",
       "dragOrderHint": "Faites glisser les lignes pour réordonner cette catégorie (les épinglés restent en tête)",
-      "orderUpdated": "Ordre d'affichage mis à jour"
+      "orderUpdated": "Ordre d'affichage mis à jour",
+      "moveUp": "Monter",
+      "moveDown": "Descendre"
     },
     "siteForm": {
       "createTitle": "Ajouter un site",

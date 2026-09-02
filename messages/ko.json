@@ -286,7 +286,9 @@
       "sourceAdmin": "관리자",
       "thSource": "출처",
       "dragOrderHint": "행을 드래그하여 이 카테고리의 표시 순서를 변경하세요(고정 항목은 항상 맨 앞)",
-      "orderUpdated": "표시 순서가 업데이트되었습니다"
+      "orderUpdated": "표시 순서가 업데이트되었습니다",
+      "moveUp": "위로 이동",
+      "moveDown": "아래로 이동"
     },
     "siteForm": {
       "createTitle": "사이트 추가",

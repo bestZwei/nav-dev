@@ -745,9 +745,9 @@ export async function getCategorySiteOrder(categoryId: string) {
     const sites = await prisma.site.findMany({
       where: { categoryId },
       orderBy: [{ isPinned: "desc" }, { order: "asc" }, { id: "asc" }],
-      select: { id: true },
+      select: { id: true, isPinned: true },
     })
-    return { success: true, data: sites.map(s => s.id) }
+    return { success: true, data: sites }
   } catch (error) {
     if (isNextDynamicError(error)) throw error
     console.error("Error fetching category site order:", error)

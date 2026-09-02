@@ -42,7 +42,7 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { useTranslations } from "next-intl"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square, ArrowUp, ArrowDown, GripVertical } from "lucide-react"
+import { Plus, Pencil, Trash2, Power, Loader2, RotateCcw, Pin, PinOff, ExternalLink, Globe, Search, Activity, Square, ArrowUp, ArrowDown, ChevronUp, ChevronDown, GripVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { SiteFormDialog } from "@/components/admin/site-form-dialog"
 import { getSitesWithPagination, deleteSite, toggleSitePublish, toggleSitePin, getCategoriesForFilter, checkSiteHealth, getSiteIdsForHealthCheck, getCategorySiteOrder, updateSitesOrder } from "@/lib/actions"
@@ -120,8 +120,9 @@ export default function AdminSitesPage() {
   const [draggedSiteId, setDraggedSiteId] = useState<string | null>(null)
   const [dragOverSiteId, setDragOverSiteId] = useState<string | null>(null)
   const [savingOrder, setSavingOrder] = useState(false)
-  // 分类下完整站点 id 顺序（服务端同口径排序），落库时以它为底册套用本页的拖拽结果
-  const fullOrderRef = useRef<string[]>([])
+  // 分类下完整站点顺序底册（服务端同口径排序，含置顶标记），拖拽/按钮落库时以它为底册套用本页结果；
+  // 带置顶标记是为了支持跨页移动时判断相邻项是否可交换（置顶/普通分区边界不可跨越）
+  const fullOrderRef = useRef<Array<{ id: string; isPinned: boolean }>>([])
 
   // 分页状态
   const [page, setPage] = useState(1)
@@ -276,7 +277,7 @@ export default function AdminSitesPage() {
     let cancelled = false
     getCategorySiteOrder(filterCategory).then((result) => {
       if (!cancelled && result.success && result.data) {
-        fullOrderRef.current = result.data as string[]
+        fullOrderRef.current = result.data as Array<{ id: string; isPinned: boolean }>
       }
     })
     return () => { cancelled = true }
@@ -308,21 +309,77 @@ export default function AdminSitesPage() {
       ...nextVisible.filter(s => !s.isPinned),
     ].map(s => s.id)
 
-    // 用可见页的新顺序替换完整底册中对应位置的 id（位置集合不变，仅换内容）
+    // 用可见页的新顺序替换完整底册中对应位置的条目（位置集合不变，仅换内容，置顶标记随站点走）
+    const siteById = new Map(sites.map(s => [s.id, { id: s.id, isPinned: !!s.isPinned }]))
     const full = [...fullOrderRef.current]
     if (full.length > 0) {
       const positions = sites
-        .map(s => full.indexOf(s.id))
+        .map(s => full.findIndex(x => x.id === s.id))
         .filter(p => p >= 0)
         .sort((a, b) => a - b)
-      positions.forEach((pos, i) => { full[pos] = newVisible[i] })
+      positions.forEach((pos, i) => { full[pos] = siteById.get(newVisible[i])! })
     }
+    const fallbackOrder = newVisible.map(id => siteById.get(id)!).filter(Boolean)
 
     setSavingOrder(true)
     try {
-      const result = await updateSitesOrder(filterCategory, full.length > 0 ? full : newVisible)
+      const orderedIds = (full.length > 0 ? full : fallbackOrder).map(x => x.id)
+      const result = await updateSitesOrder(filterCategory, orderedIds)
       if (result.success) {
-        fullOrderRef.current = full.length > 0 ? full : newVisible
+        fullOrderRef.current = full.length > 0 ? full : fallbackOrder
+        refreshFullOrder()
+        toast.success(t("orderUpdated"))
+        loadSites()
+      } else {
+        toast.error(tc("operationFailed"), {
+          description: result.error || tc("retryLater"),
+        })
+      }
+    } catch {
+      toast.error(tc("operationFailed"), {
+        description: tc("retryLater"),
+      })
+    } finally {
+      setSavingOrder(false)
+    }
+  }
+
+  // 保存成功后刷新顺序底册：置顶切换等操作可能改变分区结构，保持 canMoveRow 判断准确
+  const refreshFullOrder = () => {
+    getCategorySiteOrder(filterCategory).then((result) => {
+      if (result.success && result.data) {
+        fullOrderRef.current = result.data as Array<{ id: string; isPinned: boolean }>
+      }
+    })
+  }
+
+  // 上移/下移是否可行：以完整底册为基准判断相邻项，跨页也能正确禁用
+  // （底册按「置顶优先」排序，相邻项置顶标记不同即跨分区边界，不可交换）
+  const canMoveRow = (siteId: string, dir: -1 | 1) => {
+    if (savingOrder || loading) return false
+    const full = fullOrderRef.current
+    const idx = full.findIndex(x => x.id === siteId)
+    if (idx < 0) return false
+    const target = idx + dir
+    if (target < 0 || target >= full.length) return false
+    return full[target].isPinned === full[idx].isPinned
+  }
+
+  // 上移/下移：与完整底册中的相邻项直接交换，天然支持跨页移动
+  // （如把本页第一条上移 = 与上一页最后一条互换，保存后刷新当前页即可看到效果）
+  const handleMoveRow = async (siteId: string, dir: -1 | 1) => {
+    if (!canMoveRow(siteId, dir)) return
+    const full = [...fullOrderRef.current]
+    const idx = full.findIndex(x => x.id === siteId)
+    const target = idx + dir
+    ;[full[idx], full[target]] = [full[target], full[idx]]
+
+    setSavingOrder(true)
+    try {
+      const result = await updateSitesOrder(filterCategory, full.map(x => x.id))
+      if (result.success) {
+        fullOrderRef.current = full
+        refreshFullOrder()
         toast.success(t("orderUpdated"))
         loadSites()
       } else {
@@ -746,7 +803,7 @@ export default function AdminSitesPage() {
                 <TableHeader>
                   <TableRow>
                     {dragOrderEnabled && (
-                      <TableHead className="w-10" />
+                      <TableHead className="w-12" />
                     )}
                     <TableHead className="w-20 min-w-[72px] text-center whitespace-nowrap">{t("thIcon")}</TableHead>
                     <TableHead className="min-w-[180px] whitespace-nowrap">{t("thNameDesc")}</TableHead>
@@ -780,10 +837,32 @@ export default function AdminSitesPage() {
                       ].join(" ").trim() || undefined}
                     >
                       {dragOrderEnabled && (
-                        <TableCell className="w-10 pr-0">
-                          <GripVertical
-                            className={`h-4 w-4 ${savingOrder ? "text-muted-foreground/30" : "cursor-grab text-muted-foreground/60 hover:text-muted-foreground"}`}
-                          />
+                        <TableCell className="w-12 pr-0">
+                          <div className="flex flex-col items-center">
+                            <button
+                              type="button"
+                              aria-label={t("moveUp")}
+                              title={t("moveUp")}
+                              disabled={!canMoveRow(site.id, -1)}
+                              onClick={() => handleMoveRow(site.id, -1)}
+                              className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                            >
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            </button>
+                            <GripVertical
+                              className={`h-4 w-4 ${savingOrder ? "text-muted-foreground/30" : "cursor-grab text-muted-foreground/60 hover:text-muted-foreground"}`}
+                            />
+                            <button
+                              type="button"
+                              aria-label={t("moveDown")}
+                              title={t("moveDown")}
+                              disabled={!canMoveRow(site.id, 1)}
+                              onClick={() => handleMoveRow(site.id, 1)}
+                              className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                            >
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </TableCell>
                       )}
                       {/* 图标 */}
@@ -1083,7 +1162,7 @@ export default function AdminSitesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[10, 20, 50].map((size) => (
+                  {[10, 20, 50, 100].map((size) => (
                     <SelectItem key={size} value={size.toString()}>
                       {t("perPage", { size })}
                     </SelectItem>

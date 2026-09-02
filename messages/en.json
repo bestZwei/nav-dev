@@ -286,7 +286,9 @@
       "sourceAdmin": "Admin",
       "thSource": "Source",
       "dragOrderHint": "Drag rows to reorder sites in this category (pinned sites always come first)",
-      "orderUpdated": "Display order updated"
+      "orderUpdated": "Display order updated",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
     },
     "siteForm": {
       "createTitle": "Add site",

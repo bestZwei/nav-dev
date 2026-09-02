@@ -286,7 +286,9 @@
       "sourceAdmin": "Admin",
       "thSource": "Quelle",
       "dragOrderHint": "Zeilen ziehen, um die Reihenfolge in dieser Kategorie zu ändern (Angepinnt bleiben oben)",
-      "orderUpdated": "Anzeigereihenfolge aktualisiert"
+      "orderUpdated": "Anzeigereihenfolge aktualisiert",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten"
     },
     "siteForm": {
       "createTitle": "Seite hinzufügen",
