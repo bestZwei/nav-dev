@@ -15,13 +15,19 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const title = usePageTitle(pathname)
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh overflow-hidden">
       <AdminSidebar />
-      <SidebarInset className="@container/content">
-        <AdminHeader />
-        <div className="flex-1 px-4 py-6 @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl">
-          <h1 className="mb-4 text-2xl font-bold tracking-tight">{title}</h1>
-          {children}
+      <SidebarInset className="@container/content min-h-0 overflow-hidden">
+        <div
+          data-admin-scroll
+          className="min-h-0 flex-1 overflow-y-auto"
+        >
+          {/* 顶栏放在滚动容器内吸顶，内容从其下方穿过，backdrop-blur 才有可模糊的背景 */}
+          <AdminHeader />
+          <div className="px-4 pb-6 pt-6 @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl">
+            <h1 className="mb-4 text-2xl font-bold tracking-tight">{title}</h1>
+            {children}
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

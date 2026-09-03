@@ -73,6 +73,14 @@ function SiteIcon({
   const containerSizeClass = isCompact ? "h-7 w-7 rounded-md p-0.5" : "h-10 w-10 rounded-lg p-1"
   const pixelSize = isCompact ? 22 : 36
 
+  // 拖拽重排等场景会重建图标节点；缓存图可能早于 onLoad 监听完成加载，
+  // 挂载时直接按 complete/naturalWidth 同步状态，避免图标停在透明骨架
+  const syncLoadedImage = (node: HTMLImageElement | null) => {
+    if (node?.complete && node.naturalWidth > 0) {
+      setLoadState("loaded")
+    }
+  }
+
   return (
     <div
       className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40 transition-transform duration-200 group-hover:scale-105 ${containerSizeClass}`}
@@ -92,6 +100,7 @@ function SiteIcon({
           width={pixelSize}
           height={pixelSize}
           sizes={isCompact ? "28px" : "40px"}
+          ref={syncLoadedImage}
           referrerPolicy="no-referrer"
           loading="lazy"
           unoptimized
@@ -274,7 +283,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
       aria-label={t("visit", { name: site.name })}
       className="group relative block h-full select-none"
     >
-      <div className={`relative flex h-full items-start gap-3.5 rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover ${
+      <div className={`relative flex h-full items-start gap-3.5 overflow-hidden rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover ${
         site.isPinned
           ? "border-amber-500/30 bg-card hover:border-amber-500/60 ring-1 ring-amber-500/10"
           : "border-border/80 bg-card hover:border-primary/40 hover:bg-card"
@@ -299,13 +308,13 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
           </div>
           {site.description ? (
             <p
-              className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+              className="mt-0.5 text-xs text-muted-foreground line-clamp-1 leading-relaxed"
               title={site.description}
             >
               {site.description}
             </p>
           ) : (
-            <p className="mt-1 text-xs text-muted-foreground/60 italic">{t("noDescription")}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground/60 italic">{t("noDescription")}</p>
           )}
         </div>
 

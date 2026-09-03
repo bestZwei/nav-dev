@@ -68,7 +68,7 @@ export function BackToTop() {
       }
 
       const cardRect = poetryCard.getBoundingClientRect()
-      // 诗词卡片隐藏（移动端）或已关闭时不偏移，保持贴内容区域右边缘
+      // 移动端断点隐藏时宽度为 0；插件启用时锚点常驻（用户关闭仅隐藏可见性）
       if (cardRect.width === 0 || cardRect.height === 0) {
         setMarginRight(0)
         return
@@ -82,7 +82,7 @@ export function BackToTop() {
 
     updateOffset()
     window.addEventListener("resize", updateOffset)
-    // 诗词卡片挂载/关闭/恢复都会改动 DOM，兜底重算
+    // 诗词卡片挂载/插件开关变化都会改动 DOM，兜底重算
     const observer = new MutationObserver(updateOffset)
     observer.observe(document.body, { childList: true, subtree: true })
     return () => {

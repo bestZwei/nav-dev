@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { useHomeSideVisible, useBuiltinPluginEnabled } from "@/lib/plugins/client"
+import { cn } from "@/lib/utils"
 import { JinrishiciCard } from "./jinrishici-card"
 import { PLUGIN_ID } from "./constants"
 
@@ -11,27 +11,26 @@ import { PLUGIN_ID } from "./constants"
 export function HomeSideCard() {
   const enabled = useBuiltinPluginEnabled(PLUGIN_ID)
   const { visible, mounted, setUserVisible } = useHomeSideVisible(enabled)
-  const [showCard, setShowCard] = useState(true)
-
-  useEffect(() => {
-    if (mounted) {
-      setShowCard(visible)
-    }
-  }, [visible, mounted])
 
   const handleClose = () => {
     setUserVisible(false)
   }
 
-  // 避免服务端水合不一致；插件禁用或用户隐藏时不渲染
-  if (!mounted || !enabled || !showCard) {
+  // 避免服务端水合不一致；插件禁用时不渲染。
+  // 不能把 visible 再复制进一个 effect 驱动的 state，否则关闭状态会晚一帧生效。
+  if (!mounted || !enabled) {
     return null
   }
 
   return (
     <div
       id="jinrishici-card-anchor"
-      className="fixed top-20 right-4 z-40 hidden lg:block animate-fade-in origin-top-right"
+      className={cn(
+        "fixed top-20 right-4 z-40 hidden lg:block animate-fade-in origin-top-right",
+        // 用户关闭时保留占位几何（visibility:hidden 不响应点击），
+        // BackToTop 等消费方始终量到同一条右缘基准线
+        !visible && "invisible"
+      )}
     >
       <JinrishiciCard onClose={handleClose} />
     </div>

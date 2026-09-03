@@ -36,11 +36,16 @@ export function AdminHeader() {
   const [offset, setOffset] = useState(0)
 
   useEffect(() => {
-    const onScroll = () => {
+    const onScroll = (event: Event) => {
+      const target = event.target
+      if (target instanceof HTMLElement && target.hasAttribute("data-admin-scroll")) {
+        setOffset(target.scrollTop)
+        return
+      }
       setOffset(document.body.scrollTop || document.documentElement.scrollTop)
     }
-    document.addEventListener("scroll", onScroll, { passive: true })
-    return () => document.removeEventListener("scroll", onScroll)
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true })
+    return () => document.removeEventListener("scroll", onScroll, { capture: true })
   }, [])
 
   const scrolled = offset > 10
@@ -48,7 +53,7 @@ export function AdminHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 h-16 w-full",
+        "sticky top-0 z-50 h-16 w-full shrink-0",
         scrolled ? "shadow" : "shadow-none"
       )}
     >

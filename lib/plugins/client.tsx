@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { fetchPublicSettings } from "@/lib/client-settings"
 import { pluginRegistry } from "./registry"
 import { MarkdownContent } from "@/components/markdown-content"
@@ -17,11 +17,28 @@ import type { ClientPluginView, ManifestSlot } from "./types"
 // 启用状态来自 /api/settings 下发的精简视图，内置插件组件取自注册表（bundle 内），
 // 上传插件按 manifest 声明由 ManifestPluginRenderer 渲染
 
+const ClientPluginsContext = createContext<ClientPluginView | null>(null)
+
+// 服务端直出的插件初始状态：避免首帧按禁用布局、接口返回后再改变内容区宽度
+export function ClientPluginsProvider({
+  initialPlugins,
+  children,
+}: {
+  initialPlugins: ClientPluginView
+  children: React.ReactNode
+}) {
+  return (
+    <ClientPluginsContext.Provider value={initialPlugins}>
+      {children}
+    </ClientPluginsContext.Provider>
+  )
+}
+
 function useClientPlugins(): ClientPluginView {
-  const [plugins, setPlugins] = useState<ClientPluginView>({
-    builtinEnabledIds: [],
-    uploaded: [],
-  })
+  const initialPlugins = useContext(ClientPluginsContext)
+  const [plugins, setPlugins] = useState<ClientPluginView>(
+    () => initialPlugins || { builtinEnabledIds: [], uploaded: [] }
+  )
 
   useEffect(() => {
     let cancelled = false

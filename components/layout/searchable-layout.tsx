@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge"
 import {
   PluginSlot,
   useHomeSideActive,
-  useHomeSideVisible,
 } from "@/lib/plugins/client"
 
 interface Site {
@@ -56,10 +55,8 @@ export function SearchableLayout({
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isHomePath, setIsHomePath] = useState(false)
-  // homeSide 插件（如今日诗词）启用且用户未隐藏时，为右侧侧栏预留空间
+  // homeSide 插件（如今日诗词）启用时，为右侧浮动卡片预留稳定槽位
   const homeSideActive = useHomeSideActive()
-  const { visible: homeSideVisible, mounted: homeSideMounted } =
-    useHomeSideVisible(homeSideActive)
   const t = useTranslations("search")
 
   useEffect(() => {
@@ -106,7 +103,9 @@ export function SearchableLayout({
   }, [searchQuery, flatSites, pinyinMap])
 
   const isSearching = searchQuery.trim().length > 0
-  const hasHomeSideSpace = homeSideMounted && homeSideVisible
+  // 侧栏槽位宽度只跟随站长级插件开关；用户级显隐只切换浮动卡片，
+  // 不改变网站网格宽度，避免读取 localStorage 后首屏再次重排
+  const hasHomeSideSpace = homeSideActive
 
   return (
     <SiteDetailProvider>
