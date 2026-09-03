@@ -68,7 +68,8 @@
     "copied": "已复制网址",
     "copy": "复制网址",
     "iconAlt": "{name} 图标",
-    "copyFailed": "复制失败，请手动复制"
+    "copyFailed": "复制失败，请手动复制",
+    "edit": "编辑网站"
   },
   "search": {
     "resultsTitle": "搜索结果",

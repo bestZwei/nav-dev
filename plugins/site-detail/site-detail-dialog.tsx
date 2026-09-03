@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/components/auth/admin-auth-provider";
 import { useTranslations } from "next-intl";
 import {
   ExternalLink,
@@ -10,6 +13,7 @@ import {
   RefreshCw,
   X,
   ZoomIn,
+  Pencil,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +28,11 @@ import {
 import { useCardDensity } from "@/hooks/use-card-density";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+
+const SiteFormDialog = dynamic(
+  () => import("@/components/admin/site-form-dialog").then((m) => m.SiteFormDialog),
+  { ssr: false }
+);
 
 interface ScreenshotItem {
   id: string;
@@ -59,7 +68,11 @@ export function SiteDetailDialog({
   open,
   onOpenChange,
 }: SiteDetailDialogProps) {
+  const router = useRouter();
+  const { isAdmin } = useAdminAuth();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const t = useTranslations("siteDetail");
+  const tc = useTranslations("common");
   const [detail, setDetail] = useState<SiteDetailData | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -220,7 +233,21 @@ export function SiteDetailDialog({
                   )}
                 </div>
                 {/* 右上角「访问网站」按钮：放在关闭按钮左侧 */}
-                <div className="shrink-0 pr-7">
+                <div className="shrink-0 pr-7 flex items-center gap-2">
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        onOpenChange(false);
+                        setEditDialogOpen(true);
+                      }}
+                      className="transition-all duration-200 active:scale-95"
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                      {tc("edit")}
+                    </Button>
+                  )}
                   <Button onClick={handleVisit} size="sm">
                     <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
                     {t("visit")}

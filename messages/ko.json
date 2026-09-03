@@ -68,7 +68,8 @@
     "copied": "URL 복사됨",
     "copy": "URL 복사",
     "iconAlt": "{name} 아이콘",
-    "copyFailed": "복사에 실패했습니다. 수동으로 복사해 주세요."
+    "copyFailed": "복사에 실패했습니다. 수동으로 복사해 주세요.",
+    "edit": "사이트 편집"
   },
   "search": {
     "resultsTitle": "검색 결과",

@@ -3,14 +3,22 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import Link from "next/link"
+import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
-import { ExternalLink, Copy, Check, Pin } from "lucide-react"
+import { ExternalLink, Copy, Check, Pin, Pencil } from "lucide-react"
 import { useFaviconService, getProxiedFaviconUrl, proxyIconUrlIfPossible } from "@/hooks/use-favicon-service"
 import { useCardDensity } from "@/hooks/use-card-density"
 import { useSiteDetail } from "@/components/layout/site-detail-provider"
+import { useAdminAuth } from "@/components/auth/admin-auth-provider"
 // 装配层：详情弹窗 UI 归属 site-detail 内置插件，显隐由插件状态经 provider 壳控制
 import { SiteDetailDialog } from "@/plugins/site-detail/site-detail-dialog"
+
+const SiteFormDialog = dynamic(
+  () => import("@/components/admin/site-form-dialog").then((m) => m.SiteFormDialog),
+  { ssr: false }
+)
 import {
   Tooltip,
   TooltipContent,
@@ -32,6 +40,7 @@ export interface SiteItemProps {
   description: string
   iconUrl: string | null
   categoryId?: string
+  isPublished?: boolean
   isPinned?: boolean
   hasDetail?: boolean
   category?: {
@@ -127,7 +136,10 @@ function SiteIcon({
 }
 
 export function SiteCard({ site, density: propDensity, dragEnabled = false }: SiteCardProps) {
+  const router = useRouter()
+  const { isAdmin } = useAdminAuth()
   const [copied, setCopied] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   // 复制提示的复位计时器：卸载时清理，避免卸载后的延迟 setState
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
@@ -191,6 +203,23 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
     copyTimerRef.current = setTimeout(() => setCopied(false), 1800)
   }
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setEditDialogOpen(true)
+  }
+
+  const siteToEdit = useMemo(() => ({
+    id: site.id,
+    name: site.name,
+    url: site.url,
+    description: site.description || "",
+    iconUrl: site.iconUrl,
+    categoryId: site.categoryId || "",
+    isPublished: site.isPublished ?? true,
+    isPinned: site.isPinned ?? false,
+  }), [site])
+
   // ================= 紧凑模式 (Compact Mode) =================
   if (isCompact) {
     return (
@@ -224,9 +253,23 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
                 )}
               </div>
 
-              <div className="shrink-0 opacity-0 -translate-x-1 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-                <ExternalLink className="h-3 w-3 text-muted-foreground" />
-              </div>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  title={t("edit")}
+                  className="shrink-0 rounded p-1 text-muted-foreground opacity-0 -translate-x-1 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-x-0 hover:bg-muted hover:text-primary active:scale-90"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <div
+                  className="shrink-0 opacity-0 -translate-x-1 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-x-0"
+                  title={t("visit", { name: site.name })}
+                >
+                  <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                </div>
+              )}
             </Link>
           </TooltipTrigger>
           <TooltipContent
@@ -265,6 +308,17 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
           site={site}
           open={detailOpen}
           onOpenChange={setDetailOpen}
+        />
+      )}
+      {isAdmin && editDialogOpen && (
+        <SiteFormDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          site={siteToEdit}
+          mode="edit"
+          onSuccess={() => {
+            router.refresh()
+          }}
         />
       )}
       </>
@@ -332,9 +386,23 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
               <Copy className="h-3 w-3" />
             )}
           </button>
-          <div className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
-            <ExternalLink className="h-3 w-3" />
-          </div>
+          {isAdmin ? (
+            <button
+              onClick={handleEdit}
+              title={t("edit")}
+              type="button"
+              className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-primary active:scale-90"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+          ) : (
+            <div
+              className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              title={t("visit", { name: site.name })}
+            >
+              <ExternalLink className="h-3 w-3" />
+            </div>
+          )}
         </div>
       </div>
     </Link>
@@ -343,6 +411,17 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
         site={site}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+      />
+    )}
+    {isAdmin && editDialogOpen && (
+      <SiteFormDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        site={siteToEdit}
+        mode="edit"
+        onSuccess={() => {
+          router.refresh()
+        }}
       />
     )}
     </>

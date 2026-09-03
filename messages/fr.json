@@ -68,7 +68,8 @@
     "copied": "URL copiée",
     "copy": "Copier l'URL",
     "iconAlt": "Icône de {name}",
-    "copyFailed": "Échec de la copie. Veuillez copier manuellement."
+    "copyFailed": "Échec de la copie. Veuillez copier manuellement.",
+    "edit": "Modifier le site"
   },
   "search": {
     "resultsTitle": "Résultats de recherche",

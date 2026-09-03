@@ -68,7 +68,8 @@
     "copied": "URL をコピーしました",
     "copy": "URL をコピー",
     "iconAlt": "{name} のアイコン",
-    "copyFailed": "コピーに失敗しました。手動でコピーしてください。"
+    "copyFailed": "コピーに失敗しました。手動でコピーしてください。",
+    "edit": "サイトを編集"
   },
   "search": {
     "resultsTitle": "検索結果",

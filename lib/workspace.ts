@@ -155,6 +155,12 @@ export async function getAdminWorkspace(): Promise<WorkspaceItem> {
       if (ws) return ws
     }
 
+    // 若未显式设置后台工作区 Cookie，优先匹配当前请求的工作区（支持前台直编站点归属校验）
+    const current = await getCurrentWorkspace()
+    if (current && current.id !== FALLBACK_WORKSPACE.id) {
+      return current
+    }
+
     const def = await prisma.workspace.findFirst({
       where: { isDefault: true },
     })

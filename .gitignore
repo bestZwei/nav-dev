@@ -71,3 +71,7 @@ CLAUDE.md
 # 浏览器扩展（extension/）
 /extension/node_modules/
 /extension/dist/
+
+# temporary screenshots
+screenshots/*
+!screenshots/0[1-8]-*.png

@@ -19,7 +19,7 @@ const authRoutes = ["/admin/login"]
 // 未登录即可篡改系统设置、读取数据库连接信息（越权漏洞）
 const protectedApiRoutes = ["/api/admin"]
 // 登录接口自身放行（自身的凭据校验与限流见 app/api/admin/login/route.ts）
-const apiAuthExempt = ["/api/admin/login"]
+const apiAuthExempt = ["/api/admin/login", "/api/admin/status"]
 
 // 工作区预览参数是否启用：开发模式或显式开启（预览环境无子域名时调试用）
 const workspacePreviewEnabled =

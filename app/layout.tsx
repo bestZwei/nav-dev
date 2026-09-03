@@ -9,6 +9,8 @@ import { NextIntlClientProvider } from "next-intl"
 import { getLocale, getTranslations } from "next-intl/server"
 import { htmlLang } from "@/lib/i18n"
 import { AnimationSync } from "@/components/theme-provider/animation-sync"
+import { getAdminSession } from "@/lib/api-auth"
+import { AdminAuthProvider } from "@/components/auth/admin-auth-provider"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,6 +42,8 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale()
   const settings = await getDisplaySettings()
+  const session = await getAdminSession()
+  const initialIsAdmin = Boolean(session)
 
   return (
     <html lang={htmlLang(locale)} data-animations={settings?.enableAnimations !== false ? "true" : "false"} suppressHydrationWarning>
@@ -72,9 +76,11 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
-            <SonnerToaster position="bottom-right" richColors />
-            <AnimationSync />
+            <AdminAuthProvider initialIsAdmin={initialIsAdmin}>
+              {children}
+              <SonnerToaster position="bottom-right" richColors />
+              <AnimationSync />
+            </AdminAuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

@@ -68,7 +68,8 @@
     "copied": "URL copied",
     "copy": "Copy URL",
     "iconAlt": "{name} icon",
-    "copyFailed": "Copy failed. Please copy manually."
+    "copyFailed": "Copy failed. Please copy manually.",
+    "edit": "Edit site"
   },
   "search": {
     "resultsTitle": "Search results",
