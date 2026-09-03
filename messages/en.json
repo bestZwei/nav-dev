@@ -286,7 +286,9 @@
       "sourceAdmin": "Admin",
       "thSource": "Source",
       "dragOrderHint": "Drag rows to reorder sites in this category (pinned sites always come first)",
-      "orderUpdated": "Display order updated"
+      "orderUpdated": "Display order updated",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
     },
     "siteForm": {
       "createTitle": "Add site",
@@ -784,5 +786,30 @@
   },
   "siteOrder": {
     "resetOrder": "Reset to default order"
+  },
+  "actionErrors": {
+    "WORKSPACE_NAME_REQUIRED": "Workspace name cannot be empty",
+    "WORKSPACE_SLUG_INVALID": "Slug only supports lowercase letters, digits and hyphens (1-50 chars)",
+    "WORKSPACE_SLUG_TAKEN": "Slug is already used by another workspace",
+    "WORKSPACE_DEFAULT_UNDELETABLE": "The default workspace cannot be deleted",
+    "WORKSPACE_HAS_CATEGORIES": "This workspace still has categories; delete or move them first",
+    "WORKSPACE_NOT_FOUND": "Workspace not found or already deleted",
+    "DOMAIN_INVALID": "Invalid domain format",
+    "DOMAIN_ALREADY_BOUND": "This domain is already bound to the current workspace",
+    "DOMAIN_BOUND_TO_OTHER_WORKSPACE": "This domain is already bound to workspace \"{workspace}\"",
+    "DOMAIN_NOT_FOUND": "Domain not found",
+    "CATEGORY_SLUG_TAKEN": "A category with the same slug already exists in this workspace",
+    "CATEGORY_NOT_IN_WORKSPACE": "Category does not belong to the current workspace",
+    "CATEGORY_HAS_SITES": "This category still has {count} sites; remove or move them before deleting",
+    "SITE_URL_INVALID_PROTOCOL": "URL must use the http or https protocol",
+    "TARGET_CATEGORY_NOT_IN_WORKSPACE": "Target category does not belong to the current workspace",
+    "SITE_NOT_IN_WORKSPACE": "Site does not belong to the current workspace",
+    "PASSWORD_TOO_SHORT": "New password must be at least 6 characters",
+    "USER_NOT_FOUND": "User not found, please sign in again",
+    "PASSWORD_INCORRECT": "Current password is incorrect",
+    "IMPORT_EMPTY_OR_INVALID": "Import content is empty or entirely invalid; import cancelled to protect existing data",
+    "BOOKMARKS_IMPORT_EMPTY": "No importable bookmarks found in the file; import cancelled to protect existing data",
+    "IMPORT_SITE_VALIDATION_FAILED": "Some sites in the backup failed validation; import cancelled to avoid data loss",
+    "IMPORT_WORKSPACE_VALIDATION_FAILED": "Some workspaces in the backup failed validation; import cancelled to avoid data loss"
   }
 }

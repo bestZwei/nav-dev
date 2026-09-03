@@ -26,6 +26,7 @@ import { Upload, AlertTriangle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { importBookmarks } from "@/lib/actions"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 
 interface ImportBookmarksDialogProps {
   open: boolean
@@ -39,6 +40,7 @@ export function ImportBookmarksDialog({
   const router = useRouter()
   const t = useTranslations("admin.import")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [importMode, setImportMode] = useState<'overwrite' | 'append'>('append')
@@ -122,7 +124,7 @@ export function ImportBookmarksDialog({
         onOpenChange(false)
       } else {
         toast.error(t("importFailed"), {
-          description: result.error,
+          description: resolveActionError(tAE, result.error, t("importFailed")),
         })
       }
     } catch (error) {

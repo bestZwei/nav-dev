@@ -286,7 +286,9 @@
       "sourceAdmin": "管理员",
       "thSource": "来源",
       "dragOrderHint": "拖拽行可调整此分类下的显示顺序（置顶站点始终排在最前）",
-      "orderUpdated": "显示顺序已更新"
+      "orderUpdated": "显示顺序已更新",
+      "moveUp": "上移",
+      "moveDown": "下移"
     },
     "siteForm": {
       "createTitle": "新增网站",
@@ -784,5 +786,30 @@
   },
   "siteOrder": {
     "resetOrder": "恢复默认排序"
+  },
+  "actionErrors": {
+    "WORKSPACE_NAME_REQUIRED": "工作区名称不能为空",
+    "WORKSPACE_SLUG_INVALID": "slug 仅支持小写字母、数字与中划线（1-50 位）",
+    "WORKSPACE_SLUG_TAKEN": "slug 已被其他工作区使用",
+    "WORKSPACE_DEFAULT_UNDELETABLE": "默认工作区不可删除",
+    "WORKSPACE_HAS_CATEGORIES": "工作区下仍有分类，请先删除或转移其内容",
+    "WORKSPACE_NOT_FOUND": "工作区不存在或已被删除",
+    "DOMAIN_INVALID": "域名格式不合法",
+    "DOMAIN_ALREADY_BOUND": "该域名已绑定到当前工作区",
+    "DOMAIN_BOUND_TO_OTHER_WORKSPACE": "该域名已绑定到工作区「{workspace}」",
+    "DOMAIN_NOT_FOUND": "域名不存在",
+    "CATEGORY_SLUG_TAKEN": "当前工作区下已存在同名 slug 的分类",
+    "CATEGORY_NOT_IN_WORKSPACE": "分类不属于当前工作区",
+    "CATEGORY_HAS_SITES": "该分类下仍有 {count} 个站点，请先移除或转移这些站点后再删除分类",
+    "SITE_URL_INVALID_PROTOCOL": "URL 必须使用 http 或 https 协议",
+    "TARGET_CATEGORY_NOT_IN_WORKSPACE": "目标分类不属于当前工作区",
+    "SITE_NOT_IN_WORKSPACE": "站点不属于当前工作区",
+    "PASSWORD_TOO_SHORT": "新密码至少需要6个字符",
+    "USER_NOT_FOUND": "用户不存在，请重新登录",
+    "PASSWORD_INCORRECT": "当前密码不正确",
+    "IMPORT_EMPTY_OR_INVALID": "导入内容为空或全部非法，已取消导入以保护现有数据",
+    "BOOKMARKS_IMPORT_EMPTY": "未从文件中解析出任何可导入的书签，已取消导入以保护现有数据",
+    "IMPORT_SITE_VALIDATION_FAILED": "备份中部分站点数据未通过校验，为避免数据丢失，本次导入未执行",
+    "IMPORT_WORKSPACE_VALIDATION_FAILED": "备份中部分工作区数据未通过校验，为避免数据丢失，本次导入未执行"
   }
 }

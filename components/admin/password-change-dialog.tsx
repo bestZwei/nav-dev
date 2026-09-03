@@ -16,6 +16,7 @@ import { Loader2 } from "lucide-react"
 import { changePassword } from "@/lib/actions"
 import { toast } from "sonner"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 
 interface PasswordChangeDialogProps {
   open: boolean
@@ -31,6 +32,7 @@ export function PasswordChangeDialog({
 }: PasswordChangeDialogProps) {
   const t = useTranslations("admin.profile")
   const tc = useTranslations("common")
+  const tAE = useTranslations("actionErrors")
   const [currentPassword, setCurrentPassword] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -74,7 +76,7 @@ export function PasswordChangeDialog({
         setConfirmPassword("")
       } else {
         toast.error(t("changeFailed"), {
-          description: result.error || t("changeFailedDesc"),
+          description: resolveActionError(tAE, result.error, t("changeFailedDesc")),
         })
       }
     } catch (error) {

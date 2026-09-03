@@ -21,9 +21,12 @@ const nextConfig = {
     FALLBACK_SESSION_SECRET,
   },
   experimental: {
-    // 站点详情截图以 base64 随 server action 提交，需放宽默认 1MB 限制
+    // 站点详情截图以 base64 随 server action 提交，需放宽默认 1MB 限制。
+    // 上限口径：10 张 × 2MB 原始数据，base64 膨胀 4/3 ≈ 26.7MB，再加表单余量取 30mb。
+    // 若调低此值，需同步收紧 lib/actions.ts 的 MAX_SCREENSHOTS_PER_SITE / MAX_SCREENSHOT_BYTES，
+    // 否则满配上传会在传输层 413 失败、到不了 validateScreenshots 的友好校验提示。
     serverActions: {
-      bodySizeLimit: '10mb',
+      bodySizeLimit: '30mb',
     },
   },
   images: {

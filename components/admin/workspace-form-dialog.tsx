@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 import { createWorkspace, updateWorkspace } from "@/lib/actions"
 
 // 展示项（标题/描述/Logo/Favicon）统一在「系统设置」页按当前工作区上下文编辑，
@@ -58,6 +59,7 @@ export function WorkspaceFormDialog({
   onSuccess,
 }: WorkspaceFormDialogProps) {
   const t = useTranslations("admin.workspaceForm")
+  const tAE = useTranslations("actionErrors")
   const [values, setValues] = useState<WorkspaceFormValues>(emptyValues)
   const [saving, setSaving] = useState(false)
 
@@ -106,7 +108,7 @@ export function WorkspaceFormDialog({
         onOpenChange(false)
         onSuccess?.()
       } else {
-        toast.error(result.error || t("saveFailed"))
+        toast.error(resolveActionError(tAE, result.error, t("saveFailed")))
       }
     } catch {
       toast.error(t("saveFailed"))

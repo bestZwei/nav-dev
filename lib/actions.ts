@@ -15,15 +15,8 @@ import {
   isValidWorkspaceSlug,
 } from "./workspace"
 import type { WorkspaceItem } from "./prisma"
-
-// Next.js 内部用于标记“此路由需动态渲染”的信号错误（digest 以 DYNAMIC 或
-// NEXT_DYNAMIC 开头）。这类“错误”不是真正的异常，必须原样重新抛出，
-// 否则会被 catch 吞掉导致页面静态化或返回假失败。
-function isNextDynamicError(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false
-  const digest = (error as { digest?: string }).digest
-  return typeof digest === "string" && /^DYNAMIC/.test(digest)
-}
+// 动态渲染信号错误判定已收敛到 lib/next-errors.ts（含 NEXT_DYNAMIC_NO_SSR_CODE）
+import { isNextDynamicError } from "@/lib/next-errors"
 
 // ==================== 安全辅助 ====================
 
@@ -218,15 +211,15 @@ export async function createWorkspace(data: {
   if (unauthorized) return unauthorized
   try {
     const name = data.name?.trim()
-    if (!name) return { success: false, error: "工作区名称不能为空" }
+    if (!name) return { success: false, error: "WORKSPACE_NAME_REQUIRED" }
     if (!isValidWorkspaceSlug(data.slug)) {
-      return { success: false, error: "slug 仅支持小写字母、数字与中划线（1-50 位）" }
+      return { success: false, error: "WORKSPACE_SLUG_INVALID" }
     }
     const existing = await prisma.workspace.findUnique({
       where: { slug: data.slug },
     })
     if (existing) {
-      return { success: false, error: "slug 已被其他工作区使用" }
+      return { success: false, error: "WORKSPACE_SLUG_TAKEN" }
     }
 
     const workspace = await prisma.workspace.create({
@@ -268,17 +261,17 @@ export async function updateWorkspace(id: string, data: {
   if (unauthorized) return unauthorized
   try {
     if (data.name !== undefined && !data.name.trim()) {
-      return { success: false, error: "工作区名称不能为空" }
+      return { success: false, error: "WORKSPACE_NAME_REQUIRED" }
     }
     if (data.slug !== undefined) {
       if (!isValidWorkspaceSlug(data.slug)) {
-        return { success: false, error: "slug 仅支持小写字母、数字与中划线（1-50 位）" }
+        return { success: false, error: "WORKSPACE_SLUG_INVALID" }
       }
       const existing = await prisma.workspace.findUnique({
         where: { slug: data.slug },
       })
       if (existing && existing.id !== id) {
-        return { success: false, error: "slug 已被其他工作区使用" }
+        return { success: false, error: "WORKSPACE_SLUG_TAKEN" }
       }
     }
 
@@ -314,13 +307,13 @@ export async function deleteWorkspace(id: string) {
     const workspace = await prisma.workspace.findUnique({ where: { id } })
     if (!workspace) return { success: false, error: "Workspace not found" }
     if (workspace.isDefault) {
-      return { success: false, error: "默认工作区不可删除" }
+      return { success: false, error: "WORKSPACE_DEFAULT_UNDELETABLE" }
     }
     const categoryCount = await prisma.category.count({
       where: { workspaceId: id },
     })
     if (categoryCount > 0) {
-      return { success: false, error: "工作区下仍有分类，请先删除或转移其内容" }
+      return { success: false, error: "WORKSPACE_HAS_CATEGORIES" }
     }
 
     // 事务化：清域名与删工作区同成败，第二步失败不再留下「域名已丢、工作区仍在」
@@ -374,19 +367,20 @@ export async function addWorkspaceDomain(workspaceId: string, rawHost: string) {
   try {
     const host = normalizeHost(rawHost)
     if (!host) {
-      return { success: false, error: "域名格式不合法" }
+      return { success: false, error: "DOMAIN_INVALID" }
     }
     const existing = await prisma.domain.findUnique({ where: { host } })
     if (existing) {
       if (existing.workspaceId === workspaceId) {
-        return { success: false, error: "该域名已绑定到当前工作区" }
+        return { success: false, error: "DOMAIN_ALREADY_BOUND" }
       }
       const owner = await prisma.workspace.findUnique({
         where: { id: existing.workspaceId },
       })
       return {
         success: false,
-        error: `该域名已绑定到工作区「${owner?.name || existing.workspaceId}」`,
+        error: "DOMAIN_BOUND_TO_OTHER_WORKSPACE",
+        data: { workspace: owner?.name || existing.workspaceId },
       }
     }
 
@@ -396,7 +390,7 @@ export async function addWorkspaceDomain(workspaceId: string, rawHost: string) {
       select: { id: true },
     })
     if (!targetWorkspace) {
-      return { success: false, error: "工作区不存在或已被删除" }
+      return { success: false, error: "WORKSPACE_NOT_FOUND" }
     }
 
     const domain = await prisma.domain.create({
@@ -435,13 +429,13 @@ export async function verifyWorkspaceDomain(domainId: string) {
   try {
     const domain = await prisma.domain.findUnique({ where: { id: domainId } })
     if (!domain) {
-      return { success: false, error: "域名不存在" }
+      return { success: false, error: "DOMAIN_NOT_FOUND" }
     }
     const workspace = await prisma.workspace.findUnique({
       where: { id: domain.workspaceId },
     })
     if (!workspace) {
-      return { success: false, error: "工作区不存在" }
+      return { success: false, error: "WORKSPACE_NOT_FOUND" }
     }
 
     const result = await verifyDomainHost(domain.host, workspace.slug)
@@ -474,10 +468,29 @@ export async function getCategories() {
     const categories = await prisma.category.findMany({
       where: { workspaceId: workspace.id },
       orderBy: { order: 'asc' },
-      include: {
+      // 显式投影：此结果直接序列化进首页 RSC payload，
+      // 必须排除 detailContent 等大字段（详情弹窗按需经 getSiteDetail 拉取）
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        icon: true,
+        order: true,
         sites: {
           where: { isPublished: true },
           orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
+          select: {
+            id: true,
+            name: true,
+            url: true,
+            description: true,
+            iconUrl: true,
+            categoryId: true,
+            isPinned: true,
+            hasDetail: true,
+            order: true,
+            category: { select: { name: true } },
+          },
         },
       },
     })
@@ -495,10 +508,28 @@ export async function getCategoryBySlug(slug: string) {
     const workspace = await getCurrentWorkspace()
     const category = await prisma.category.findFirst({
       where: { slug, workspaceId: workspace.id },
-      include: {
+      // 显式投影：与 getCategories 同口径，避免 detailContent 进入列表 payload
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        icon: true,
+        order: true,
         sites: {
           where: { isPublished: true },
           orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
+          select: {
+            id: true,
+            name: true,
+            url: true,
+            description: true,
+            iconUrl: true,
+            categoryId: true,
+            isPinned: true,
+            hasDetail: true,
+            order: true,
+            category: { select: { name: true } },
+          },
         },
       },
     })
@@ -519,6 +550,8 @@ export async function getAllCategories() {
     const categories = await prisma.category.findMany({
       where: { workspaceId: workspace.id },
       orderBy: { order: 'asc' },
+      // 仅顶栏/筛选所需的导航字段
+      select: { id: true, name: true, slug: true, icon: true },
     })
     return { success: true, data: categories }
   } catch (error) {
@@ -634,7 +667,7 @@ export async function createCategory(data: {
       where: { slug: data.slug, workspaceId: workspace.id },
     })
     if (duplicate) {
-      return { success: false, error: "当前工作区下已存在同名 slug 的分类" }
+      return { success: false, error: "CATEGORY_SLUG_TAKEN" }
     }
     const category = await prisma.category.create({
       data: {
@@ -649,6 +682,7 @@ export async function createCategory(data: {
     revalidatePath("/")
     return { success: true, data: category }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error creating category:", error)
     return { success: false, error: "Failed to create category" }
   }
@@ -664,7 +698,7 @@ export async function updateCategory(id: string, data: {
   if (unauthorized) return unauthorized
   try {
     if (!(await isCategoryInCurrentWorkspace(id))) {
-      return { success: false, error: "分类不属于当前工作区" }
+      return { success: false, error: "CATEGORY_NOT_IN_WORKSPACE" }
     }
     if (data.slug !== undefined) {
       // 工作区内 slug 查重（排除自身）
@@ -673,7 +707,7 @@ export async function updateCategory(id: string, data: {
         where: { slug: data.slug, workspaceId: workspace.id },
       })
       if (duplicate && duplicate.id !== id) {
-        return { success: false, error: "当前工作区下已存在同名 slug 的分类" }
+        return { success: false, error: "CATEGORY_SLUG_TAKEN" }
       }
     }
     // 字段白名单拷贝：Server Action 入参类型注解运行时不存在，
@@ -740,14 +774,14 @@ export async function getCategorySiteOrder(categoryId: string) {
   if (unauthorized) return unauthorized
   try {
     if (!(await isCategoryInCurrentWorkspace(categoryId))) {
-      return { success: false, error: "分类不属于当前工作区" }
+      return { success: false, error: "CATEGORY_NOT_IN_WORKSPACE" }
     }
     const sites = await prisma.site.findMany({
       where: { categoryId },
       orderBy: [{ isPinned: "desc" }, { order: "asc" }, { id: "asc" }],
-      select: { id: true },
+      select: { id: true, isPinned: true },
     })
-    return { success: true, data: sites.map(s => s.id) }
+    return { success: true, data: sites }
   } catch (error) {
     if (isNextDynamicError(error)) throw error
     console.error("Error fetching category site order:", error)
@@ -763,7 +797,7 @@ export async function updateSitesOrder(categoryId: string, orderedIds: string[])
   if (unauthorized) return unauthorized
   try {
     if (!(await isCategoryInCurrentWorkspace(categoryId))) {
-      return { success: false, error: "分类不属于当前工作区" }
+      return { success: false, error: "CATEGORY_NOT_IN_WORKSPACE" }
     }
     const sites = await prisma.site.findMany({
       where: { categoryId },
@@ -802,14 +836,15 @@ export async function deleteCategory(id: string) {
   if (unauthorized) return unauthorized
   try {
     if (!(await isCategoryInCurrentWorkspace(id))) {
-      return { success: false, error: "分类不属于当前工作区" }
+      return { success: false, error: "CATEGORY_NOT_IN_WORKSPACE" }
     }
     // 级联删除会连带销毁分类下全部站点与访问记录，显式预检阻断而非静默清空
     const siteCount = await prisma.site.count({ where: { categoryId: id } })
     if (siteCount > 0) {
       return {
         success: false,
-        error: `该分类下仍有 ${siteCount} 个站点，请先移除或转移这些站点后再删除分类`,
+        error: "CATEGORY_HAS_SITES",
+        data: { count: siteCount },
       }
     }
     await prisma.category.delete({
@@ -836,8 +871,19 @@ export async function getSites() {
     const sites = await prisma.site.findMany({
       where: { isPublished: true, categoryId: { in: categoryIds } },
       orderBy: [{ isPinned: 'desc' }, { order: 'asc' }],
-      include: {
-        category: true,
+      // 显式投影：仅搜索/卡片所需字段，排除 detailContent 等大字段
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        description: true,
+        iconUrl: true,
+        categoryId: true,
+        isPublished: true,
+        isPinned: true,
+        hasDetail: true,
+        order: true,
+        category: { select: { name: true } },
       },
     })
     return { success: true, data: sites }
@@ -992,6 +1038,7 @@ export async function getSiteById(id: string) {
     }
     return { success: true, data: site }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching site:", error)
     return { success: false, error: "Failed to fetch site" }
   }
@@ -1154,6 +1201,7 @@ export async function getSiteDetail(siteId: string) {
     }
     return { success: true, data }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching site detail:", error)
     return { success: false, error: "Failed to fetch site detail" }
   }
@@ -1191,6 +1239,7 @@ export async function checkScreenshotUploadCapability() {
     capabilityCache = { supported: probe, checkedAt: now }
     return { success: true, data: capabilityCache }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.warn("Screenshot upload capability check failed:", error)
     capabilityCache = {
       supported: false,
@@ -1218,7 +1267,7 @@ export async function createSite(data: {
   try {
     // URL 协议白名单校验，防止 javascript: 等协议入库
     if (!isSafeSiteUrl(data.url)) {
-      return { success: false, error: "站点 URL 必须使用 http 或 https 协议" }
+      return { success: false, error: "SITE_URL_INVALID_PROTOCOL" }
     }
     const detailContent = normalizeDetailContent(data.detailContent)
     // 新建场景不存在「已有截图」，带 keepId 的条目（无 url/data）一律剔除，
@@ -1232,7 +1281,7 @@ export async function createSite(data: {
 
     // 归属校验：目标分类必须属于当前选中的工作区
     if (!(await isCategoryInCurrentWorkspace(data.categoryId))) {
-      return { success: false, error: "目标分类不属于当前工作区" }
+      return { success: false, error: "TARGET_CATEGORY_NOT_IN_WORKSPACE" }
     }
 
     const site = await prisma.$transaction(async (tx) => {
@@ -1277,6 +1326,7 @@ export async function createSite(data: {
 
     return { success: true, data: site }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error creating site:", error)
     return { success: false, error: "Failed to create site" }
   }
@@ -1299,13 +1349,13 @@ export async function updateSite(id: string, data: {
   try {
     // 归属校验：站点及其目标分类（如迁移）都必须属于当前选中的工作区
     if (!(await isSiteInCurrentWorkspace(id))) {
-      return { success: false, error: "站点不属于当前工作区" }
+      return { success: false, error: "SITE_NOT_IN_WORKSPACE" }
     }
     if (data.categoryId !== undefined && !(await isCategoryInCurrentWorkspace(data.categoryId))) {
-      return { success: false, error: "目标分类不属于当前工作区" }
+      return { success: false, error: "TARGET_CATEGORY_NOT_IN_WORKSPACE" }
     }
     if (data.url !== undefined && !isSafeSiteUrl(data.url)) {
-      return { success: false, error: "站点 URL 必须使用 http 或 https 协议" }
+      return { success: false, error: "SITE_URL_INVALID_PROTOCOL" }
     }
     let detailContent: string | null | undefined = undefined
     if (data.detailContent !== undefined) {
@@ -1437,6 +1487,7 @@ export async function updateSite(id: string, data: {
 
     return { success: true, data: site }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error updating site:", error)
     return { success: false, error: "Failed to update site" }
   }
@@ -1447,7 +1498,7 @@ export async function toggleSitePin(id: string) {
   if (unauthorized) return unauthorized
   try {
     if (!(await isSiteInCurrentWorkspace(id))) {
-      return { success: false, error: "站点不属于当前工作区" }
+      return { success: false, error: "SITE_NOT_IN_WORKSPACE" }
     }
     const existing = await prisma.site.findUnique({ where: { id } })
     if (!existing) return { success: false, error: "Site not found" }
@@ -1461,6 +1512,7 @@ export async function toggleSitePin(id: string) {
     revalidatePath(`/category/${updated.category?.slug || ''}`)
     return { success: true, data: updated }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error toggling site pin:", error)
     return { success: false, error: "Failed to toggle pin" }
   }
@@ -1471,7 +1523,7 @@ export async function deleteSite(id: string) {
   if (unauthorized) return unauthorized
   try {
     if (!(await isSiteInCurrentWorkspace(id))) {
-      return { success: false, error: "站点不属于当前工作区" }
+      return { success: false, error: "SITE_NOT_IN_WORKSPACE" }
     }
     const site = await prisma.site.delete({
       where: { id },
@@ -1493,6 +1545,7 @@ export async function deleteSite(id: string) {
 
     return { success: true }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error deleting site:", error)
     return { success: false, error: "Failed to delete site" }
   }
@@ -1503,7 +1556,7 @@ export async function toggleSitePublish(id: string) {
   if (unauthorized) return unauthorized
   try {
     if (!(await isSiteInCurrentWorkspace(id))) {
-      return { success: false, error: "站点不属于当前工作区" }
+      return { success: false, error: "SITE_NOT_IN_WORKSPACE" }
     }
     const currentSite = await prisma.site.findUnique({
       where: { id },
@@ -1535,6 +1588,7 @@ export async function toggleSitePublish(id: string) {
 
     return { success: true, data: site }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error toggling site publish status:", error)
     return { success: false, error: "Failed to toggle site publish status" }
   }
@@ -1628,6 +1682,7 @@ async function probeUrl(url: string): Promise<ProbeResult> {
     }
     return head
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     // undici 默认响应头上限 16KB，Google 等服务 Set-Cookie 数量巨大会触发
     // UND_ERR_HEADERS_OVERFLOW；能收到响应头说明站点活着，判疑似受限而非失效。
     // （部署层可通过 --max-http-header-size 根治，见 package.json/entrypoint.sh）
@@ -1677,6 +1732,7 @@ export async function checkSiteHealth(siteId: string) {
     })
     return { success: true, data: updated }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error checking site health:", error)
     return { success: false, error: "Failed to check site health" }
   }
@@ -1753,6 +1809,7 @@ export async function getUsersWithPagination(params: {
       },
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching users with pagination:", error)
     return { success: false, error: "Failed to fetch users" }
   }
@@ -1802,6 +1859,7 @@ export async function updateUser(
       },
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error updating user:", error)
     return { success: false, error: "Failed to update user" }
   }
@@ -1817,20 +1875,20 @@ export async function changePassword(
   if (!session) return { success: false, error: "Unauthorized" }
   try {
     if (typeof newPassword !== "string" || newPassword.length < 6) {
-      return { success: false, error: "新密码至少需要6个字符" }
+      return { success: false, error: "PASSWORD_TOO_SHORT" }
     }
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
     })
     if (!user) {
-      return { success: false, error: "用户不存在，请重新登录" }
+      return { success: false, error: "USER_NOT_FOUND" }
     }
     const matched = await bcrypt.compare(
       typeof currentPassword === "string" ? currentPassword : "",
       user.password
     )
     if (!matched) {
-      return { success: false, error: "当前密码不正确" }
+      return { success: false, error: "PASSWORD_INCORRECT" }
     }
     await prisma.user.update({
       where: { id: user.id },
@@ -1839,6 +1897,7 @@ export async function changePassword(
     revalidatePath("/admin/users")
     return { success: true }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error changing password:", error)
     return { success: false, error: "Failed to change password" }
   }
@@ -1880,6 +1939,7 @@ export async function searchSites(query: string) {
 
     return { success: true, data: sites }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error searching sites:", error)
     return { success: false, error: "Failed to search sites" }
   }
@@ -1896,6 +1956,7 @@ export async function getSystemSettings() {
     const settings = await getSystemSettingsRecord()
     return { success: true, data: settings }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching system settings:", error)
     return { success: false, error: "Failed to fetch system settings" }
   }
@@ -1911,6 +1972,7 @@ export async function getDisplaySettings() {
   try {
     settings = ((await getSystemSettingsRecord()) ?? {}) as Record<string, unknown>
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error fetching display settings:", error)
   }
   const str = (v: unknown) => (typeof v === "string" ? v : undefined)
@@ -2024,7 +2086,7 @@ export async function updateSystemSettings(data: {
       (allowed.icpLink && !isSafeSiteUrl(allowed.icpLink) && '备案链接') ||
       (allowed.githubUrl && !isSafeSiteUrl(allowed.githubUrl) && 'GitHub 链接')
     if (unsafeUrlField) {
-      return { success: false, error: `${unsafeUrlField}的 URL 必须使用 http 或 https 协议` }
+      return { success: false, error: "SITE_URL_INVALID_PROTOCOL" }
     }
 
     // 获取第一条设置记录
@@ -2053,6 +2115,7 @@ export async function updateSystemSettings(data: {
 
     return { success: true, data: settings }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error updating system settings:", error)
     return { success: false, error: "Failed to update system settings" }
   }
@@ -2188,6 +2251,7 @@ export async function exportData(mode: "workspace" | "full" = "workspace") {
       data: fullData,
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error exporting data:", error)
     return { success: false, error: "Failed to export data" }
   }
@@ -2225,6 +2289,7 @@ export async function exportBookmarks() {
       data: bookmarkData,
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error exporting bookmarks:", error)
     return { success: false, error: "Failed to export bookmarks" }
   }
@@ -2302,8 +2367,10 @@ function normalizeImportCategories(
         : []
       const screenshotError = validateScreenshots(screenshots)
       if (screenshotError) {
+        // 细节原因仅入服务端日志；对外返回稳定错误码由前端按 locale 渲染
+        console.warn("[importFullBackup] screenshot validation failed:", siteData.name, screenshotError)
         return {
-          error: `站点「${siteData.name}」的截图数据未通过校验（${screenshotError}）。为避免覆盖后数据丢失，本次导入未执行。`,
+          error: "IMPORT_SITE_VALIDATION_FAILED",
         }
       }
       const detailContent = normalizeDetailContent(siteData.detailContent)
@@ -2415,7 +2482,7 @@ export async function importData(
     // 否则会先清空工作区再导入 0 条，造成不可逆数据丢失却报告成功
     const totalImportSites = importCategories.reduce((sum, c) => sum + c.sites.length, 0)
     if (mode === 'overwrite' && (importCategories.length === 0 || totalImportSites === 0)) {
-      return { success: false, error: "导入内容为空或全部非法，已取消覆盖导入以保护现有数据" }
+      return { success: false, error: "IMPORT_EMPTY_OR_INVALID" }
     }
 
     const workspace = await getAdminWorkspace()
@@ -2511,7 +2578,8 @@ async function importFullBackup(
       Array.isArray(wsData.categories) ? wsData.categories : []
     )
     if ('error' in normalized) {
-      return { success: false, error: `工作区「${wsData.slug}」：${normalized.error}` }
+      console.warn("[importFullBackup] workspace validation failed:", wsData.slug, normalized.error)
+      return { success: false, error: "IMPORT_WORKSPACE_VALIDATION_FAILED" }
     }
 
     // 每个工作区整体一个事务：元数据 upsert、域名绑定、清空与内容写入同成败。
@@ -2663,7 +2731,7 @@ export async function importBookmarks(
     // 防止清空工作区后导入 0 条——与 importData 的空内容保护口径一致
     const totalBookmarkSites = parsed.categories.reduce((sum, c) => sum + c.sites.length, 0)
     if (mode === 'overwrite' && (parsed.categories.length === 0 || totalBookmarkSites === 0)) {
-      return { success: false, error: "未从文件中解析出任何可导入的书签，已取消覆盖导入以保护现有数据" }
+      return { success: false, error: "BOOKMARKS_IMPORT_EMPTY" }
     }
     // 书签导入归属当前后台选中的工作区
     const workspace = await getAdminWorkspace()
@@ -2804,6 +2872,7 @@ export async function importBookmarks(
       importedCount: importedCategories,
     }
   } catch (error) {
+    if (isNextDynamicError(error)) throw error
     console.error("Error importing bookmarks:", error)
     return { success: false, error: "Failed to import bookmarks" }
   }

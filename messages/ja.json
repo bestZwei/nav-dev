@@ -286,7 +286,9 @@
       "sourceAdmin": "管理者",
       "thSource": "来源",
       "dragOrderHint": "行をドラッグしてこのカテゴリ内の表示順を変更できます（ピン留めは常に先頭）",
-      "orderUpdated": "表示順を更新しました"
+      "orderUpdated": "表示順を更新しました",
+      "moveUp": "上へ移動",
+      "moveDown": "下へ移動"
     },
     "siteForm": {
       "createTitle": "サイトを追加",
@@ -784,5 +786,30 @@
   },
   "siteOrder": {
     "resetOrder": "デフォルトの順序に戻す"
+  },
+  "actionErrors": {
+    "WORKSPACE_NAME_REQUIRED": "ワークスペース名は空にできません",
+    "WORKSPACE_SLUG_INVALID": "スラッグは小文字・数字・ハイフンのみ（1-50 文字）",
+    "WORKSPACE_SLUG_TAKEN": "そのスラッグは他のワークスペースで使用中です",
+    "WORKSPACE_DEFAULT_UNDELETABLE": "デフォルトのワークスペースは削除できません",
+    "WORKSPACE_HAS_CATEGORIES": "このワークスペースにはまだカテゴリがあります。先に削除または移動してください",
+    "WORKSPACE_NOT_FOUND": "ワークスペースが存在しないか、削除されました",
+    "DOMAIN_INVALID": "ドメインの形式が正しくありません",
+    "DOMAIN_ALREADY_BOUND": "このドメインは現在のワークスペースに既に紐付いています",
+    "DOMAIN_BOUND_TO_OTHER_WORKSPACE": "このドメインはワークスペース「{workspace}」に既に紐付いています",
+    "DOMAIN_NOT_FOUND": "ドメインが見つかりません",
+    "CATEGORY_SLUG_TAKEN": "同じスラッグのカテゴリがこのワークスペースに既に存在します",
+    "CATEGORY_NOT_IN_WORKSPACE": "カテゴリが現在のワークスペースに属していません",
+    "CATEGORY_HAS_SITES": "このカテゴリにはまだ {count} 件のサイトがあります。削除前に移動または削除してください",
+    "SITE_URL_INVALID_PROTOCOL": "URL は http または https プロトコルである必要があります",
+    "TARGET_CATEGORY_NOT_IN_WORKSPACE": "移動先のカテゴリが現在のワークスペースに属していません",
+    "SITE_NOT_IN_WORKSPACE": "サイトが現在のワークスペースに属していません",
+    "PASSWORD_TOO_SHORT": "新しいパスワードは 6 文字以上必要です",
+    "USER_NOT_FOUND": "ユーザーが見つかりません。再度サインインしてください",
+    "PASSWORD_INCORRECT": "現在のパスワードが正しくありません",
+    "IMPORT_EMPTY_OR_INVALID": "インポート内容が空または無効のため、既存データ保護のためキャンセルしました",
+    "BOOKMARKS_IMPORT_EMPTY": "インポート可能なブックマークが見つからず、キャンセルしました",
+    "IMPORT_SITE_VALIDATION_FAILED": "バックアップの一部サイトが検証に失敗したため、データ保護のためインポートを中止しました",
+    "IMPORT_WORKSPACE_VALIDATION_FAILED": "バックアップの一部ワークスペースが検証に失敗したため、インポートを中止しました"
   }
 }

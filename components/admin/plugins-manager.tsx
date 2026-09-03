@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react"
 import { useTranslations } from "next-intl"
+import { resolveActionError } from "@/lib/action-error"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -48,6 +49,7 @@ interface PluginView {
 
 export function PluginsManager({ plugins }: { plugins: PluginView[] }) {
   const t = useTranslations("plugins.registry")
+  const tAE = useTranslations("actionErrors")
   const [items, setItems] = useState(plugins)
   const [pending, startTransition] = useTransition()
   const [deleting, setDeleting] = useState<PluginView | null>(null)
@@ -65,7 +67,7 @@ export function PluginsManager({ plugins }: { plugins: PluginView[] }) {
         )
         toast.success(t(enabled ? "enableSuccess" : "disableSuccess"))
       } else {
-        toast.error(result.error || t("updateFailed"))
+        toast.error(resolveActionError(tAE, result.error, t("updateFailed")))
       }
     })
   }
@@ -84,7 +86,7 @@ export function PluginsManager({ plugins }: { plugins: PluginView[] }) {
         )
         toast.success(t("configSaved"))
       } else {
-        toast.error(result.error || t("updateFailed"))
+        toast.error(resolveActionError(tAE, result.error, t("updateFailed")))
       }
     })
   }
@@ -97,7 +99,7 @@ export function PluginsManager({ plugins }: { plugins: PluginView[] }) {
         setItems((prev) => prev.filter((p) => p.id !== plugin.id))
         toast.success(t("deleteSuccess"))
       } else {
-        toast.error(result.error || t("updateFailed"))
+        toast.error(resolveActionError(tAE, result.error, t("updateFailed")))
       }
       setDeleting(null)
     })
@@ -114,7 +116,7 @@ export function PluginsManager({ plugins }: { plugins: PluginView[] }) {
         // 上传成功后整页刷新以载入合并视图新增的插件
         window.location.reload()
       } else {
-        toast.error(result.error || t("uploadFailed"), { duration: 8000 })
+        toast.error(resolveActionError(tAE, result.error, t("uploadFailed")), { duration: 8000 })
       }
     } catch {
       toast.error(t("uploadFailed"))
@@ -224,6 +226,7 @@ function PluginCard({
 }) {
   const t = useTranslations("plugins.registry")
   const tp = useTranslations()
+  const tAE = useTranslations("actionErrors")
   const [values, setValues] = useState(plugin.configValues)
   const dirty = JSON.stringify(values) !== JSON.stringify(plugin.configValues)
 
@@ -251,7 +254,7 @@ function PluginCard({
         setValues((prev) => ({ ...prev, extensionToken: result.token! }))
         toast.success(tr("plugins.browserExtension.generated"))
       } else {
-        toast.error(result.error || t("updateFailed"))
+        toast.error(resolveActionError(tAE, result.error, t("updateFailed")))
       }
     } finally {
       setTokenGenerating(false)
