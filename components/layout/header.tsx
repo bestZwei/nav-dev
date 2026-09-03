@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { LocaleToggle } from "@/components/locale-toggle"
 import { FaviconServiceToggle } from "@/components/favicon-service-toggle"
 import { CardDensityToggle } from "@/components/card-density-toggle"
-import { ShareToggle, type ShareData } from "@/components/layout/share-dialog"
+import type { OverviewData } from "@/components/layout/overview-view"
 import {
   Drawer,
   DrawerContent,
@@ -19,6 +19,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { useCardDensity } from "@/hooks/use-card-density"
 import { Search, X } from "lucide-react"
 import { fetchPublicSettings } from "@/lib/client-settings"
 import { PluginHeaderSlot, PluginSlot } from "@/lib/plugins/client"
@@ -40,8 +41,8 @@ interface HeaderProps {
   onSearchSubmit?: (query: string) => void
   useAnchorLinks?: boolean
   onCategoryClick?: (slug: string) => void
-  // 分享卡片数据：仅首页传入，分享按钮随之只在首页渲染
-  shareData?: ShareData
+  // 图鉴视图数据：仅首页传入，该模式下的精简顶栏也随之只在首页生效
+  overviewData?: OverviewData
 }
 
 export function Header({
@@ -54,13 +55,15 @@ export function Header({
   onSearchSubmit,
   useAnchorLinks = false,
   onCategoryClick,
-  shareData,
+  overviewData,
 }: HeaderProps) {
   const [logo, setLogo] = useState<string | null>(siteLogo)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const isDesktop = useMediaQuery("(min-width: 768px)")
+  const { isOverview } = useCardDensity()
   const t = useTranslations("header")
+  const overviewMode = Boolean(overviewData) && isOverview
 
   useEffect(() => {
     setMounted(true)
@@ -272,11 +275,15 @@ export function Header({
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={`sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
+        overviewMode ? "border-b border-transparent" : "border-b"
+      }`}
+    >
       <div className="px-2 sm:px-4 lg:px-6">
         <div className="flex h-16 items-center">
           {/* 桌面端：Logo + 站点名 */}
-          <div className="hidden md:flex flex-shrink-0 pr-6 sm:pr-8 items-center">
+          <div className={`hidden flex-shrink-0 items-center ${overviewMode ? "md:hidden" : "md:flex pr-6 sm:pr-8"}`}>
             <Link href="/" className="flex items-center space-x-2">
               {logo && (
                 <Image
@@ -294,7 +301,7 @@ export function Header({
           </div>
 
           {/* 移动端：分类按钮（drawer 触发器），靠最左侧 */}
-          <div className="flex md:hidden flex-shrink-0 items-center gap-1">
+          <div className={`flex-shrink-0 items-center gap-1 md:hidden ${overviewMode ? "hidden" : "flex"}`}>
             <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} direction="left">
               <DrawerTrigger asChild>
                 <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
@@ -370,7 +377,7 @@ export function Header({
           </div>
 
           {/* 桌面端：Tabs 风格横向分类导航（分类溢出时滚轮/拖拽横滑，边缘渐隐提示） */}
-          <div className="relative hidden min-w-0 flex-1 md:block">
+          <div className={`relative hidden min-w-0 flex-1 ${overviewMode ? "md:hidden" : "md:block"}`}>
             <nav
               ref={navRef}
               onPointerDown={handleNavPointerDown}
@@ -411,7 +418,7 @@ export function Header({
           </div>
 
           <div className="flex-shrink-0 ml-auto pl-2 sm:pl-4 flex items-center gap-2">
-            <div className="relative hidden sm:block group">
+            <div className={`relative hidden group ${overviewMode ? "sm:hidden" : "sm:block"}`}>
               <Label htmlFor="search" className="sr-only">{t("searchSr")}</Label>
               <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none select-none transition-colors group-focus-within:text-foreground" />
               <Input
@@ -446,13 +453,16 @@ export function Header({
             </div>
 
             {/* 插件注入点：启用的插件在此渲染前台入口（如网站收录按钮） */}
-            <PluginHeaderSlot />
-            <ShareToggle data={shareData} />
+            {!overviewMode && <PluginHeaderSlot />}
             <CardDensityToggle />
-            <FaviconServiceToggle />
-            {/* 插件工具按钮槽（如诗词显隐切换） */}
-            <PluginSlot position="headerTools" />
-            <LocaleToggle />
+            {!overviewMode && (
+              <>
+                <FaviconServiceToggle />
+                {/* 插件工具按钮槽（如诗词显隐切换） */}
+                <PluginSlot position="headerTools" />
+                <LocaleToggle />
+              </>
+            )}
             <ThemeToggle />
           </div>
         </div>

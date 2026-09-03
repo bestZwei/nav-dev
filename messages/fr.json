@@ -29,8 +29,10 @@
     "changedTitle": "Affichage des cartes changé",
     "compact": "Mode compact",
     "standard": "Mode standard",
+    "overview": "Mode atlas",
     "switchedToCompact": "Passé en mode compact",
     "switchedToStandard": "Passé en mode standard",
+    "switchedToOverview": "Passé en mode atlas",
     "ariaLabel": "Changer la densité des cartes (actuel : {mode})",
     "srToggle": "Changer la taille et la disposition des cartes",
     "sizeLabel": "Taille des cartes",
@@ -51,15 +53,6 @@
     "searchSr": "Rechercher",
     "searchPlaceholder": "Rechercher... (raccourci /)",
     "clearSearch": "Effacer la recherche"
-  },
-  "share": {
-    "toggle": "Partager le site",
-    "title": "Partager le site",
-    "description": "Enregistrez ou capturez cette carte d'ensemble pour partager votre collection",
-    "saveImage": "Enregistrer l'image",
-    "saving": "Génération...",
-    "saved": "Image enregistrée",
-    "saveFailed": "Échec de l'enregistrement, veuillez réessayer"
   },
   "siteCard": {
     "visit": "Visiter {name}",
@@ -814,5 +807,8 @@
     "BOOKMARKS_IMPORT_EMPTY": "Aucun favori importable trouvé dans le fichier ; import annulé",
     "IMPORT_SITE_VALIDATION_FAILED": "Certains sites de la sauvegarde sont invalides ; import annulé pour éviter toute perte de données",
     "IMPORT_WORKSPACE_VALIDATION_FAILED": "Certains espaces de la sauvegarde sont invalides ; import annulé"
+  },
+  "overview": {
+    "label": "Vue atlas"
   }
 }

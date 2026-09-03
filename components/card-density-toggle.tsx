@@ -8,12 +8,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { LayoutGrid, Grid3X3 } from "lucide-react"
+import { LayoutGrid, Grid3X3, BookMarked } from "lucide-react"
 import { useCardDensity } from "@/hooks/use-card-density"
 import { toast } from "sonner"
 
 export function CardDensityToggle() {
-  const { density, toggleDensity, mounted } = useCardDensity()
+  const { density, toggleDensity, isOverview, mounted } = useCardDensity()
   const t = useTranslations("density")
 
   if (!mounted) {
@@ -27,7 +27,12 @@ export function CardDensityToggle() {
   const handleToggle = () => {
     const nextMode = toggleDensity()
     toast.success(t("changedTitle"), {
-      description: nextMode === "compact" ? t("switchedToCompact") : t("switchedToStandard"),
+      description:
+        nextMode === "compact"
+          ? t("switchedToCompact")
+          : nextMode === "overview"
+            ? t("switchedToOverview")
+            : t("switchedToStandard"),
       duration: 2000,
     })
   }
@@ -43,9 +48,13 @@ export function CardDensityToggle() {
             size="icon"
             onClick={handleToggle}
             className="h-9 w-9 transition-transform active:scale-95"
-            aria-label={t("ariaLabel", { mode: isCompact ? t("compact") : t("standard") })}
+            aria-label={t("ariaLabel", {
+              mode: isOverview ? t("overview") : isCompact ? t("compact") : t("standard"),
+            })}
           >
-            {isCompact ? (
+            {isOverview ? (
+              <BookMarked className="h-4 w-4 text-primary animate-scale-in" />
+            ) : isCompact ? (
               <Grid3X3 className="h-4 w-4 text-primary animate-scale-in" />
             ) : (
               <LayoutGrid className="h-4 w-4 text-muted-foreground hover:text-foreground" />
@@ -55,7 +64,10 @@ export function CardDensityToggle() {
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <p className="text-xs">
-            {t("sizeLabel")}：<span className="font-semibold">{isCompact ? t("compact") : t("standard")}</span>
+            {t("sizeLabel")}：
+            <span className="font-semibold">
+              {isOverview ? t("overview") : isCompact ? t("compact") : t("standard")}
+            </span>
             <span className="block text-muted-foreground text-[10px] mt-0.5">{t("clickHint")}</span>
           </p>
         </TooltipContent>

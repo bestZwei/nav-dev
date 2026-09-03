@@ -29,8 +29,10 @@
     "changedTitle": "カード表示を切り替えました",
     "compact": "コンパクトモード",
     "standard": "標準モード",
+    "overview": "アトラスモード",
     "switchedToCompact": "コンパクトモードに切り替えました",
     "switchedToStandard": "標準モードに切り替えました",
+    "switchedToOverview": "アトラスモードに切り替えました",
     "ariaLabel": "カード表示モードを切り替える（現在：{mode}）",
     "srToggle": "カードのサイズとレイアウトを切り替える",
     "sizeLabel": "カードサイズ",
@@ -51,15 +53,6 @@
     "searchSr": "検索",
     "searchPlaceholder": "検索... （ショートカット /）",
     "clearSearch": "検索をクリア"
-  },
-  "share": {
-    "toggle": "サイトを共有",
-    "title": "サイトを共有",
-    "description": "このカードを保存またはスクリーンショットして、より多くの人に共有しましょう",
-    "saveImage": "画像を保存",
-    "saving": "生成中...",
-    "saved": "画像を保存しました",
-    "saveFailed": "保存に失敗しました。再試行してください"
   },
   "siteCard": {
     "visit": "{name} にアクセス",
@@ -814,5 +807,8 @@
     "BOOKMARKS_IMPORT_EMPTY": "インポート可能なブックマークが見つからず、キャンセルしました",
     "IMPORT_SITE_VALIDATION_FAILED": "バックアップの一部サイトが検証に失敗したため、データ保護のためインポートを中止しました",
     "IMPORT_WORKSPACE_VALIDATION_FAILED": "バックアップの一部ワークスペースが検証に失敗したため、インポートを中止しました"
+  },
+  "overview": {
+    "label": "アトラスビュー"
   }
 }

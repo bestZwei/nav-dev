@@ -29,8 +29,10 @@
     "changedTitle": "Card view switched",
     "compact": "Compact mode",
     "standard": "Standard mode",
+    "overview": "Atlas mode",
     "switchedToCompact": "Switched to compact mode",
     "switchedToStandard": "Switched to standard mode",
+    "switchedToOverview": "Switched to Atlas mode",
     "ariaLabel": "Toggle card density, current: {mode}",
     "srToggle": "Toggle card size and layout",
     "sizeLabel": "Card size",
@@ -51,15 +53,6 @@
     "searchSr": "Search",
     "searchPlaceholder": "Search... (press /)",
     "clearSearch": "Clear search"
-  },
-  "share": {
-    "toggle": "Share site",
-    "title": "Share site",
-    "description": "Save or screenshot this overview card and share your collection with more people",
-    "saveImage": "Save image",
-    "saving": "Generating...",
-    "saved": "Image saved",
-    "saveFailed": "Failed to save, please retry"
   },
   "siteCard": {
     "visit": "Visit {name}",
@@ -814,5 +807,8 @@
     "BOOKMARKS_IMPORT_EMPTY": "No importable bookmarks found in the file; import cancelled to protect existing data",
     "IMPORT_SITE_VALIDATION_FAILED": "Some sites in the backup failed validation; import cancelled to avoid data loss",
     "IMPORT_WORKSPACE_VALIDATION_FAILED": "Some workspaces in the backup failed validation; import cancelled to avoid data loss"
+  },
+  "overview": {
+    "label": "Atlas overview"
   }
 }

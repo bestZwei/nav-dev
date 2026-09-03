@@ -8,7 +8,8 @@ import { Footer } from "./footer"
 import { SiteGrid } from "./site-grid"
 import { BackToTop } from "./back-to-top"
 import { SiteDetailProvider } from "./site-detail-provider"
-import type { ShareData } from "./share-dialog"
+import { OverviewView, type OverviewData } from "./overview-view"
+import { useCardDensity } from "@/hooks/use-card-density"
 import { Badge } from "@/components/ui/badge"
 import {
   PluginSlot,
@@ -39,8 +40,8 @@ interface SearchableLayoutProps {
   siteName?: string
   currentCategory?: string
   useAnchorLinks?: boolean
-  // 分享卡片数据：仅首页传入，分享按钮随之只在首页渲染
-  shareData?: ShareData
+  // 图鉴视图数据：仅首页传入，第三种卡片视图随之只在首页生效
+  overviewData?: OverviewData
   children: React.ReactNode
 }
 
@@ -50,13 +51,14 @@ export function SearchableLayout({
   siteName,
   currentCategory,
   useAnchorLinks,
-  shareData,
+  overviewData,
   children,
 }: SearchableLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isHomePath, setIsHomePath] = useState(false)
   // homeSide 插件（如今日诗词）启用时，为右侧浮动卡片预留稳定槽位
   const homeSideActive = useHomeSideActive()
+  const { isOverview } = useCardDensity()
   const t = useTranslations("search")
 
   useEffect(() => {
@@ -105,7 +107,8 @@ export function SearchableLayout({
   const isSearching = searchQuery.trim().length > 0
   // 侧栏槽位宽度只跟随站长级插件开关；用户级显隐只切换浮动卡片，
   // 不改变网站网格宽度，避免读取 localStorage 后首屏再次重排
-  const hasHomeSideSpace = homeSideActive
+  const overviewActive = Boolean(overviewData) && isOverview
+  const hasHomeSideSpace = homeSideActive && !overviewActive
 
   return (
     <SiteDetailProvider>
@@ -117,17 +120,20 @@ export function SearchableLayout({
         onSearchChange={setSearchQuery}
         currentCategory={currentCategory}
         useAnchorLinks={anchorLinks}
-        shareData={shareData}
+        overviewData={overviewData}
       />
 
       <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
         <div className="mx-auto max-w-[1600px] w-full">
           {/* 插件 homeSide 槽位 - 固定在右上角（如今日诗词卡片） */}
-          <PluginSlot position="homeSide" />
+          {!overviewActive && <PluginSlot position="homeSide" />}
 
           {/* 内容区域：为右侧侧栏插件预留空间 */}
           <div className={hasHomeSideSpace ? "lg:pr-36 lg:pl-2" : "lg:pl-2"}>
-            {isSearching ? (
+            {overviewActive ? (
+              // 图鉴模式：首页正文整体替换为分享卡片样式的站点全览
+              <OverviewView data={overviewData!} />
+            ) : isSearching ? (
               // 搜索结果
               <div className="animate-fade-in">
                 <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
@@ -173,11 +179,11 @@ export function SearchableLayout({
             )}
           </div>
 
-          <BackToTop />
+          {!overviewActive && <BackToTop />}
         </div>
       </main>
 
-      <Footer />
+      {!overviewActive && <Footer />}
       </div>
     </SiteDetailProvider>
   )

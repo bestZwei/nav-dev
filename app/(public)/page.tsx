@@ -1,7 +1,7 @@
 import { SearchableLayout } from "@/components/layout/searchable-layout"
 import { SiteGrid } from "@/components/layout/site-grid"
 import { CategoryIconBadge } from "@/components/category-icon"
-import type { ShareData } from "@/components/layout/share-dialog"
+import type { OverviewData } from "@/components/layout/overview-view"
 import { getCategories, getDisplaySettings } from "@/lib/actions"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -23,8 +23,8 @@ export default async function HomePage() {
   }))
   const flatSites = (categories || []).flatMap(c => c.sites ?? [])
 
-  // 分享卡片数据：服务端渲染时就地投影给弹窗，避免运行时请求
-  const shareData: ShareData = {
+  // 图鉴视图数据：服务端渲染时就地投影给整页视图，避免运行时请求
+  const overviewData: OverviewData = {
     siteName: settings?.siteName || "Conan Nav",
     siteDescription: settings?.siteDescription,
     footerCopyright: settings?.footerCopyright,
@@ -45,7 +45,7 @@ export default async function HomePage() {
         allCategories={allCategories || []}
         flatSites={flatSites}
         siteName={settings?.siteName}
-        shareData={shareData}
+        overviewData={overviewData}
       >
       <div className="space-y-8">
         {/* 分类内容 */}

@@ -29,8 +29,10 @@
     "changedTitle": "已切换卡片视图",
     "compact": "紧凑模式",
     "standard": "标准模式",
+    "overview": "图鉴模式",
     "switchedToCompact": "已切换为「紧凑模式」",
     "switchedToStandard": "已切换为「标准模式」",
+    "switchedToOverview": "已切换为「图鉴模式」",
     "ariaLabel": "切换卡片视图模式，当前为：{mode}",
     "srToggle": "切换卡片大小与布局",
     "sizeLabel": "卡片大小",
@@ -51,15 +53,6 @@
     "searchSr": "搜索",
     "searchPlaceholder": "搜索... (快捷键 /)",
     "clearSearch": "清除搜索"
-  },
-  "share": {
-    "toggle": "分享站点",
-    "title": "分享站点",
-    "description": "保存或截图这张站点全览卡片，分享给更多人",
-    "saveImage": "保存图片",
-    "saving": "生成中...",
-    "saved": "图片已保存",
-    "saveFailed": "保存失败，请重试"
   },
   "siteCard": {
     "visit": "访问 {name}",
@@ -814,5 +807,8 @@
     "BOOKMARKS_IMPORT_EMPTY": "未从文件中解析出任何可导入的书签，已取消导入以保护现有数据",
     "IMPORT_SITE_VALIDATION_FAILED": "备份中部分站点数据未通过校验，为避免数据丢失，本次导入未执行",
     "IMPORT_WORKSPACE_VALIDATION_FAILED": "备份中部分工作区数据未通过校验，为避免数据丢失，本次导入未执行"
+  },
+  "overview": {
+    "label": "图鉴全览"
   }
 }

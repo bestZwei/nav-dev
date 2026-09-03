@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Header } from "./header"
-import type { ShareData } from "./share-dialog"
+import type { OverviewData } from "./overview-view"
 
 interface ScrollHeaderProps {
   categories: Array<{
@@ -16,7 +16,7 @@ interface ScrollHeaderProps {
   onSearchChange?: (query: string) => void
   currentCategory?: string
   useAnchorLinks?: boolean
-  shareData?: ShareData
+  overviewData?: OverviewData
 }
 
 // 点击分类后锁定高亮的时长（覆盖平滑滚动期），期间滚动事件不重算
@@ -36,7 +36,7 @@ export function ScrollHeader({
   onSearchChange,
   currentCategory: initialCategory = "",
   useAnchorLinks = false,
-  shareData,
+  overviewData,
 }: ScrollHeaderProps) {
   const [activeCategory, setActiveCategory] = useState(initialCategory)
   const clickLockUntilRef = useRef(0)
@@ -108,7 +108,7 @@ export function ScrollHeader({
       onSearchChange={onSearchChange}
       useAnchorLinks={useAnchorLinks}
       onCategoryClick={handleCategoryClick}
-      shareData={shareData}
+      overviewData={overviewData}
     />
   )
 }

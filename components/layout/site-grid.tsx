@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { GripVertical, RotateCcw } from "lucide-react"
 import { SiteCard, type SiteItemProps } from "./site-card"
-import { useCardDensity } from "@/hooks/use-card-density"
+import { useCardDensity, type CardDensity } from "@/hooks/use-card-density"
 import { useLocalSiteOrder } from "@/hooks/use-local-site-order"
 
 interface SiteGridProps {
@@ -26,7 +26,9 @@ export function SiteGrid({
   const { orderedSites, hasCustomOrder, saveOrder, resetOrder } =
     useLocalSiteOrder(categoryId, sites)
 
-  const currentDensity = densityMounted ? density : "standard"
+  // 图鉴模式只替换首页正文；搜索结果仍使用标准卡片网格
+  const currentDensity: CardDensity =
+    densityMounted && density !== "overview" ? density : "standard"
 
   const dragEnabled = enableDrag && Boolean(categoryId) && orderedSites.length > 1
   const [draggedId, setDraggedId] = useState<string | null>(null)

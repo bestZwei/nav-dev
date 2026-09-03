@@ -29,8 +29,10 @@
     "changedTitle": "Kartenansicht gewechselt",
     "compact": "Kompaktmodus",
     "standard": "Standardmodus",
+    "overview": "Atlas-Modus",
     "switchedToCompact": "Zum Kompaktmodus gewechselt",
     "switchedToStandard": "Zum Standardmodus gewechselt",
+    "switchedToOverview": "Zum Atlas-Modus gewechselt",
     "ariaLabel": "Kartendichte umschalten (aktuell: {mode})",
     "srToggle": "Kartengröße und Layout umschalten",
     "sizeLabel": "Kartengröße",
@@ -51,15 +53,6 @@
     "searchSr": "Suchen",
     "searchPlaceholder": "Suchen... (Kürzel /)",
     "clearSearch": "Suche löschen"
-  },
-  "share": {
-    "toggle": "Seite teilen",
-    "title": "Seite teilen",
-    "description": "Speichern oder fotografieren Sie diese Übersichtskarte und teilen Sie Ihre Sammlung",
-    "saveImage": "Bild speichern",
-    "saving": "Wird erstellt...",
-    "saved": "Bild gespeichert",
-    "saveFailed": "Speichern fehlgeschlagen, bitte erneut versuchen"
   },
   "siteCard": {
     "visit": "{name} besuchen",
@@ -814,5 +807,8 @@
     "BOOKMARKS_IMPORT_EMPTY": "Keine importierbaren Lesezeichen gefunden; Import abgebrochen",
     "IMPORT_SITE_VALIDATION_FAILED": "Einige Websites im Backup sind ungültig; Import zum Datenschutz abgebrochen",
     "IMPORT_WORKSPACE_VALIDATION_FAILED": "Einige Workspaces im Backup sind ungültig; Import abgebrochen"
+  },
+  "overview": {
+    "label": "Atlas-Ansicht"
   }
 }
