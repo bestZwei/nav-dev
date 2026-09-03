@@ -942,7 +942,7 @@ export default function AdminSitesPage() {
                                 {togglingPinId === site.id ? (
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 ) : (
-                                  <Pin className={`h-3.5 w-3.5 ${site.isPinned ? "fill-current" : ""}`} />
+                                  <Pin className={`h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110 ${site.isPinned ? "fill-current" : ""}`} />
                                 )}
                                 <span>{site.isPinned ? t("pinnedAction") : t("pinAction")}</span>
                               </Button>

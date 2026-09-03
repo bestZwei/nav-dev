@@ -96,7 +96,7 @@ export function AdminSidebar() {
       <SidebarHeader className="px-4 pt-4 pb-2 group-data-[collapsible=icon]:!px-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="transition-all duration-200 active:scale-95 group">
               <Link href="/admin">
                 {siteLogo ? (
                   <div className="flex aspect-square size-8 items-center justify-center">
@@ -105,7 +105,7 @@ export function AdminSidebar() {
                       alt="Logo"
                       width={24}
                       height={24}
-                      className="h-6 w-6 object-contain"
+                      className="h-6 w-6 object-contain transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
                       referrerPolicy="no-referrer"
                       priority
                     />

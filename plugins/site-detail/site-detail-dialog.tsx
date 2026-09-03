@@ -243,13 +243,13 @@ export function SiteDetailDialog({
                         key={shot.id}
                         type="button"
                         onClick={() => setLightboxShot(shot)}
-                        className="group relative aspect-video w-56 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-all hover:border-primary/50 hover:shadow-sm sm:w-64"
+                        className="group relative aspect-video w-56 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-all duration-250 ease-spring hover:scale-[1.03] hover:border-primary/60 hover:shadow-md active:scale-[0.98] sm:w-64"
                       >
                         <ScreenshotImage
                           displayUrl={shot.displayUrl}
                           name={detail.name}
                         />
-                        <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/55 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                        <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:scale-110">
                           <ZoomIn className="h-3.5 w-3.5" />
                         </span>
                       </button>
@@ -280,8 +280,8 @@ export function SiteDetailDialog({
       >
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[60] w-[95vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
-            <DialogPrimitive.Close className="absolute -top-11 right-0 rounded-md p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[60] w-[95vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-200">
+            <DialogPrimitive.Close className="absolute -top-11 right-0 rounded-md p-2 text-white/80 transition-all duration-200 hover:bg-white/15 hover:text-white hover:rotate-90 active:scale-95">
               <X className="h-5 w-5" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>

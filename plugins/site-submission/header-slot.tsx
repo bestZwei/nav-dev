@@ -167,7 +167,7 @@ export function SiteSubmissionHeaderSlot() {
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative transition-all duration-200 active:scale-95 group hover:bg-accent">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -178,7 +178,7 @@ export function SiteSubmissionHeaderSlot() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="lucide lucide-archive h-[1.2rem] w-[1.2rem]"
+                  className="lucide lucide-archive h-[1.2rem] w-[1.2rem] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105"
                 >
                   <rect width="20" height="5" x="2" y="3" rx="1"></rect>
                   <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path>
@@ -201,7 +201,7 @@ export function SiteSubmissionHeaderSlot() {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 animate-fade-in">
             <FormField
               control={form.control}
               name="name"
@@ -303,7 +303,7 @@ export function SiteSubmissionHeaderSlot() {
               >
                 {t("cancel")}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="transition-all duration-200 active:scale-[0.97]">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("submit")}
               </Button>

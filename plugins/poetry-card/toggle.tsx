@@ -32,7 +32,7 @@ export function PoetryToggle() {
             size="icon"
             onClick={() => setUserVisible(true)}
           >
-            <BookOpen className="h-[1.2rem] w-[1.2rem]" />
+            <BookOpen className="h-[1.2rem] w-[1.2rem] transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
             <span className="sr-only">{t("show")}</span>
           </Button>
         </TooltipTrigger>

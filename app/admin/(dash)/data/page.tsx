@@ -21,7 +21,7 @@ export default function DataManagementPage() {
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
         {/* 导入数据 - 主要操作 */}
-        <Card className="border-primary/20 bg-primary/5">
+        <Card className="border-primary/20 bg-primary/5 transition-all duration-250 ease-spring hover:-translate-y-1 hover:shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="p-2 bg-primary/10 rounded">

@@ -132,7 +132,7 @@ export function SearchableLayout({
               <div className="animate-fade-in">
                 <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3">
                   <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t("resultsTitle")}</h1>
-                  <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
+                  <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium animate-scale-in">
                     {t("found", { count: filteredSites.length })}
                   </Badge>
                   <p className="text-sm text-muted-foreground">

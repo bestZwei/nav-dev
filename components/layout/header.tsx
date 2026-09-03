@@ -362,7 +362,7 @@ export function Header({
                 strokeLinejoin="round"
                 className="h-5 w-5"
               >
-                <path d="M3 9.5L12 3l9 6.5" />
+                <path d="M3 9.5L12 3l9 6.5" className="transition-transform duration-200 group-hover:scale-105" />
                 <path d="M5 9.5V21h14V9.5" />
                 <path d="M10 21v-6h4v6" />
               </svg>
@@ -391,7 +391,7 @@ export function Header({
                     className={`inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out active:scale-95 ${
                       currentCategory === category.slug
                         ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-accent/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                     }`}
                   >
                     {category.icon && (

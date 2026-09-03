@@ -307,7 +307,7 @@ export function UserEditDialog({
             >
               {tc("cancel")}
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="transition-all duration-200 active:scale-[0.97]">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("saveChanges")}
             </Button>

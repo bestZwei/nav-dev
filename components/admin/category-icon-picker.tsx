@@ -126,7 +126,7 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
             <Button
               type="button"
               variant="outline"
-              className="h-10 px-3 flex items-center gap-2.5 justify-start min-w-[180px] border-dashed hover:border-primary/50 transition-colors"
+              className="h-10 px-3 flex items-center gap-2.5 justify-start min-w-[180px] border-dashed hover:border-primary/50 transition-all duration-200 active:scale-95"
             >
               {value ? (
                 <CategoryIconBadge icon={value} size="sm" />
@@ -209,13 +209,13 @@ export function CategoryIconPicker({ value, onChange }: CategoryIconPickerProps)
                           type="button"
                           onClick={() => handleSelectIcon(item.name)}
                           title={`${item.label} (${item.name}) - ${item.group}`}
-                          className={`flex flex-col items-center justify-center p-2 rounded-lg text-center transition-all hover:scale-105 active:scale-95 group relative border ${
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg text-center transition-all duration-200 ease-spring hover:scale-110 active:scale-95 group relative border ${
                             isSelected
                               ? "ring-2 ring-primary border-primary bg-accent shadow-xs"
                               : "border-border/60 hover:border-primary/40 bg-card hover:bg-accent/40"
                           }`}
                         >
-                          <div className="mb-1.5 transition-transform group-hover:scale-110">
+                          <div className="mb-1.5 transition-transform duration-200 group-hover:scale-115">
                             <CategoryIconBadge icon={item.name} size="md" />
                           </div>
                           <span className="text-[11px] font-medium truncate max-w-full leading-tight text-foreground/90">

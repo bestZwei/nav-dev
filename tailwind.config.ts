@@ -153,6 +153,23 @@ const config: Config = {
   					transform: 'scale(1)'
   				}
   			},
+  			'shake': {
+  				'0%, 100%': { transform: 'translateX(0)' },
+  				'20%, 60%': { transform: 'translateX(-4px)' },
+  				'40%, 80%': { transform: 'translateX(4px)' }
+  			},
+  			'pulse-glow': {
+  				'0%, 100%': { opacity: '1', transform: 'scale(1)' },
+  				'50%': { opacity: '0.6', transform: 'scale(1.08)' }
+  			},
+  			'unroll-in': {
+  				from: { opacity: '0', transform: 'scale(0.88) translateY(-10px)' },
+  				to: { opacity: '1', transform: 'scale(1) translateY(0)' }
+  			},
+  			'unroll-out': {
+  				from: { opacity: '1', transform: 'scale(1) translateY(0)' },
+  				to: { opacity: '0', transform: 'scale(0.88) translateY(-10px)' }
+  			},
   			'bounce-subtle': {
   				'0%, 100%': {
   					transform: 'scale(1)'
@@ -182,6 +199,10 @@ const config: Config = {
   			'scale-in': 'scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
   			'fade-in-up': 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
   			'zoom-in-smooth': 'zoom-in-smooth 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+  			'shake': 'shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both',
+  			'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+  			'unroll-in': 'unroll-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+  			'unroll-out': 'unroll-out 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
   			'bounce-subtle': 'bounce-subtle 0.3s cubic-bezier(0.34, 1.4, 0.64, 1)',
   			'pulse-subtle': 'pulse_subtle 3s ease-in-out infinite'
   		}

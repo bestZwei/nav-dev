@@ -309,7 +309,7 @@ export function ShareToggle({ data }: { data?: ShareData }) {
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon">
-                <Share2 className="h-[1.2rem] w-[1.2rem]" />
+                <Share2 className="h-[1.2rem] w-[1.2rem] transition-transform duration-200 group-hover:scale-110" />
                 <span className="sr-only">{t("toggle")}</span>
               </Button>
             </DialogTrigger>

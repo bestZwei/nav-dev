@@ -273,7 +273,7 @@ function PluginCard({
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40 transition-transform duration-300 group-hover:scale-105">
               {plugin.manifestIcon ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

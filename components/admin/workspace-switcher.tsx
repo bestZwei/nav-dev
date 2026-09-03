@@ -105,7 +105,7 @@ export function WorkspaceSwitcher() {
         <TooltipTrigger asChild>
           {isGlobal ? (
             <span className="inline-flex">
-              <Button variant="outline" size="sm" disabled className="h-8 gap-1.5 px-2.5 font-normal">
+              <Button variant="outline" size="sm" disabled className="h-8 gap-1.5 px-2.5 font-normal transition-all duration-200 active:scale-95 hover:bg-accent group">
                 <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span>{t("globalLabel")}</span>
                 <span className="sr-only">{t("globalTooltip")}</span>

@@ -114,7 +114,7 @@ export function JinrishiciCard({ onClose }: JinrishiciCardProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-6 w-6 transition-all duration-200 hover:rotate-90 hover:scale-110 active:scale-90"
               onClick={onClose}
             >
               <X className="h-3 w-3" />
@@ -133,9 +133,9 @@ export function JinrishiciCard({ onClose }: JinrishiciCardProps) {
   }
 
   return (
-    <Card className="relative group">
+    <Card className="relative group transition-all duration-300 ease-spring hover:shadow-lg hover:border-primary/40 hover:-translate-y-0.5">
       {onClose && (
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out group-hover:translate-y-0 translate-y-1">
           <Button
             variant="ghost"
             size="icon"

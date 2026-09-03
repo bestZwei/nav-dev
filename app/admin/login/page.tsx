@@ -144,7 +144,7 @@ function LoginForm() {
 
           {/* 浮动特性卡片 - 统一在右上角区域错落排列，间距加大 */}
           {/* 1. 分类导航 */}
-          <div className="absolute top-[4%] right-[6%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[4%] right-[6%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <FolderTree className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featureCategories")}</span>
@@ -157,7 +157,7 @@ function LoginForm() {
           </div>
 
           {/* 2. 响应式设计 */}
-          <div className="absolute top-[10.5%] right-[16%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[10.5%] right-[16%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <Smartphone className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featureResponsive")}</span>
@@ -170,7 +170,7 @@ function LoginForm() {
           </div>
 
           {/* 3. 数据统计 */}
-          <div className="absolute top-[17%] right-[4%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[17%] right-[4%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <BarChart3 className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featureStats")}</span>
@@ -187,7 +187,7 @@ function LoginForm() {
           </div>
 
           {/* 4. 实时搜索 */}
-          <div className="absolute top-[23.5%] right-[14%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[23.5%] right-[14%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <Search className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featureSearch")}</span>
@@ -201,7 +201,7 @@ function LoginForm() {
           </div>
 
           {/* 5. 古诗词 */}
-          <div className="absolute top-[30%] right-[8%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[30%] right-[8%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <Scroll className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featurePoetry")}</span>
@@ -212,7 +212,7 @@ function LoginForm() {
           </div>
 
           {/* 6. 暗黑模式 */}
-          <div className="absolute top-[36.5%] right-[18%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[36.5%] right-[18%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <Moon className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featureDark")}</span>
@@ -227,7 +227,7 @@ function LoginForm() {
           </div>
 
           {/* 8. 简洁优雅 */}
-          <div className="absolute top-[49.5%] right-[15%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[49.5%] right-[15%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <Palette className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featureElegant")}</span>
@@ -240,7 +240,7 @@ function LoginForm() {
           </div>
 
           {/* 9. 智能图标 */}
-          <div className="absolute top-[56%] right-[9%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60">
+          <div className="absolute top-[56%] right-[9%] bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl p-4 shadow-xl opacity-60 transition-all duration-300 hover:opacity-95 hover:scale-105 hover:-translate-y-1">
             <div className="flex items-center gap-2 mb-2">
               <ImageIcon className="size-4 text-primary" />
               <span className="text-xs font-medium">{t("featureIcons")}</span>
@@ -340,12 +340,12 @@ function LoginForm() {
             </div>
 
             {/* 登录表单卡片 */}
-            <Card className="shadow-xl">
+            <Card className="shadow-xl animate-fade-in-up">
               <CardContent className="pt-6">
                 <form onSubmit={handleSubmit}>
                   <FieldGroup className="space-y-4">
                     {error && (
-                      <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                      <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive animate-shake">
                         {error}
                       </div>
                     )}

@@ -125,7 +125,7 @@ export function WorkspaceFormDialog({
           <DialogDescription>{t("formDesc")}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
+        <div className="grid gap-4 py-2 animate-fade-in">
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="ws-name">{t("name")}</Label>
@@ -173,10 +173,10 @@ export function WorkspaceFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving} className="transition-all duration-200 active:scale-[0.97]">
             {t("cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button onClick={handleSubmit} disabled={saving} className="transition-all duration-200 active:scale-[0.97]">
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {mode === "edit" ? t("save") : t("create")}
           </Button>

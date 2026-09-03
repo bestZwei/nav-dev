@@ -261,11 +261,11 @@ export default function AdminDashboardPage() {
       {/* 统计卡片：全站口径由顶栏切换器的「全局」禁用态示意 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {siteStats.map((stat) => (
-          <Card key={stat.titleKey} className="@container/card transition-all duration-200 ease-spring hover:-translate-y-0.5 hover:shadow-md">
+          <Card key={stat.titleKey} className="@container/card group transition-all duration-250 ease-spring hover:-translate-y-1 hover:shadow-md hover:border-primary/40">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t(stat.titleKey)}</CardTitle>
               <CardAction>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
+                <stat.icon className="h-4 w-4 text-muted-foreground transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:text-primary" />
               </CardAction>
             </CardHeader>
             <CardContent>

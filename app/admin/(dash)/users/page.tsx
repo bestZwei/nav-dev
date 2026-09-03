@@ -275,13 +275,13 @@ export default function AdminSettingsPage() {
                   type="button"
                   onClick={() => setActiveSection(section.id)}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors w-full",
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm whitespace-nowrap transition-all duration-150 w-full active:scale-[0.98] group",
                     activeSection === section.id
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      ? "bg-muted font-medium text-foreground shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:translate-x-0.5"
                   )}
                 >
-                  <section.icon className="h-4 w-4 shrink-0" />
+                  <section.icon className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
                   {t(section.titleKey as never)}
                 </button>
               </li>
@@ -291,7 +291,7 @@ export default function AdminSettingsPage() {
 
         {/* 右侧表单内容 */}
         <div className="min-w-0 flex-1">
-          <div className="max-w-2xl space-y-6">
+          <div key={activeSection} className="max-w-2xl space-y-6 animate-fade-in">
             <div className="space-y-1">
               <h4 className="text-base font-semibold">{sectionMeta[activeSection].title}</h4>
               <p className="text-sm text-muted-foreground">

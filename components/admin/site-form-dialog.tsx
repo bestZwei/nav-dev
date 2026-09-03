@@ -755,7 +755,7 @@ function DetailContentFields({
         {screenshots.length > 0 && (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {screenshots.map((shot, index) => (
-              <div key={shot.key} className="group relative overflow-hidden rounded-lg border bg-muted/20">
+              <div key={shot.key} className="group relative overflow-hidden rounded-lg border bg-muted/20 transition-all duration-200 hover:shadow-md hover:border-primary/40 hover:scale-[1.02]">
                 <div className="relative aspect-video">
                   <Image
                     src={shot.previewUrl}
@@ -765,7 +765,7 @@ function DetailContentFields({
                     className="object-cover"
                   />
                 </div>
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 px-1.5 py-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 px-1.5 py-1 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0 translate-y-1">
                   <div className="flex">
                     <button
                       type="button"

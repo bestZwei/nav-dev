@@ -134,7 +134,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="animate-fade-in">
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">{t("nameLabel")}</Label>
@@ -196,7 +196,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId, mode, onSuc
             >
               {tc("cancel")}
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="transition-all duration-200 active:scale-[0.97]">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "create" ? t("createBtn") : t("saveBtn")}
             </Button>

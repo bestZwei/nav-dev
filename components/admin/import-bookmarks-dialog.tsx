@@ -162,13 +162,13 @@ export function ImportBookmarksDialog({
               <label htmlFor="bookmark-file">
                 <Button
                   variant="outline"
-                  className="w-full h-24 border-dashed border-2"
+                  className="w-full h-24 border-dashed border-2 transition-all duration-200 hover:border-primary/60 hover:bg-primary/5 active:scale-[0.99] group"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting}
                   type="button"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <Upload className="h-8 w-8 text-muted-foreground transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
                     <div className="text-center">
                       <p className="font-medium">
                         {selectedFile ? selectedFile.name : t("selectFile")}
@@ -191,7 +191,7 @@ export function ImportBookmarksDialog({
               {/* 追加模式 */}
               <button
                 onClick={() => setImportMode('append')}
-                className={`w-full text-left p-4 border rounded-lg transition-colors ${
+                className={`w-full text-left p-4 border rounded-lg transition-all duration-150 active:scale-[0.99] ${
                   importMode === 'append'
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:bg-muted/50'
@@ -217,7 +217,7 @@ export function ImportBookmarksDialog({
               {/* 覆盖模式 */}
               <button
                 onClick={() => setImportMode('overwrite')}
-                className={`w-full text-left p-4 border rounded-lg transition-colors ${
+                className={`w-full text-left p-4 border rounded-lg transition-all duration-150 active:scale-[0.99] ${
                   importMode === 'overwrite'
                     ? 'border-destructive bg-destructive/5'
                     : 'border-border hover:bg-muted/50'

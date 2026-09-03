@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useHomeSideVisible, useBuiltinPluginEnabled } from "@/lib/plugins/client"
 import { cn } from "@/lib/utils"
 import { JinrishiciCard } from "./jinrishici-card"
@@ -11,13 +12,17 @@ import { PLUGIN_ID } from "./constants"
 export function HomeSideCard() {
   const enabled = useBuiltinPluginEnabled(PLUGIN_ID)
   const { visible, mounted, setUserVisible } = useHomeSideVisible(enabled)
+  const [isClosing, setIsClosing] = useState(false)
 
   const handleClose = () => {
-    setUserVisible(false)
+    setIsClosing(true)
+    setTimeout(() => {
+      setUserVisible(false)
+      setIsClosing(false)
+    }, 240)
   }
 
   // 避免服务端水合不一致；插件禁用时不渲染。
-  // 不能把 visible 再复制进一个 effect 驱动的 state，否则关闭状态会晚一帧生效。
   if (!mounted || !enabled) {
     return null
   }
@@ -26,10 +31,12 @@ export function HomeSideCard() {
     <div
       id="jinrishici-card-anchor"
       className={cn(
-        "fixed top-20 right-4 z-40 hidden lg:block animate-fade-in origin-top-right",
-        // 用户关闭时保留占位几何（visibility:hidden 不响应点击），
-        // BackToTop 等消费方始终量到同一条右缘基准线
-        !visible && "invisible"
+        "fixed top-20 right-4 z-40 hidden lg:block origin-top-right transition-all duration-250 ease-out",
+        isClosing
+          ? "animate-unroll-out pointer-events-none"
+          : visible
+          ? "animate-unroll-in"
+          : "invisible opacity-0 pointer-events-none scale-90 -translate-y-2"
       )}
     >
       <JinrishiciCard onClose={handleClose} />
