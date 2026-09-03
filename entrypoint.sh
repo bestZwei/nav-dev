@@ -203,13 +203,21 @@ if [ -d "/app/prisma/migrations" ] && [ "$(ls -A /app/prisma/migrations)" ]; the
   # 自动修复在生产是破坏性/脆弱操作——需要删列时会因缺 --accept-data-loss 失败，
   # set -e 下容器进入 crash loop；漂移修复应由人工评估后执行 migrate/db push
   echo "🔍 校验数据库结构与 schema 一致性..."
-  if npx prisma migrate diff \
+  # prisma migrate diff --exit-code：一致退出 0，漂移退出非 0 并把差异 SQL 打到 stdout。
+  # 赋值放在 if 条件里，set -e 不会因非零退出码中断；stderr 是 CLI 弃用告警等噪音，忽略
+  if DRIFT_DETAIL="$(npx prisma migrate diff \
     --from-schema-datasource prisma/schema.prisma \
     --to-schema-datamodel prisma/schema.prisma \
-    --exit-code > /dev/null 2>&1; then
+    --exit-code 2>/dev/null)"; then
     echo "✅ 数据库结构与 schema 一致"
   else
-    echo "❌ 警告：数据库结构与 schema 不一致！请人工评估后执行"
+    if [ -n "$DRIFT_DETAIL" ]; then
+      echo "❌ 警告：数据库结构与 schema 不一致！差异明细（当前数据库 → schema 期望）："
+      echo ""
+      echo "$DRIFT_DETAIL"
+      echo ""
+    fi
+    echo "❌ 请人工评估后执行"
     echo "    npx prisma migrate dev / npx prisma db push 修复漂移。"
     echo "    本次启动将继续，但可能出现字段缺失的运行时错误（P2022）。"
   fi

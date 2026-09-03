@@ -241,17 +241,26 @@ export function Header({
   const handleNavPointerDown = (e: React.PointerEvent<HTMLElement>) => {
     if (e.button !== 0) return
     navDragRef.current = { down: true, startX: e.clientX, startScroll: navRef.current?.scrollLeft ?? 0, moved: false }
-    e.currentTarget.setPointerCapture(e.pointerId)
   }
 
   const handleNavPointerMove = (e: React.PointerEvent<HTMLElement>) => {
     const drag = navDragRef.current
     if (!drag.down) return
     const dx = e.clientX - drag.startX
-    if (!drag.moved && Math.abs(dx) > 4) drag.moved = true
+    // 超过阈值才进入拖拽态并捕获指针。捕获会把后续 click 重定向到 nav，
+    // 若在 pointerdown 无条件捕获，普通点击永远无法触达分类链接（点击滚动失效）
+    if (!drag.moved && Math.abs(dx) > 4) {
+      drag.moved = true
+      navRef.current?.setPointerCapture(e.pointerId)
+    }
     if (drag.moved && navRef.current) {
       navRef.current.scrollLeft = drag.startScroll - dx
     }
+  }
+
+  // 拖拽结束停止跟踪：捕获隐式释放，未按下状态下的 pointermove 不再滚动
+  const handleNavPointerEnd = () => {
+    navDragRef.current.down = false
   }
 
   const handleNavClickCapture = (e: React.MouseEvent<HTMLElement>) => {
@@ -366,6 +375,9 @@ export function Header({
               ref={navRef}
               onPointerDown={handleNavPointerDown}
               onPointerMove={handleNavPointerMove}
+              onPointerUp={handleNavPointerEnd}
+              onPointerCancel={handleNavPointerEnd}
+              onDragStart={(e) => e.preventDefault()}
               onClickCapture={handleNavClickCapture}
               className="flex flex-1 select-none items-center overflow-x-auto overflow-y-hidden scrollbar-hide"
             >

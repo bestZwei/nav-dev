@@ -110,7 +110,7 @@ export function BackToTop() {
         onClick={handleClick}
         style={{ marginRight: `${marginRight}px` }}
         className={cn(
-          "h-11 w-11 rounded-full shadow-lg border transition-all duration-300 pointer-events-auto",
+          "h-11 w-11 rounded-full border bg-background/70 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-background/50 hover:bg-background/90 supports-[backdrop-filter]:hover:bg-background/70 transition-all duration-300 pointer-events-auto",
           visible
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-4"
