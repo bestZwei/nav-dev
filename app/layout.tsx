@@ -8,6 +8,7 @@ import { getCurrentWorkspace } from "@/lib/workspace"
 import { NextIntlClientProvider } from "next-intl"
 import { getLocale, getTranslations } from "next-intl/server"
 import { htmlLang } from "@/lib/i18n"
+import { AnimationSync } from "@/components/theme-provider/animation-sync"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -38,9 +39,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale()
+  const settings = await getDisplaySettings()
 
   return (
-    <html lang={htmlLang(locale)} suppressHydrationWarning>
+    <html lang={htmlLang(locale)} data-animations={settings?.enableAnimations !== false ? "true" : "false"} suppressHydrationWarning>
       <head>
         {/*
           esbuild keepNames 兜底：Vercel / Cloudflare（OpenNext）构建链会把
@@ -72,6 +74,7 @@ export default async function RootLayout({
           >
             {children}
             <SonnerToaster position="bottom-right" richColors />
+            <AnimationSync />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

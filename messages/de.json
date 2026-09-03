@@ -584,7 +584,9 @@
       "customHeadCodeLabel": "Head-Code",
       "customHeadCodeHint": "Wird nur in öffentliche Navigationsseiten injiziert (nicht ins Admin-Panel). Wird am Anfang des body eingefügt und früh ausgeführt: ideal für Analytics, Website-Verifizierung und eigene Styles.",
       "customBodyCodeLabel": "Footer-Code",
-      "customBodyCodeHint": "Wird nur in öffentliche Navigationsseiten injiziert (nicht ins Admin-Panel). Wird am Ende des body eingefügt und nach dem Rendern ausgeführt: ideal für Seiteneffekte, Widgets und Live-Chat."
+      "customBodyCodeHint": "Wird nur in öffentliche Navigationsseiten injiziert (nicht ins Admin-Panel). Wird am Ende des body eingefügt und nach dem Rendern ausgeführt: ideal für Seiteneffekte, Widgets und Live-Chat.",
+      "enableAnimationsLabel": "UI-Animationen",
+      "enableAnimationsHint": "Aktivieren Sie flüssige Animationen und Übergänge auf der Website. Deaktivieren, um Bewegungen zu reduzieren"
     },
     "profile": {
       "admin": "Admin",

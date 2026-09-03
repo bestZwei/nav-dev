@@ -1997,6 +1997,7 @@ export async function getDisplaySettings() {
     icpLink: (settings.icpLink as string | null | undefined) ?? undefined,
     githubUrl: (settings.githubUrl as string | null | undefined) ?? undefined,
     defaultLanguage: str(settings.defaultLanguage),
+    enableAnimations: bool(settings.enableAnimations) ?? true,
     // 自定义代码为全局配置（不参与工作区覆盖），显式透传以保证类型可见；
     // 公开接口 /api/settings 会在装配层剔除这两个字段，不外泄给客户端
     customHeadCode: settings.customHeadCode as string | null | undefined,
@@ -2041,6 +2042,7 @@ const ALLOWED_SETTINGS_FIELDS = [
   "defaultLanguage",
   "customHeadCode",
   "customBodyCode",
+  "enableAnimations",
 ] as const
 
 export async function updateSystemSettings(data: {
@@ -2061,6 +2063,7 @@ export async function updateSystemSettings(data: {
   defaultLanguage?: Locale
   customHeadCode?: string | null
   customBodyCode?: string | null
+  enableAnimations?: boolean
 }) {
   const unauthorized = await requireAdmin()
   if (unauthorized) return unauthorized

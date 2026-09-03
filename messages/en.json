@@ -584,7 +584,9 @@
       "customHeadCodeLabel": "Head Code",
       "customHeadCodeHint": "Injected into public nav pages only (not the admin panel), at the start of body, executing early: ideal for analytics, site verification scripts and custom styles.",
       "customBodyCodeLabel": "Footer Code",
-      "customBodyCodeHint": "Injected into public nav pages only (not the admin panel), at the end of the page content, executing after render: ideal for page effects, third-party widgets and live chat."
+      "customBodyCodeHint": "Injected into public nav pages only (not the admin panel), at the end of the page content, executing after render: ideal for page effects, third-party widgets and live chat.",
+      "enableAnimationsLabel": "UI Animations",
+      "enableAnimationsHint": "Enable smooth animations and transition effects across the site. Disable to turn off all motion for lower-spec devices"
     },
     "profile": {
       "admin": "Admin",

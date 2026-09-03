@@ -83,7 +83,7 @@ function SiteIcon({
 
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40 transition-transform duration-200 group-hover:scale-105 ${containerSizeClass}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-border/50 bg-muted/40 transition-transform duration-300 ease-spring group-hover:scale-105 ${containerSizeClass}`}
     >
       {/* 骨架屏加载动画占位符 */}
       {loadState === "loading" && iconSrc && (
@@ -205,7 +205,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
               onClick={handleCardClick}
               draggable={dragEnabled ? false : undefined}
               aria-label={t("visit", { name: site.name })}
-              className={`group relative flex h-12 items-center gap-2.5 rounded-lg border px-3 py-2 text-card-foreground shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs select-none ${
+              className={`group relative flex h-12 items-center gap-2.5 rounded-lg border px-3 py-2 text-card-foreground shadow-xs transition-all duration-200 ease-spring hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] select-none ${
                 site.isPinned
                   ? "border-amber-500/30 bg-amber-500/[0.04] hover:border-amber-500/60 hover:bg-amber-500/[0.08]"
                   : "border-border/80 bg-card hover:border-primary/40 hover:bg-accent/40"
@@ -224,7 +224,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
                 )}
               </div>
 
-              <div className="shrink-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+              <div className="shrink-0 opacity-0 -translate-x-1 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-x-0">
                 <ExternalLink className="h-3 w-3 text-muted-foreground" />
               </div>
             </Link>
@@ -283,7 +283,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
       aria-label={t("visit", { name: site.name })}
       className="group relative block h-full select-none"
     >
-      <div className={`relative flex h-full items-start gap-3.5 overflow-hidden rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover ${
+      <div className={`relative flex h-full items-start gap-3.5 overflow-hidden rounded-xl border p-3.5 sm:p-4 text-card-foreground shadow-xs transition-all duration-250 ease-spring hover:-translate-y-1 hover:shadow-card-hover active:scale-[0.98] active:translate-y-0 ${
         site.isPinned
           ? "border-amber-500/30 bg-card hover:border-amber-500/60 ring-1 ring-amber-500/10"
           : "border-border/80 bg-card hover:border-primary/40 hover:bg-card"
@@ -319,7 +319,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
         </div>
 
         {/* 悬停快捷操作 */}
-        <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+        <div className="absolute right-2.5 top-2.5 flex items-center gap-0.5 opacity-0 translate-x-1 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:translate-x-0">
           <button
             onClick={handleCopy}
             title={copied ? t("copied") : t("copy")}
@@ -327,12 +327,12 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
             className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             {copied ? (
-              <Check className="h-3 w-3 text-green-500 animate-scale-in" />
+              <Check className="h-3 w-3 text-green-500 animate-in zoom-in-50 duration-200" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
           </button>
-          <div className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+          <div className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
             <ExternalLink className="h-3 w-3" />
           </div>
         </div>

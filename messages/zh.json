@@ -584,7 +584,9 @@
       "customHeadCodeLabel": "头部代码",
       "customHeadCodeHint": "仅注入前台导航页（后台不注入），位于 body 起始处，页面加载早期执行：适合访问统计、站点验证脚本、自定义样式。",
       "customBodyCodeLabel": "尾部代码",
-      "customBodyCodeHint": "仅注入前台导航页（后台不注入），位于前台内容结尾，页面渲染后执行：适合页面特效、第三方挂件、在线客服。"
+      "customBodyCodeHint": "仅注入前台导航页（后台不注入），位于前台内容结尾，页面渲染后执行：适合页面特效、第三方挂件、在线客服。",
+      "enableAnimationsLabel": "页面动效效果",
+      "enableAnimationsHint": "开启后全站拥有丝滑的操作动效与交互过渡；关闭后禁用所有动效，提升低性能设备下的响应速度"
     },
     "profile": {
       "admin": "管理员",

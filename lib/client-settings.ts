@@ -15,6 +15,8 @@ export interface PublicSettings {
   icpLink: string | null
   githubUrl: string | null
   defaultLanguage: string
+  // 页面动效总开关
+  enableAnimations?: boolean
   // 插件系统：前台注入点消费的精简视图
   plugins: ClientPluginView
 }
@@ -34,6 +36,7 @@ export const defaultSettings: PublicSettings = {
   icpLink: null,
   githubUrl: "https://github.com/kenanlabs/nav",
   defaultLanguage: "zh",
+  enableAnimations: true,
   plugins: { builtinEnabledIds: [], uploaded: [] },
 }
 

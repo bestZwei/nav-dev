@@ -388,7 +388,7 @@ export function Header({
                     data-category-slug={category.slug}
                     href={getCategoryHref(category.slug)}
                     onClick={(e) => handleAnchorClick(e, category.slug)}
-                    className={`inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] ${
+                    className={`inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out active:scale-95 ${
                       currentCategory === category.slug
                         ? "bg-background text-foreground shadow-sm"
                         : "text-muted-foreground hover:bg-accent/50"
@@ -418,7 +418,7 @@ export function Header({
                 id="search"
                 type="text"
                 placeholder={t("searchPlaceholder")}
-                className="h-9 w-40 sm:w-48 lg:w-64 pl-8 pr-8 text-xs bg-muted/40 transition-all focus:bg-background focus:w-56 sm:focus:w-60 lg:focus:w-72 [&::-webkit-search-cancel-button]:hidden [&::-ms-clear]:hidden"
+                className="h-9 w-40 sm:w-48 lg:w-64 pl-8 pr-8 text-xs bg-muted/40 transition-all duration-300 ease-spring focus:bg-background focus:w-56 sm:focus:w-60 lg:focus:w-72 focus:shadow-xs [&::-webkit-search-cancel-button]:hidden [&::-ms-clear]:hidden"
                 value={searchQuery}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 onKeyDown={(e) => {
@@ -432,7 +432,7 @@ export function Header({
               {searchQuery ? (
                 <button
                   onClick={handleClearSearch}
-                  className="absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-transform active:scale-90"
+                  className="absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-all duration-150 animate-in zoom-in-75 active:scale-90"
                   type="button"
                   aria-label={t("clearSearch")}
                 >

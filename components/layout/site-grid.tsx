@@ -59,11 +59,11 @@ export function SiteGrid({
       <div
         className={
           currentDensity === "compact"
-            ? `grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 transition-all duration-200`
-            : `grid auto-rows-[76px] grid-cols-1 content-start gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 transition-all duration-200`
+            ? `grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 transition-all duration-300 ease-spring`
+            : `grid auto-rows-[76px] grid-cols-1 content-start gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 transition-all duration-300 ease-spring`
         }
       >
-        {orderedSites.map((site) => (
+        {orderedSites.map((site, index) => (
           <div
             key={site.id}
             draggable={dragEnabled}
@@ -85,7 +85,8 @@ export function SiteGrid({
               e.preventDefault()
               handleDrop(site.id)
             }}
-            className={`group relative ${draggedId === site.id ? "opacity-40" : ""}`}
+            style={{ animationDelay: `${Math.min(index * 20, 240)}ms` }}
+            className={`group relative animate-fade-in-up ${draggedId === site.id ? "opacity-40" : ""}`}
           >
             {dragEnabled && (
               <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 rounded bg-background/80 p-0.5 text-muted-foreground/60 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">

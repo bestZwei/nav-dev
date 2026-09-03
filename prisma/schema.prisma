@@ -170,6 +170,8 @@ model SystemSettings {
   customBodyCode   String?  @map("custom_body_code")
   // Default site language for visitors without a locale cookie (zh/en)
   defaultLanguage  String   @default("zh") @map("default_language")
+  // 页面动效总开关（开启后前台与后台具备丝滑动画效果，关闭后所有动效被禁用）
+  enableAnimations Boolean  @default(true) @map("enable_animations")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 

@@ -53,6 +53,7 @@ interface SystemSettingsData {
   defaultLanguage: Locale
   customHeadCode: string | undefined
   customBodyCode: string | undefined
+  enableAnimations: boolean
 }
 
 const sections = [
@@ -87,6 +88,7 @@ export default function AdminSettingsPage() {
     defaultLanguage: "zh",
     customHeadCode: undefined,
     customBodyCode: undefined,
+    enableAnimations: true,
   })
   const [savingSettings, setSavingSettings] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionId>("basic")
@@ -163,6 +165,7 @@ export default function AdminSettingsPage() {
         defaultLanguage: isLocale(global.defaultLanguage) ? global.defaultLanguage : "zh",
         customHeadCode: global.customHeadCode || undefined,
         customBodyCode: global.customBodyCode || undefined,
+        enableAnimations: (global.enableAnimations as boolean | undefined) !== false,
       }))
     }
     if (display) {
@@ -388,6 +391,30 @@ export default function AdminSettingsPage() {
                   <p className="text-sm text-muted-foreground">
                     {t("defaultLanguageHint")}
                   </p>
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-4 shadow-2xs transition-colors hover:border-primary/30">
+                  <div className="space-y-0.5 pr-4">
+                    <Label htmlFor="enable-animations" className="text-base font-medium cursor-pointer">
+                      {t("enableAnimationsLabel")}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t("enableAnimationsHint")}
+                    </p>
+                  </div>
+                  <Switch
+                    id="enable-animations"
+                    checked={settings.enableAnimations}
+                    onCheckedChange={(checked) => {
+                      setSettings({ ...settings, enableAnimations: checked })
+                      document.documentElement.setAttribute("data-animations", checked ? "true" : "false")
+                      window.dispatchEvent(
+                        new CustomEvent("animations-settings-changed", {
+                          detail: { enableAnimations: checked },
+                        })
+                      )
+                    }}
+                  />
                 </div>
               </div>
             )}

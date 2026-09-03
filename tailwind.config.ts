@@ -133,6 +133,34 @@ const config: Config = {
   					transform: 'scale(1)'
   				}
   			},
+  			'fade-in-up': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translateY(8px)'
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translateY(0)'
+  				}
+  			},
+  			'zoom-in-smooth': {
+  				from: {
+  					opacity: '0',
+  					transform: 'scale(0.95)'
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'scale(1)'
+  				}
+  			},
+  			'bounce-subtle': {
+  				'0%, 100%': {
+  					transform: 'scale(1)'
+  				},
+  				'50%': {
+  					transform: 'scale(1.06)'
+  				}
+  			},
   			pulse_subtle: {
   				'0%, 100%': {
   					opacity: '1'
@@ -142,11 +170,19 @@ const config: Config = {
   				}
   			}
   		},
+  		transitionTimingFunction: {
+  			spring: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  			'spring-bounce': 'cubic-bezier(0.34, 1.4, 0.64, 1)',
+  			'spring-smooth': 'cubic-bezier(0.32, 0.72, 0, 1)'
+  		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			'fade-in': 'fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
   			'scale-in': 'scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+  			'fade-in-up': 'fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
+  			'zoom-in-smooth': 'zoom-in-smooth 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+  			'bounce-subtle': 'bounce-subtle 0.3s cubic-bezier(0.34, 1.4, 0.64, 1)',
   			'pulse-subtle': 'pulse_subtle 3s ease-in-out infinite'
   		}
   	}

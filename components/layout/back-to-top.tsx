@@ -110,10 +110,10 @@ export function BackToTop() {
         onClick={handleClick}
         style={{ marginRight: `${marginRight}px` }}
         className={cn(
-          "h-11 w-11 rounded-full border bg-background/70 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-background/50 hover:bg-background/90 supports-[backdrop-filter]:hover:bg-background/70 transition-all duration-300 pointer-events-auto",
+          "h-11 w-11 rounded-full border bg-background/70 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-background/50 hover:bg-background/90 supports-[backdrop-filter]:hover:bg-background/70 transition-all duration-300 ease-spring hover:scale-110 hover:-translate-y-1 hover:shadow-xl active:scale-90 pointer-events-auto",
           visible
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-4"
+            ? "opacity-100 translate-y-0 scale-100"
+            : "opacity-0 translate-y-4 scale-90 pointer-events-none"
         )}
       >
         <ArrowUp className="h-5 w-5" />

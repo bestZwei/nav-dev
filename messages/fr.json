@@ -584,7 +584,9 @@
       "customHeadCodeLabel": "Code d'en-tête",
       "customHeadCodeHint": "Injecté uniquement dans les pages publiques (pas dans l'admin). Injecté au début du body, exécution précoce : idéal pour les statistiques, la vérification de site et les styles personnalisés.",
       "customBodyCodeLabel": "Code de pied de page",
-      "customBodyCodeHint": "Injecté uniquement dans les pages publiques (pas dans l'admin). Injecté à la fin du body, exécution après le rendu : idéal pour les effets visuels, les widgets tiers et le chat en direct."
+      "customBodyCodeHint": "Injecté uniquement dans les pages publiques (pas dans l'admin). Injecté à la fin du body, exécution après le rendu : idéal pour les effets visuels, les widgets tiers et le chat en direct.",
+      "enableAnimationsLabel": "Animations d'interface",
+      "enableAnimationsHint": "Activer des animations et transitions fluides sur le site. Désactiver pour réduire les mouvements"
     },
     "profile": {
       "admin": "Admin",

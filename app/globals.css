@@ -167,3 +167,45 @@
 }
 
 
+
+
+/* 丝滑物理微弹性缓动变量 */
+:root {
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* 全局动效总控：后台关闭「页面动画效果」时，全局压制所有动画、过渡与平滑滚动，实现瞬时零延迟响应 */
+[data-animations="false"] *,
+[data-animations="false"] *::before,
+[data-animations="false"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* 尊重系统级减弱动态偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 丝滑微动效通用辅助类 */
+.spring-transition {
+  transition-timing-function: var(--ease-spring);
+}
+
+.active-press {
+  transition: transform 0.15s var(--ease-spring);
+}
+.active-press:active {
+  transform: scale(0.97);
+}

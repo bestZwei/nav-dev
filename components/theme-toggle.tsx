@@ -80,13 +80,13 @@ export function ThemeToggle() {
             size="icon"
             onClick={cycleTheme}
           >
-            <Sun className={`h-[1.2rem] w-[1.2rem] transition-all ${
+            <Sun className={`h-[1.2rem] w-[1.2rem] transition-all duration-300 ease-spring ${
               theme === 'light' ? 'rotate-0 scale-100' : 'rotate-90 scale-0'
             }`} />
-            <Moon className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
+            <Moon className={`absolute h-[1.2rem] w-[1.2rem] transition-all duration-300 ease-spring ${
               theme === 'dark' ? 'rotate-0 scale-100' : 'rotate-90 scale-0'
             }`} />
-            <Laptop className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
+            <Laptop className={`absolute h-[1.2rem] w-[1.2rem] transition-all duration-300 ease-spring ${
               theme === 'system' ? 'rotate-0 scale-100' : 'rotate-90 scale-0'
             }`} />
             <span className="sr-only">{t("toggle")}</span>
