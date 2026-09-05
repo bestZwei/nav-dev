@@ -168,7 +168,7 @@ export default function AdminSitesPage() {
           result.pagination.totalPages >= 1 &&
           currentPage > result.pagination.totalPages
         ) {
-          await loadSites(result.pagination.totalPages, currentPageSize)
+          await loadSites(result.pagination.totalPages, currentPageSize, silent)
           return
         }
         setSites(result.data)
@@ -412,7 +412,16 @@ export default function AdminSitesPage() {
         fullOrderRef.current = full
         refreshFullOrder()
         toast.success(t("orderUpdated"))
-        loadSites()
+        // 两行都在当前页时先本地交换；静默刷新兜底（覆盖跨页交换的场景）
+        setSites(prev => {
+          const from = prev.findIndex(s => s.id === siteId)
+          const to = prev.findIndex(s => s.id === full[target].id)
+          if (from < 0 || to < 0) return prev
+          const next = [...prev]
+          ;[next[from], next[to]] = [next[to], next[from]]
+          return next
+        })
+        loadSites(page, pageSize, true)
       } else {
         toast.error(tc("operationFailed"), {
           description: resolveActionError(tAE, result.error, tc("retryLater")),
@@ -463,7 +472,9 @@ export default function AdminSitesPage() {
         toast.success(t("deleteSuccess"), {
           description: t("deleteSuccessDesc"),
         })
-        loadSites()
+        // 本地移除 + 静默刷新，避免整表闪 spinner（末页清空的 clamp 由 loadSites 内置）
+        setSites(prev => prev.filter(s => s.id !== deletingSiteId))
+        loadSites(page, pageSize, true)
       } else {
         toast.error(t("deleteFailed"), {
           description: resolveActionError(tAE, result.error, t("deleteFailedDesc")),
@@ -491,7 +502,8 @@ export default function AdminSitesPage() {
         toast.success(t("statusUpdated"), {
           description: t("publishToggledDesc"),
         })
-        loadSites()
+        setSites(prev => prev.map(s => (s.id === siteId ? { ...s, isPublished: !s.isPublished } : s)))
+        loadSites(page, pageSize, true)
       } else {
         toast.error(tc("operationFailed"), {
           description: resolveActionError(tAE, result.error, tc("operationFailed")),
@@ -517,7 +529,9 @@ export default function AdminSitesPage() {
         toast.success(currentPin ? t("unpinnedToast") : t("pinnedToast"), {
           description: currentPin ? t("unpinnedDesc") : t("pinnedDesc"),
         })
-        loadSites()
+        setSites(prev => prev.map(s => (s.id === siteId ? { ...s, isPinned: !s.isPinned } : s)))
+        // 置顶影响「置顶优先」排序（可能跨页移动），由静默刷新带回最终顺序
+        loadSites(page, pageSize, true)
       } else {
         toast.error(tc("operationFailed"), {
           description: resolveActionError(tAE, result.error, t("pinToggleFailed")),
@@ -603,6 +617,10 @@ export default function AdminSitesPage() {
             const status = result.success && result.data
               ? (result.data as { healthStatus?: string }).healthStatus
               : undefined
+            // 行级局部更新，与单站测活同口径；不在当前页的站点 map 自然空转
+            if (status) {
+              setSites(prev => prev.map(s => (s.id === item.id ? { ...s, healthStatus: status } : s)))
+            }
             if (status === "up") {
               up += 1
             } else if (status === "suspicious") {
@@ -635,7 +653,8 @@ export default function AdminSitesPage() {
           description: t("checkAllDoneDesc", { up, down, suspicious }),
         })
       }
-      loadSites()
+      // 逐行已局部更新，这里静默刷新兜底对齐服务器数据
+      loadSites(page, pageSize, true)
     } finally {
       setBatchChecking(false)
     }
@@ -1206,7 +1225,7 @@ export default function AdminSitesPage() {
         onOpenChange={setDialogOpen}
         site={editingSite}
         mode={dialogMode}
-        onSuccess={() => loadSites()}
+        onSuccess={() => loadSites(page, pageSize, true)}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

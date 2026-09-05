@@ -99,8 +99,10 @@ export default function AdminCategoriesPage() {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
 
   // 加载分类列表
-  const loadCategories = async (currentPage = page) => {
-    setLoading(true)
+  // silent=true 时跳过 loading 态：用于删除/保存成功后的保底刷新，
+  // 本地状态已更新，整表替换成 spinner 再重建会造成明显闪动
+  const loadCategories = async (currentPage = page, silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const result = await getCategoriesWithPagination({ page: currentPage, pageSize: 20 })
       if (result.success && result.data) {
@@ -112,7 +114,7 @@ export default function AdminCategoriesPage() {
           result.pagination.totalPages >= 1 &&
           currentPage > result.pagination.totalPages
         ) {
-          await loadCategories(result.pagination.totalPages)
+          await loadCategories(result.pagination.totalPages, silent)
           return
         }
         // Sort by order ascending
@@ -273,7 +275,9 @@ export default function AdminCategoriesPage() {
         toast.success(t("deleteSuccess"), {
           description: t("deleteSuccessDesc"),
         })
-        loadCategories()
+        // 本地移除 + 静默刷新，避免整表闪 spinner（末页清空的 clamp 由 loadCategories 内置）
+        setCategories(prev => prev.filter(c => c.id !== deletingCategoryId))
+        loadCategories(page, true)
       } else {
         toast.error(t("deleteFailed"), {
           description: resolveActionError(
@@ -574,7 +578,7 @@ export default function AdminCategoriesPage() {
         onOpenChange={setDialogOpen}
         categoryId={editingCategoryId}
         mode={dialogMode}
-        onSuccess={() => loadCategories()}
+        onSuccess={() => loadCategories(page, true)}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
