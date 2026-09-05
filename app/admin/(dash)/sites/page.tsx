@@ -340,7 +340,9 @@ export default function AdminSitesPage() {
     ].map(s => s.id)
 
     // 用可见页的新顺序替换完整底册中对应位置的条目（位置集合不变，仅换内容，置顶标记随站点走）；
-    // 位置按拖拽发起时的原始快照计算，因为 sites 已被实时重排改写
+    // 位置按拖拽发起时的原始快照计算，因为 sites 已被实时重排改写。
+    // 底册与快照可能因并发操作（拖拽中删除/静默刷新）短暂不同步：
+    // 缺失的条目过滤掉而非断言崩溃，剩余条目仍按相对顺序落库
     const siteById = new Map(dragStartOrderRef.current.map(s => [s.id, { id: s.id, isPinned: !!s.isPinned }]))
     const full = [...fullOrderRef.current]
     if (full.length > 0) {
@@ -348,9 +350,16 @@ export default function AdminSitesPage() {
         .map(s => full.findIndex(x => x.id === s.id))
         .filter(p => p >= 0)
         .sort((a, b) => a - b)
-      positions.forEach((pos, i) => { full[pos] = siteById.get(newVisible[i])! })
+      const ordered = newVisible
+        .map(id => siteById.get(id))
+        .filter((x): x is { id: string; isPinned: boolean } => Boolean(x))
+      positions.forEach((pos, i) => {
+        if (ordered[i]) full[pos] = ordered[i]
+      })
     }
-    const fallbackOrder = newVisible.map(id => siteById.get(id)!).filter(Boolean)
+    const fallbackOrder = newVisible
+      .map(id => siteById.get(id))
+      .filter((x): x is { id: string; isPinned: boolean } => Boolean(x))
 
     setSavingOrder(true)
     try {
@@ -530,7 +539,9 @@ export default function AdminSitesPage() {
           description: currentPin ? t("unpinnedDesc") : t("pinnedDesc"),
         })
         setSites(prev => prev.map(s => (s.id === siteId ? { ...s, isPinned: !s.isPinned } : s)))
-        // 置顶影响「置顶优先」排序（可能跨页移动），由静默刷新带回最终顺序
+        // 置顶影响「置顶优先」排序（可能跨页移动），由静默刷新带回最终顺序；
+        // 底册同步刷新，保证 canMoveRow 的置顶分区判断基于最新 isPinned
+        refreshFullOrder()
         loadSites(page, pageSize, true)
       } else {
         toast.error(tc("operationFailed"), {

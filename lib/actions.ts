@@ -1181,6 +1181,11 @@ export async function getSiteDetail(siteId: string) {
     if (!(await isPluginEnabled("site-detail"))) {
       return { success: false, error: "Site not found" }
     }
+    // 工作区隔离：detailContent 只对站点所属工作区可见，
+    // 与 searchSites/getSites 的公开读取口径一致
+    if (!(await isSiteInCurrentWorkspace(siteId))) {
+      return { success: false, error: "Site not found" }
+    }
     const site = await prisma.site.findUnique({
       where: { id: siteId },
       select: {
@@ -2084,15 +2089,19 @@ const updateSystemSettingsSchema = z
   .object({
     siteName: z.string().max(100),
     siteDescription: z.string().max(500),
-    siteLogo: z.string().max(500),
-    favicon: z.string().max(500),
+    // siteLogo/favicon 容许存量 data URL 形式（base64 可达数十 KB）；
+    // 仅管理员可写，上限只为拦截意外垃圾值
+    siteLogo: z.string().max(100000),
+    favicon: z.string().max(100000),
     pageSize: z.number().int().min(1).max(100),
     showFooter: z.boolean(),
     footerCopyright: z.string().max(200),
     footerLinks: z
       .array(
         z.object({
-          name: z.string().min(1).max(100),
+          // name 允许空：设置页「添加链接」会先插入空行，历史数据也可能有空 name；
+          // 全空行由客户端在提交前过滤
+          name: z.string().max(100),
           url: z.string().max(500),
         })
       )

@@ -222,7 +222,7 @@ async function fetchUpstream(url: string): Promise<{ body: Uint8Array<ArrayBuffe
         },
         cache: "no-store",
       })
-      if ([301, 302, 307, 308].includes(res.status)) {
+      if ([301, 302, 303, 307, 308].includes(res.status)) {
         const location = res.headers.get("location")
         if (!location) return null
         current = new URL(location, current).toString()

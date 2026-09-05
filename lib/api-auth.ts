@@ -27,12 +27,13 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   })
   if (!user || user.role !== "ADMIN") return null
 
-  // 改密吊销：token 签发早于最近一次改密即失效。旧版 token 无签发时间（iat 缺失），
-  // 无法证明晚于改密，同样拒绝——用户重新登录一次即可。
+  // 改密吊销：token 签发早于最近一次改密即失效。iat 为秒级、changedAt 为毫秒级，
+  // 改密时间截断到秒再比较，避免「改密后同一秒内重新登录的新 token 被误杀」；
+  // 旧版 token 无签发时间（iat 缺失），无法证明晚于改密，同样拒绝——重新登录一次即可。
   if (
     user.passwordChangedAt &&
     (session.iat === undefined ||
-      session.iat * 1000 < user.passwordChangedAt.getTime())
+      session.iat < Math.floor(user.passwordChangedAt.getTime() / 1000))
   ) {
     return null
   }

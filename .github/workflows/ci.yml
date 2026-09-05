@@ -40,18 +40,20 @@ jobs:
         run: npx tsc --noEmit
 
       # 构建期数据库供给：与 Dockerfile 构建段同口径（静态预渲染页面需要可查询的数据库），
-      # 避免依赖「全站恰好没有静态路由」这一隐式条件
+      # 避免依赖「全站恰好没有静态路由」这一隐式条件。
+      # 路径必须绝对：Prisma CLI 把相对 file: 路径按 schema 所在目录解析，
+      # 而应用/seed 经 lib/db-config 按 SQLITE_PATH（cwd 基准）解析，两端基准不同会各写各的库
       - name: Prepare build database
         run: |
           npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss --skip-generate
           npx tsx prisma/seed.ts full
         env:
-          SQLITE_URL: "file:./data/nav.db"
-          SQLITE_PATH: "./data/nav.db"
+          SQLITE_URL: "file:${{ github.workspace }}/data/nav.db"
+          SQLITE_PATH: "${{ github.workspace }}/data/nav.db"
 
       # SKIP_OPEN_NEXT_BUILD=1：CI 只验证 Next.js 构建，跳过 OpenNext 产物处理
       - name: Build
         run: npm run build
         env:
           SKIP_OPEN_NEXT_BUILD: "1"
-          SQLITE_URL: "file:./data/nav.db"
+          SQLITE_PATH: "${{ github.workspace }}/data/nav.db"
