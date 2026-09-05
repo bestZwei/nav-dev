@@ -128,7 +128,13 @@ export default function AdminSitesPage() {
   // 发起拖拽时的可见列表快照：实时重排会持续改写 sites，
   // 落库时需要用「原始顺序 → 底册位置」的映射还原完整底册
   const dragStartOrderRef = useRef<Site[]>([])
+  // 跨页拖拽：被拖行不在当前页时，悬停行仅作为落点指示（无法页内实时重排）
+  const [crossPageTargetId, setCrossPageTargetId] = useState<string | null>(null)
+  const edgeFlipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const flippingRef = useRef(false)
   const dragTableRef = useFlipList(useRef<HTMLDivElement>(null), draggedSiteId !== null)
+
+  // 跨页拖拽的边缘自动翻页 effect 见 loadSites 定义之后（依赖 page/pagination/loadSites）
   // 分类下完整站点顺序底册（服务端同口径排序，含置顶标记），拖拽/按钮落库时以它为底册套用本页结果；
   // 带置顶标记是为了支持跨页移动时判断相邻项是否可交换（置顶/普通分区边界不可跨越）
   const fullOrderRef = useRef<Array<{ id: string; isPinned: boolean }>>([])
@@ -208,6 +214,53 @@ export default function AdminSitesPage() {
     loadSitesRef.current = loadSites
     loadCategoriesRef.current = loadCategories
   })
+
+  // 跨页拖拽：指针在视口上/下边缘感应区停留时自动翻页（静默加载不闪 spinner），
+  // 可连续翻多页；拖回页面中部取消计时。置于 loadSites/pagination 声明之后（deps 渲染期求值）
+  const EDGE_ZONE_PX = 72
+  const EDGE_FLIP_DELAY_MS = 500
+  useEffect(() => {
+    if (!draggedSiteId || !dragOrderEnabled) return
+    const cancelFlip = () => {
+      if (edgeFlipTimerRef.current) {
+        clearTimeout(edgeFlipTimerRef.current)
+        edgeFlipTimerRef.current = null
+      }
+    }
+    const onWindowDragOver = (e: DragEvent) => {
+      if (flippingRef.current) return
+      const dir =
+        e.clientY < EDGE_ZONE_PX ? -1 : e.clientY > window.innerHeight - EDGE_ZONE_PX ? 1 : 0
+      if (dir === 0) {
+        cancelFlip()
+        return
+      }
+      const targetPage = page + dir
+      if (targetPage < 1 || (pagination && targetPage > pagination.totalPages)) {
+        cancelFlip()
+        return
+      }
+      // 已在倒计时中：维持原计划（dragover 持续触发，不能反复重置）
+      if (edgeFlipTimerRef.current) return
+      edgeFlipTimerRef.current = setTimeout(async () => {
+        edgeFlipTimerRef.current = null
+        flippingRef.current = true
+        try {
+          // 翻页后重置落点记忆，让新页第一行可立即作为落点
+          lastOverIdRef.current = null
+          setCrossPageTargetId(null)
+          await loadSitesRef.current(targetPage, pageSize, true)
+        } finally {
+          flippingRef.current = false
+        }
+      }, EDGE_FLIP_DELAY_MS)
+    }
+    window.addEventListener("dragover", onWindowDragOver)
+    return () => {
+      window.removeEventListener("dragover", onWindowDragOver)
+      cancelFlip()
+    }
+  }, [draggedSiteId, dragOrderEnabled, page, pageSize, pagination])
 
   useEffect(() => {
     loadSitesRef.current(1)
@@ -310,6 +363,15 @@ export default function AdminSitesPage() {
     if (!draggedSiteId || siteId === draggedSiteId || lastOverIdRef.current === siteId) return
     lastOverIdRef.current = siteId
 
+    // 跨页拖拽：被拖行不在当前页（无法页内实时重排），仅标记落点显示插入指示线；
+    // 翻回被拖行所在页后自动恢复页内实时重排
+    if (!sites.some(s => s.id === draggedSiteId)) {
+      setCrossPageTargetId(siteId)
+      dragMovedRef.current = true
+      return
+    }
+    setCrossPageTargetId(null)
+
     setSites(prev => {
       const from = prev.findIndex(s => s.id === draggedSiteId)
       if (from < 0) return prev
@@ -323,15 +385,59 @@ export default function AdminSitesPage() {
     })
   }
 
-  // dragEnd 总会触发；把实时重排后的可见页顺序套用到完整底册上落库
+  // dragEnd 总会触发；按被拖行是否在当前页分流：页内走实时重排映射落库，
+  // 跨页直接在完整底册中移动到落点之前
   const handleDragEndRow = async () => {
     const dragged = draggedSiteId
     const moved = dragMovedRef.current
+    const crossTarget = crossPageTargetId
     dragMovedRef.current = false
     lastOverIdRef.current = null
     setDraggedSiteId(null)
+    setCrossPageTargetId(null)
     if (!dragged || !moved) return
 
+    // ================= 跨页路径 =================
+    if (!sites.some(s => s.id === dragged)) {
+      const full = [...fullOrderRef.current]
+      // 底册未就绪或无有效落点时放弃落库：用残缺列表写入会压扁其他页的顺序
+      if (full.length === 0 || !crossTarget) return
+      const fromIdx = full.findIndex(x => x.id === dragged)
+      if (fromIdx < 0) return
+      const [removed] = full.splice(fromIdx, 1)
+      let toIdx = full.findIndex(x => x.id === crossTarget)
+      if (toIdx < 0) toIdx = full.length
+      full.splice(toIdx, 0, removed)
+      // 稳定置顶分区（置顶区/普通区各自保序），与页内落库口径一致
+      const ordered = [
+        ...full.filter(x => x.isPinned),
+        ...full.filter(x => !x.isPinned),
+      ]
+
+      setSavingOrder(true)
+      try {
+        const result = await updateSitesOrder(filterCategory, ordered.map(x => x.id))
+        if (result.success) {
+          fullOrderRef.current = ordered
+          refreshFullOrder()
+          toast.success(t("orderUpdated"))
+          loadSites(page, pageSize, true)
+        } else {
+          toast.error(tc("operationFailed"), {
+            description: resolveActionError(tAE, result.error, tc("retryLater")),
+          })
+        }
+      } catch {
+        toast.error(tc("operationFailed"), {
+          description: tc("retryLater"),
+        })
+      } finally {
+        setSavingOrder(false)
+      }
+      return
+    }
+
+    // ================= 页内路径 =================
     // 置顶站点始终显示在最前：落库前稳定分区（置顶区/普通区各自保序），
     // 避免「拖到置顶上方、刷新后却不生效」的错觉
     const newVisible = [
@@ -673,6 +779,13 @@ export default function AdminSitesPage() {
 
   return (
     <div className="space-y-4">
+      {/* 跨页拖拽进行中：视口上/下边缘显示翻页感应区指示条（停留自动翻页） */}
+      {draggedSiteId && dragOrderEnabled && (
+        <>
+          <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1.5 animate-fade-in bg-gradient-to-b from-primary/50 to-transparent" />
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 h-1.5 animate-fade-in bg-gradient-to-t from-primary/50 to-transparent" />
+        </>
+      )}
       {/* 筛选器工具栏 */}
       <div className="flex flex-wrap items-center gap-4">
           {/* 分类筛选 */}
@@ -891,6 +1004,10 @@ export default function AdminSitesPage() {
                       className={[
                         site.isPinned ? "bg-amber-500/5" : "",
                         draggedSiteId === site.id ? "opacity-40" : "",
+                        // 跨页拖拽的插入指示线：inset shadow 避免 table 边框合并模式的兼容问题
+                        crossPageTargetId === site.id && draggedSiteId !== site.id
+                          ? "shadow-[inset_0_2px_0_0_hsl(var(--primary))]"
+                          : "",
                       ].join(" ").trim() || undefined}
                     >
                       {dragOrderEnabled && (
