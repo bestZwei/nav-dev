@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useFlipList } from "@/hooks/use-flip-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card"
 import {
@@ -120,8 +121,14 @@ export default function AdminSitesPage() {
     (!submissionEnabled || filterSubmitter === "all") &&
     !searchKeyword.trim()
   const [draggedSiteId, setDraggedSiteId] = useState<string | null>(null)
-  const [dragOverSiteId, setDragOverSiteId] = useState<string | null>(null)
   const [savingOrder, setSavingOrder] = useState(false)
+  // 拖拽实时重排的辅助状态（避免在 dragover/dragenter 高频事件里频繁 setState）
+  const dragMovedRef = useRef(false)
+  const lastOverIdRef = useRef<string | null>(null)
+  // 发起拖拽时的可见列表快照：实时重排会持续改写 sites，
+  // 落库时需要用「原始顺序 → 底册位置」的映射还原完整底册
+  const dragStartOrderRef = useRef<Site[]>([])
+  const dragTableRef = useFlipList(useRef<HTMLDivElement>(null), draggedSiteId !== null)
   // 分类下完整站点顺序底册（服务端同口径排序，含置顶标记），拖拽/按钮落库时以它为底册套用本页结果；
   // 带置顶标记是为了支持跨页移动时判断相邻项是否可交换（置顶/普通分区边界不可跨越）
   const fullOrderRef = useRef<Array<{ id: string; isPinned: boolean }>>([])
@@ -133,8 +140,14 @@ export default function AdminSitesPage() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
 
   // 加载网站列表
-  const loadSites = async (currentPage = page, currentPageSize = pageSize) => {
-    setLoading(true)
+  // silent=true 时跳过 loading 态：用于拖拽排序保存后的保底刷新，
+  // 本地顺序已正确，整表替换成 spinner 再重建会造成明显闪动
+  const loadSites = async (
+    currentPage = page,
+    currentPageSize = pageSize,
+    silent = false
+  ) => {
+    if (!silent) setLoading(true)
     try {
       const result = await getSitesWithPagination({
         page: currentPage,
@@ -286,36 +299,52 @@ export default function AdminSitesPage() {
   }, [dragOrderEnabled, filterCategory])
 
   const handleDragStartRow = (siteId: string) => {
+    dragMovedRef.current = false
+    lastOverIdRef.current = null
+    dragStartOrderRef.current = sites
     setDraggedSiteId(siteId)
   }
 
+  // 拖到其他行上时立即实时交换位置，拖动过程所见即所得
   const handleDragEnterRow = (siteId: string) => {
-    if (!draggedSiteId || siteId === draggedSiteId) return
-    setDragOverSiteId(siteId)
+    if (!draggedSiteId || siteId === draggedSiteId || lastOverIdRef.current === siteId) return
+    lastOverIdRef.current = siteId
+
+    setSites(prev => {
+      const from = prev.findIndex(s => s.id === draggedSiteId)
+      if (from < 0) return prev
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      const to = next.findIndex(s => s.id === siteId)
+      if (to < 0) return prev
+      next.splice(to, 0, moved)
+      dragMovedRef.current = true
+      return next
+    })
   }
 
-  const handleDropRow = async () => {
-    const from = sites.findIndex(s => s.id === draggedSiteId)
-    const to = sites.findIndex(s => s.id === dragOverSiteId)
+  // dragEnd 总会触发；把实时重排后的可见页顺序套用到完整底册上落库
+  const handleDragEndRow = async () => {
+    const dragged = draggedSiteId
+    const moved = dragMovedRef.current
+    dragMovedRef.current = false
+    lastOverIdRef.current = null
     setDraggedSiteId(null)
-    setDragOverSiteId(null)
-    if (from < 0 || to < 0 || from === to) return
+    if (!dragged || !moved) return
 
-    const nextVisible = [...sites]
-    const [moved] = nextVisible.splice(from, 1)
-    nextVisible.splice(to, 0, moved)
     // 置顶站点始终显示在最前：落库前稳定分区（置顶区/普通区各自保序），
     // 避免「拖到置顶上方、刷新后却不生效」的错觉
     const newVisible = [
-      ...nextVisible.filter(s => s.isPinned),
-      ...nextVisible.filter(s => !s.isPinned),
+      ...sites.filter(s => s.isPinned),
+      ...sites.filter(s => !s.isPinned),
     ].map(s => s.id)
 
-    // 用可见页的新顺序替换完整底册中对应位置的条目（位置集合不变，仅换内容，置顶标记随站点走）
-    const siteById = new Map(sites.map(s => [s.id, { id: s.id, isPinned: !!s.isPinned }]))
+    // 用可见页的新顺序替换完整底册中对应位置的条目（位置集合不变，仅换内容，置顶标记随站点走）；
+    // 位置按拖拽发起时的原始快照计算，因为 sites 已被实时重排改写
+    const siteById = new Map(dragStartOrderRef.current.map(s => [s.id, { id: s.id, isPinned: !!s.isPinned }]))
     const full = [...fullOrderRef.current]
     if (full.length > 0) {
-      const positions = sites
+      const positions = dragStartOrderRef.current
         .map(s => full.findIndex(x => x.id === s.id))
         .filter(p => p >= 0)
         .sort((a, b) => a - b)
@@ -331,7 +360,7 @@ export default function AdminSitesPage() {
         fullOrderRef.current = full.length > 0 ? full : fallbackOrder
         refreshFullOrder()
         toast.success(t("orderUpdated"))
-        loadSites()
+        loadSites(page, pageSize, true)
       } else {
         toast.error(tc("operationFailed"), {
           description: resolveActionError(tAE, result.error, tc("retryLater")),
@@ -800,7 +829,7 @@ export default function AdminSitesPage() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <div className="overflow-hidden rounded-lg border">
+            <div ref={dragTableRef} className="overflow-hidden rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -823,19 +852,15 @@ export default function AdminSitesPage() {
                   {sites.map((site) => (
                     <TableRow
                       key={site.id}
+                      data-flip-id={site.id}
                       draggable={dragOrderEnabled}
                       onDragStart={() => handleDragStartRow(site.id)}
-                      onDragEnter={() => handleDragEnterRow(site.id)}
+                      onDragEnter={dragOrderEnabled ? () => handleDragEnterRow(site.id) : undefined}
                       onDragOver={(e) => dragOrderEnabled && e.preventDefault()}
-                      onDrop={dragOrderEnabled ? handleDropRow : undefined}
-                      onDragEnd={() => {
-                        setDraggedSiteId(null)
-                        setDragOverSiteId(null)
-                      }}
+                      onDragEnd={dragOrderEnabled ? handleDragEndRow : undefined}
                       className={[
                         site.isPinned ? "bg-amber-500/5" : "",
                         draggedSiteId === site.id ? "opacity-40" : "",
-                        dragOverSiteId === site.id && draggedSiteId !== site.id ? "bg-primary/5" : "",
                       ].join(" ").trim() || undefined}
                     >
                       {dragOrderEnabled && (
