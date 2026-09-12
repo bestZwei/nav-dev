@@ -112,11 +112,7 @@
       "adminTitle": "管理画面",
       "visitSite": "サイトのホームへ",
       "version": {
-        "current": "バージョン {version}",
-        "latest": "最新です",
-        "updateAvailable": "新バージョン {version}",
-        "unavailable": "更新チェック不可用",
-        "dev": "dev"
+        "current": "バージョン {version}"
       },
       "workspaces": "ワークスペース管理",
       "plugins": "プラグイン",

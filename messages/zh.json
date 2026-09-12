@@ -112,11 +112,7 @@
       "adminTitle": "管理后台",
       "visitSite": "访问网站首页",
       "version": {
-        "current": "当前版本 {version}",
-        "latest": "已是最新版本",
-        "updateAvailable": "新版本 {version}",
-        "unavailable": "版本检查不可用",
-        "dev": "开发版本"
+        "current": "当前版本 {version}"
       },
       "workspaces": "工作区管理",
       "plugins": "插件管理",

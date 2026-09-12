@@ -112,11 +112,7 @@
       "adminTitle": "Administration",
       "visitSite": "Voir le site",
       "version": {
-        "current": "Version {version}",
-        "latest": "À jour",
-        "updateAvailable": "Nouv. {version}",
-        "unavailable": "Vérification de mise à jour indisponible",
-        "dev": "dev"
+        "current": "Version {version}"
       },
       "workspaces": "Espaces de travail",
       "plugins": "Extensions",
