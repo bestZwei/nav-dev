@@ -329,6 +329,8 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
   // ================= 标准模式 (Standard Mode) =================
   return (
     <>
+    <Tooltip>
+      <TooltipTrigger asChild>
     {/* 操作按钮移出 Link：交互元素不得嵌套（键盘 Enter 会命中外层链接而非按钮） */}
     <div className="group relative block h-full select-none">
     <Link
@@ -353,7 +355,6 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
           <div className="flex items-center gap-1.5">
             <h3
               className="text-sm sm:text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-150 group-hover:text-primary line-clamp-1"
-              title={site.name}
             >
               {site.name}
             </h3>
@@ -364,10 +365,7 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
             )}
           </div>
           {site.description ? (
-            <p
-              className="mt-0.5 text-xs text-muted-foreground line-clamp-1 leading-relaxed"
-              title={site.description}
-            >
+            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1 leading-relaxed">
               {site.description}
             </p>
           ) : (
@@ -412,6 +410,19 @@ export function SiteCard({ site, density: propDensity, dragEnabled = false }: Si
       )}
     </div>
     </div>
+    </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        align="center"
+        className="max-w-[320px] text-left bg-primary/77 backdrop-blur-sm"
+      >
+        {site.description ? (
+          <p className="text-xs leading-relaxed">{site.description}</p>
+        ) : (
+          <p className="text-xs italic">{t("noDescription")}</p>
+        )}
+      </TooltipContent>
+    </Tooltip>
     {/* 常挂载 + open 受控：条件卸载会砍掉 Radix 关闭动画并瞬间解除滚动锁定（页面跳动） */}
     <SiteDetailDialog
       site={site}
